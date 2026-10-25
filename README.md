@@ -20,11 +20,11 @@ Full integration and customization guide: `docs/engine_guide/ednova_engine_guide
 ```bash
 python3 -m venv myenv && myenv/bin/pip install -r requirements.txt
 cp .env.example .env            # fill in placeholders; never commit real keys
-ollama pull llama3.2:3b && ollama pull llama3.1:8b   # models named in .env.ollama
+ollama pull llama3.2:3b && ollama pull llama3.1:8b   # models named in your env file
 ```
 
-Env profiles: `.env.ollama` (Ollama + in-process constraint simulator), `.env` (standalone `mock_server.py`),
-`.env.real` (FelCloud; local only, git-ignored). Select one with `ENV_FILE=.env.ollama`.
+Env profiles (all git-ignored, create from `.env.example`): `.env.ollama` (Ollama + in-process constraint simulator), `.env` (standalone `mock_server.py`),
+`.env.real` (FelCloud). Select one with `ENV_FILE=.env.ollama`.
 
 ## Commands
 
