@@ -1,0 +1,8 @@
+{"id": "xdar-1", "language": "DARIJA", "question": "كيفاش نكتب معادلة المماس في النقطة a؟", "expected": "derivee-definition.fr#interpretation-graphique-la-tangente"}
+{"id": "xdar-2", "language": "DARIJA", "question": "شنية مشتقة الجذر المربع و مشتقة 1/x؟", "expected": "derivee-formules.fr#derivees-des-fonctions-usuelles"}
+{"id": "xdar-3", "language": "DARIJA", "question": "كيفاش نشتق جداء زوز دوال u و v؟", "expected": "derivee-formules.fr#produit-et-quotient"}
+{"id": "xdar-4", "language": "DARIJA", "question": "كيفاش نحسب مشتقة خارج u على v؟", "expected": "derivee-formules.fr#produit-et-quotient"}
+{"id": "xazi-1", "language": "ARABIZI", "question": "kifech nekteb mo3adlet el mamas mta3 el courbe?", "expected": "derivee-definition.fr#interpretation-graphique-la-tangente"}
+{"id": "xazi-2", "language": "ARABIZI", "question": "chnowa mochtaqet jather x w mochtaqet 1/x ?", "expected": "derivee-formules.fr#derivees-des-fonctions-usuelles"}
+{"id": "xazi-3", "language": "ARABIZI", "question": "3lech mochtaqet el jida2 moch jida2 el mochtaqat?", "expected": "derivee-erreurs.fr#erreurs-avec-le-produit"}
+{"id": "xazi-4", "language": "ARABIZI", "question": "ki tkoun 3andek sor3et karhba, chnowa 3laqa m3a el mochtaqa?", "expected": "derivee-definition.fr#idee-intuitive"}

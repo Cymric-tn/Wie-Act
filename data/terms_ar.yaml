@@ -1,0 +1,41 @@
+# Arabic math terminology for answers in Modern Standard Arabic (explain / hint with language ARABIC).
+# The engine injects only the terms relevant to the question and retrieved course text (max 12).
+# Usage follows Tunisian secondary-school Arabic textbooks (e.g. "عدد مشتق", "دالة تزايدية").
+version: 1
+terms:
+  - {fr: fonction, ar: دالة}
+  - {fr: dérivée, ar: مشتقة}
+  - {fr: dériver, ar: اشتقاق}
+  - {fr: nombre dérivé, ar: العدد المشتق}
+  - {fr: taux d'accroissement, ar: نسبة التغير}
+  - {fr: tangente, ar: مماس}
+  - {fr: pente, ar: ميل}
+  - {fr: coefficient directeur, ar: معامل التوجيه}
+  - {fr: limite, ar: نهاية}
+  - {fr: courbe, ar: منحنى}
+  - {fr: équation, ar: معادلة}
+  - {fr: abscisse, ar: فاصلة}
+  - {fr: ordonnée, ar: ترتيبة}
+  - {fr: constante, ar: ثابتة}
+  - {fr: puissance, ar: قوة}
+  - {fr: exposant, ar: أس}
+  - {fr: produit, ar: جداء}
+  - {fr: quotient, ar: خارج}
+  - {fr: somme, ar: مجموع}
+  - {fr: polynôme, ar: كثير حدود}
+  - {fr: racine carrée, ar: الجذر التربيعي}
+  - {fr: inverse, ar: مقلوب}
+  - {fr: croissante, ar: تزايدية}
+  - {fr: décroissante, ar: تناقصية}
+  - {fr: tableau de variation, ar: جدول التغيرات}
+  - {fr: signe, ar: إشارة}
+  - {fr: maximum, ar: قيمة عظمى}
+  - {fr: minimum, ar: قيمة دنيا}
+  - {fr: extremum, ar: قيمة قصوى}
+  - {fr: intervalle, ar: مجال}
+  - {fr: variable, ar: متغير}
+  - {fr: valeur, ar: قيمة}
+  - {fr: droite, ar: مستقيم}
+  - {fr: point, ar: نقطة}
+  - {fr: vitesse instantanée, ar: السرعة اللحظية}
+  - {fr: réel, ar: عدد حقيقي}

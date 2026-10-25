@@ -1,0 +1,225 @@
+# Exercise bank, topic "derivative", lycée. Synthetic, written for EdNova.
+# statement = template_key + expression (+ a, condition), rendered in FR / EN / AR from data/templates.yaml;
+#   an exercise that fits no template sets statement: {fr: ..., en: ..., ar: ...} instead.
+# level: 1 (direct application) .. 3 (several rules / steps). hints: graded, most general first; never the answer.
+# common_mistakes: typical wrong answers as expressions (compared symbolically with sympy, before any LLM call)
+#   + the feedback shown when a learner's answer is equivalent to one. Text-only entries (d14, d15) go to the LLM grader.
+version: 1
+topic: derivative
+exercises:
+  - id: d01
+    concept: puissance
+    level: 1
+    template_key: derive
+    expression: "x⁴"
+    solution: "f'(x) = 4x³"
+    hints:
+      - "Quelle règle donne la dérivée de xⁿ ?"
+      - "(xⁿ)' = n·xⁿ⁻¹ : ici, que vaut n ?"
+      - "Multiplie par l'exposant, puis baisse l'exposant de 1."
+    common_mistakes:
+      - {expr: "x³", feedback: "Tu as baissé l'exposant mais oublié de multiplier par l'exposant."}
+      - {expr: "4x⁴", feedback: "Tu as multiplié par l'exposant mais oublié de le baisser de 1."}
+
+  - id: d02
+    concept: polynôme
+    level: 1
+    template_key: derive
+    expression: "2x³ − 4x + 1"
+    solution: "f'(x) = 6x² − 4"
+    hints:
+      - "La dérivée d'une somme est la somme des dérivées : dérive chaque terme séparément."
+      - "Que vaut la dérivée de 2x³ ? Et celle de −4x ?"
+      - "N'oublie pas : la dérivée d'une constante est 0."
+    common_mistakes:
+      - {expr: "6x² − 3", feedback: "La constante 1 a une dérivée nulle : elle disparaît."}
+      - {expr: "6x³ − 4", feedback: "Pour 2x³, il faut aussi baisser l'exposant de 1."}
+
+  - id: d03
+    concept: constante
+    level: 1
+    template_key: derive
+    expression: "x² + 9"
+    solution: "f'(x) = 2x"
+    hints:
+      - "Dérive chaque terme séparément."
+      - "Une constante varie-t-elle quand x change ?"
+      - "La dérivée d'une constante est 0."
+    common_mistakes:
+      - {expr: "2x + 9", feedback: "La constante 9 ne varie pas : sa dérivée est 0, elle disparaît."}
+      - {expr: "2x + 1", feedback: "La dérivée de la constante 9 est 0, pas 1."}
+
+  - id: d04
+    concept: polynôme
+    level: 2
+    template_key: derive
+    expression: "5x⁴ − 3x² + x"
+    solution: "f'(x) = 20x³ − 6x + 1"
+    hints:
+      - "Dérive terme par terme."
+      - "Que vaut la dérivée de x tout seul ?"
+      - "(5x⁴)' = 20x³ ; continue avec −3x² puis x."
+    common_mistakes:
+      - {expr: "20x³ − 6x", feedback: "La dérivée de x est 1 : il manque ce terme."}
+      - {expr: "20x³ − 6x + x", feedback: "Le terme x se dérive en 1, pas en x."}
+
+  - id: d05
+    concept: produit
+    level: 2
+    template_key: derive
+    expression: "x(x + 3)"
+    solution: "f'(x) = 2x + 3"
+    hints:
+      - "f est un produit u·v : quelle est la règle de dérivation d'un produit ?"
+      - "(u·v)' = u'·v + u·v' avec u = x et v = x + 3."
+      - "Tu peux aussi vérifier en développant d'abord f(x)."
+    common_mistakes:
+      - {expr: "1", feedback: "La dérivée d'un produit n'est pas le produit des dérivées : utilise (u·v)' = u'·v + u·v'."}
+      - {expr: "x + 3", feedback: "Tu as seulement calculé u'·v ; il manque le terme u·v'."}
+
+  - id: d06
+    concept: produit
+    level: 3
+    template_key: derive
+    expression: "(2x + 1)(x − 4)"
+    solution: "f'(x) = 4x − 7"
+    hints:
+      - "Identifie u et v, puis calcule u' et v'."
+      - "Applique (u·v)' = u'·v + u·v' avec u = 2x + 1 et v = x − 4."
+      - "Développe et regroupe les termes : 2(x − 4) + (2x + 1)·1."
+    common_mistakes:
+      - {expr: "2", feedback: "Tu as multiplié les dérivées (2 × 1) : ce n'est pas la règle du produit."}
+      - {expr: "4x − 9", feedback: "Vérifie le développement de 2(x − 4) + (2x + 1) : attention aux constantes."}
+
+  - id: d07
+    concept: quotient
+    level: 3
+    template_key: derive_on
+    expression: "1/(x + 1)"
+    condition: "x ≠ −1"
+    solution: "f'(x) = −1/(x + 1)²"
+    hints:
+      - "Quelle règle utilise-t-on pour un quotient u/v ?"
+      - "(u/v)' = (u'·v − u·v')/v² avec u = 1 et v = x + 1."
+      - "Que vaut u' quand u est une constante ?"
+    common_mistakes:
+      - {expr: "1/(x + 1)²", feedback: "Attention au signe : (u'·v − u·v') donne 0 − 1 = −1."}
+      - {expr: "0", feedback: "Le numérateur est constant, mais le dénominateur dépend de x : utilise la règle du quotient."}
+
+  - id: d08
+    concept: inverse
+    level: 2
+    template_key: derive_on
+    expression: "3/x"
+    condition: "x ≠ 0"
+    solution: "f'(x) = −3/x²"
+    hints:
+      - "Écris f(x) = 3 × (1/x)."
+      - "Quelle est la dérivée de 1/x ?"
+      - "(1/x)' = −1/x² ; multiplie par la constante 3."
+    common_mistakes:
+      - {expr: "3/x²", feedback: "La dérivée de 1/x est −1/x² : il manque le signe moins."}
+      - {expr: "−3/x", feedback: "Le dénominateur devient x², pas x."}
+
+  - id: d09
+    concept: racine carrée
+    level: 2
+    template_key: derive_on
+    expression: "2√x"
+    condition: "x > 0"
+    solution: "f'(x) = 1/√x"
+    hints:
+      - "Quelle est la dérivée de √x ?"
+      - "(√x)' = 1/(2√x) ; que fait la constante 2 devant ?"
+      - "Multiplie 1/(2√x) par 2 et simplifie."
+    common_mistakes:
+      - {expr: "1/(2√x)", feedback: "Tu as oublié de multiplier par la constante 2."}
+      - {expr: "2/√x", feedback: "2 × 1/(2√x) se simplifie : les 2 se compensent."}
+
+  - id: d10
+    concept: nombre dérivé
+    level: 1
+    template_key: derivative_at
+    expression: "x²"
+    a: "3"
+    solution: "f'(3) = 6"
+    hints:
+      - "Calcule d'abord la fonction dérivée f'(x)."
+      - "f'(x) = 2x ; remplace maintenant x par 3."
+      - "Attention : on demande f'(3), pas f(3)."
+    common_mistakes:
+      - {expr: "9", feedback: "9 est f(3), la valeur de la fonction. On demande f'(3), la valeur de la dérivée."}
+      - {expr: "2x", feedback: "C'est f'(x) ; il reste à remplacer x par 3."}
+
+  - id: d11
+    concept: nombre dérivé
+    level: 2
+    template_key: derivative_at
+    expression: "x³ − 2x"
+    a: "1"
+    solution: "f'(1) = 1"
+    hints:
+      - "Calcule f'(x) terme par terme."
+      - "f'(x) = 3x² − 2 ; remplace x par 1."
+      - "Vérifie que tu calcules f'(1) et non f(1)."
+    common_mistakes:
+      - {expr: "-1", feedback: "−1 est f(1). On demande f'(1)."}
+      - {expr: "3x² − 2", feedback: "C'est f'(x) ; il reste à remplacer x par 1."}
+
+  - id: d12
+    concept: tangente
+    level: 2
+    template_key: tangent_at
+    expression: "x²"
+    a: "2"
+    solution: "y = 4x − 4"
+    hints:
+      - "L'équation de la tangente en a est y = f'(a)(x − a) + f(a)."
+      - "Calcule f(2) et f'(2)."
+      - "f(2) = 4 et f'(2) = 4 : remplace dans la formule et développe."
+    common_mistakes:
+      - {expr: "y = 4x", feedback: "Tu as oublié le terme f(a) et le décalage (x − a) dans la formule."}
+      - {expr: "y = 2x", feedback: "La pente est f'(2) = 4, pas 2."}
+
+  - id: d13
+    concept: tangente
+    level: 3
+    template_key: tangent_at
+    expression: "x³"
+    a: "1"
+    solution: "y = 3x − 2"
+    hints:
+      - "Utilise y = f'(a)(x − a) + f(a)."
+      - "Calcule f(1) et f'(1) avec f'(x) = 3x²."
+      - "y = 3(x − 1) + 1 : développe."
+    common_mistakes:
+      - {expr: "y = 3x + 1", feedback: "Il faut développer 3(x − 1) + 1 : attention au −3."}
+      - {expr: "y = 3x", feedback: "Il manque le terme constant : vérifie la formule y = f'(a)(x − a) + f(a)."}
+
+  - id: d14
+    concept: variations
+    level: 2
+    template_key: variations
+    expression: "x² − 6x + 2"
+    solution: "f est décroissante sur ]−∞, 3] et croissante sur [3, +∞["
+    hints:
+      - "Calcule f'(x) et étudie son signe."
+      - "f'(x) = 2x − 6 : pour quelle valeur s'annule-t-elle ?"
+      - "Si f'(x) < 0, f est décroissante ; si f'(x) > 0, f est croissante."
+    common_mistakes:
+      - {expr: "croissante sur ]−∞, 3] et décroissante sur [3, +∞[", feedback: "Le signe est inversé : 2x − 6 est négatif pour x < 3."}
+      - {expr: "croissante sur ℝ", feedback: "f'(x) change de signe en x = 3 : f n'est pas croissante partout."}
+
+  - id: d15
+    concept: extremum
+    level: 3
+    template_key: extremum
+    expression: "−x² + 4x + 1"
+    solution: "maximum 5 atteint en x = 2"
+    hints:
+      - "Un extremum se trouve là où f'(x) s'annule en changeant de signe."
+      - "f'(x) = −2x + 4 : résous f'(x) = 0, puis étudie le signe autour."
+      - "f' passe de positif à négatif en x = 2 : calcule f(2)."
+    common_mistakes:
+      - {expr: "minimum en x = 2", feedback: "f' passe de positif à négatif : f monte puis descend, c'est un maximum."}
+      - {expr: "maximum 2", feedback: "2 est l'abscisse ; la valeur du maximum est f(2)."}

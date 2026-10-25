@@ -1,0 +1,24 @@
+{
+  "models": {
+    "qwen2.5-3b":       {"class": "compact", "s_short": 0.5,  "s_per_out_token": 0.023, "max_tokens": 8192},
+    "llama3.2-3b":      {"class": "compact", "s_short": 0.35, "s_per_out_token": 0.025, "max_tokens": 8192},
+    "llama3.1-8b":      {"class": "mid",     "s_short": 0.5,  "s_per_out_token": 0.046, "max_tokens": 8192},
+    "qwen2.5-coder-7b": {"class": "mid",     "s_short": 0.5,  "s_per_out_token": 0.048, "max_tokens": 8192}
+  },
+  "embed_model": "UNKNOWN-ask-organizers",
+  "embed_dim": 384,
+  "rpm": 20, "burst": 20, "max_concurrent": 2, "mid_slots": 1,
+  "headers": {
+    "limit": "x-ratelimit-api_key-limit-requests",
+    "remaining": "x-ratelimit-api_key-remaining-requests",
+    "reset": "x-ednova-mock-reset"
+  },
+  "latency_scale": 0,
+  "backend": "http://localhost:11434/v1",
+  "backend_map": {
+    "qwen2.5-3b": "qwen2.5:3b",
+    "llama3.2-3b": "llama3.2:3b",
+    "llama3.1-8b": "llama3.1:8b",
+    "qwen2.5-coder-7b": "llama3.1:8b"
+  }
+}

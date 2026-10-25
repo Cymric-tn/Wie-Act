@@ -1,0 +1,70 @@
+# Deterministic scaffolding around model output (the model never writes these lines).
+# Openers: chosen by learner language x confusion (from classify). No praise, never "you understood".
+# Tunisian forms for DARIJA / ARABIZI (متاع, شنوة, باهي, ماكش; never Moroccan ديال / واش).
+# Darija/Arabizi wording written by the engine authors: to be reviewed by a native Tunisian speaker.
+version: 1
+
+opener:
+  FRENCH:
+    LOW: "Voici l'essentiel du cours sur ce point."
+    MEDIUM: "Pas de souci, on reprend ce point calmement."
+    HIGH: "C'est une notion qui demande du temps : on la reprend pas à pas."
+  ENGLISH:
+    LOW: "Here is the key idea from the course."
+    MEDIUM: "No problem, let's go over it calmly."
+    HIGH: "This one takes time, so let's take it step by step."
+  ARABIC:
+    LOW: "إليك الفكرة الأساسية من الدرس."
+    MEDIUM: "لا بأس، لنراجع هذه النقطة بهدوء."
+    HIGH: "هذا المفهوم يحتاج إلى بعض الوقت، لنأخذه خطوة بخطوة."
+  DARIJA:
+    LOW: "هاي الفكرة الأساسية متاع الدرس (الشرح بالفرنسية كيما في الكور):"
+    MEDIUM: "باهي، نعاودوها بالشوية (الشرح بالفرنسية كيما في الكور):"
+    HIGH: "ماكش وحدك، المفهوم هذا يحب شوية وقت. نمشيو خطوة بخطوة (الشرح بالفرنسية كيما في الكور):"
+  ARABIZI:
+    LOW: "Hedhi el fekra el asesiya mta3 el cours (el char7 bel français kima fel cours):"
+    MEDIUM: "Behi, n3awdouha bechwaya (el char7 bel français kima fel cours):"
+    HIGH: "Mech wa7dek, el notion hedhi t7eb chwaya wa9t. Nemchiw étape par étape (el char7 bel français):"
+
+practice:
+  FRENCH: "À toi :"
+  ENGLISH: "Your turn:"
+  ARABIC: "حاول بنفسك:"
+  DARIJA: "جرّب إنت:"
+  ARABIZI: "Jarreb enti :"
+
+grade_wrong:      # generic feedback when the answer is wrong and matches no known mistake
+  FRENCH: "Ce n'est pas encore ça : reprends ton calcul étape par étape."
+  ENGLISH: "Not quite yet: go through your calculation step by step."
+  ARABIC: "ليس بعد: أعد حسابك خطوة بخطوة."
+  DARIJA: "موش هكا بالضبط: عاود الحساب خطوة بخطوة."
+  ARABIZI: "Moch hakka bedhabt: 3awed el 7seb étape par étape."
+
+# Exercise statements: data/exercises/*.yaml gives template_key + expression (+ a, condition).
+# FRENCH / DARIJA / ARABIZI learners get the French phrase (course language); ENGLISH -> en; ARABIC -> ar
+# (MSA, vocabulary from data/terms_ar.yaml: مشتقة، مماس، فاصلة، قيمة عظمى / دنيا، اتجاه التغير).
+exercise:
+  derive:
+    fr: "Calculer la dérivée de f(x) = {expr}."
+    en: "Find the derivative of f(x) = {expr}."
+    ar: "احسب مشتقة الدالة f(x) = {expr}."
+  derive_on:
+    fr: "Calculer la dérivée de f(x) = {expr}, pour {condition}."
+    en: "Find the derivative of f(x) = {expr}, for {condition}."
+    ar: "احسب مشتقة الدالة f(x) = {expr} من أجل {condition}."
+  derivative_at:
+    fr: "Soit f(x) = {expr}. Calculer f'({a})."
+    en: "Let f(x) = {expr}. Compute f'({a})."
+    ar: "لتكن f(x) = {expr}. احسب f'({a})."
+  tangent_at:
+    fr: "Donner l'équation de la tangente à la courbe de f(x) = {expr} au point d'abscisse a = {a}."
+    en: "Give the equation of the tangent line to the graph of f(x) = {expr} at the point with x-coordinate a = {a}."
+    ar: "أعط معادلة المماس لمنحنى الدالة f(x) = {expr} في النقطة التي فاصلتها a = {a}."
+  variations:
+    fr: "Étudier les variations de f(x) = {expr} sur ℝ."
+    en: "Study the variations of f(x) = {expr} on ℝ."
+    ar: "ادرس اتجاه تغير الدالة f(x) = {expr} على ℝ."
+  extremum:
+    fr: "Soit f(x) = {expr}. Trouver l'extremum de f et dire si c'est un maximum ou un minimum."
+    en: "Let f(x) = {expr}. Find the extremum of f and say whether it is a maximum or a minimum."
+    ar: "لتكن f(x) = {expr}. أوجد القيمة القصوى للدالة f وحدد هل هي قيمة عظمى أم قيمة دنيا."

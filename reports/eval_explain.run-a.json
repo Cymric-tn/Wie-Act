@@ -1,0 +1,826 @@
+[
+ {
+  "run": 1,
+  "id": "fr-1",
+  "question": "C'est quoi le taux d'accroissement et comment on obtient le nombre dérivé ?",
+  "language": "FRENCH",
+  "outcome": "explain_guard:degenerate",
+  "reasons": [
+   "explain_guard:degenerate"
+  ],
+  "body": null,
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "fr-2",
+  "question": "Comment trouver l'équation de la tangente à une courbe ?",
+  "language": "FRENCH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée d'une fonction f est notée f' et représente la pente de la tangente à la courbe de f au point d'abscisse a. Pour trouver l'équation de la tangente, on utilise la formule : y = f'(a)(x − a) + f(a). C'est-à-dire que l'on remplace f'(a) par la valeur de la dérivée en a et f(a) par la valeur de la fonction en a. Par exemple, pour f(x) = x², la dérivée est f'(x) = 2x, donc f'(1) = 2. En remplaçant a = 1 dans la formule, on obtient y = 2(x − 1) + 1, ce qui se simplifie en y = 2x − 1.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#interpretation-graphique-la-tangente"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "fr-3",
+  "question": "À quoi sert une dérivée, intuitivement, avec la vitesse d'une voiture ?",
+  "language": "FRENCH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée mesure la vitesse à laquelle une fonction change. Si f(t) est la distance parcourue par une voiture au temps t, la dérivée f'(t) est sa vitesse instantanée : de combien la distance augmente pendant un tout petit intervalle de temps. Une dérivée positive signifie que la fonction augmente à cet endroit, une dérivée négative qu'elle diminue, et une dérivée nulle que la fonction est momentanément « à plat ».",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#idee-intuitive"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "fr-4",
+  "question": "Quelle est la dérivée de racine de x et de 1/x ?",
+  "language": "FRENCH",
+  "outcome": "explain_guard:degenerate",
+  "reasons": [
+   "explain_guard:degenerate"
+  ],
+  "body": null,
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#derivees-des-fonctions-usuelles"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "fr-5",
+  "question": "Comment dériver un quotient u/v ?",
+  "language": "FRENCH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "Pour dériver un quotient u/v, on utilise la formule : (u/v)' = (u'·v − u·v') / v². C'est une règle spécifique pour les quotients, qui ne s'applique pas aux produits. L'exemple donné dans le cours est f(x) = 1/(x + 2), où u = 1 et v = x + 2. En remplaçant ces valeurs, on obtient f'(x) = (0·(x + 2) − 1·1) / (x + 2)² = −1/(x + 2)².",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#produit-et-quotient",
+   "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "fr-6",
+  "question": "Pourquoi la dérivée de x(x+1) n'est pas 1 × 1 ?",
+  "language": "FRENCH",
+  "outcome": "ungrounded_formula",
+  "reasons": [
+   "ungrounded_formula"
+  ],
+  "body": "La dérivée d'une fonction est la mesure de la vitesse à laquelle elle change. Pour trouver la dérivée de x(x+1), on applique les règles de dérivation. En utilisant le produit des fonctions, on obtient :\n\nd/dx (x(x+1)) = d/dx (x² + x)\n\nPuis, en appliquant les règles de dérivation, on obtient :\n\nd/dx (x²) + d/dx (x) = 2x + 1\n\nLa dérivée de x(x+1) n'est donc pas 1 × 1, mais 2x + 1.",
+  "wrong_math": [],
+  "ungrounded": [
+   "d/dx (x(x+1)) = d/dx (x² + x)",
+   "d/dx (x²) + d/dx (x) = 2x + 1"
+  ],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#idee-intuitive",
+   "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "azi-1",
+  "question": "kifech nderivi polynome terme par terme, kima 3x² + 5x - 7 ?",
+  "language": "ARABIZI",
+  "outcome": "explain_guard:degenerate",
+  "reasons": [
+   "explain_guard:degenerate"
+  ],
+  "body": null,
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#somme-et-produit-par-une-constante"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "azi-2",
+  "question": "3lech dérivée mta3 constante hiya 0 ? ena ktebt f'(x) = 2x + 7",
+  "language": "ARABIZI",
+  "outcome": "wrong_math",
+  "reasons": [
+   "wrong_math"
+  ],
+  "body": "La dérivée d'une constante est bien nulle, comme indiqué dans l'exemple de [1] : dans f(x) = x² + 7, le 7 disparaît car sa dérivée est 0. La formule de dérivation de la somme [2] nous dit que (u + v)' = u' + v', donc si on applique cela à f(x) = 2x + 7, on obtient f'(x) = 2x + 0, ce qui se simplifie en f'(x) = 2x.",
+  "wrong_math": [
+   "f'(x) = 2x + 0",
+   "f'(x) = 2x"
+  ],
+  "ungrounded": [],
+  "new_examples": [
+   "f(x) = 2x + 7"
+  ],
+  "sources": [
+   "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
+   "derivee-formules.fr#somme-et-produit-par-une-constante"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "azi-3",
+  "question": "ma fhemtech 3lech (x³)' = 3x² w moch x², chnowa el règle mta3 l'exposant",
+  "language": "ARABIZI",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La règle est (xⁿ)' = n·xⁿ⁻¹. Donc, pour x³, on multiplie par 3 (qui est l'exposant) et on baisse l'exposant de 1, ce qui donne 3x². L'exposant reste associé au x.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-erreurs.fr#erreurs-avec-les-puissances"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "en-1",
+  "question": "How do I know if a function is increasing using its derivative?",
+  "language": "ENGLISH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "To determine if a function is increasing using its derivative, look for where f'(x) > 0. According to [2], on an interval where f'(x) > 0, the function f is increasing. This means that when x grows, f(x) also grows. For example, in [1], the derivative of f(x) = x² − 4x + 1 is f'(x) = 2x − 4. It equals zero when x = 2, and it is positive for x > 2. Therefore, the function f is increasing on [2, +∞).",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivative-variations.en#worked-example",
+   "derivative-variations.en#sign-of-the-derivative-and-monotonicity"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "en-2",
+  "question": "How can I find the minimum of x² − 4x + 1?",
+  "language": "ENGLISH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "To find the minimum of f(x) = x² − 4x + 1, we need to find the value of x for which its derivative f'(x) = 2x − 4 equals zero. Setting f'(x) = 0, we get 2x − 4 = 0. Solving for x, we have x = 2. This is the x-value where the function has a minimum.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivative-variations.en#worked-example"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "en-3",
+  "question": "When does a zero of the derivative give a local maximum?",
+  "language": "ENGLISH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "A zero of the derivative gives a local maximum when the derivative changes from positive to negative at that point. This is stated in the course material: \"If f'(x) changes from positive to negative at x = a, then f has a local maximum at a: it goes up, then down.\"",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivative-variations.en#finding-a-maximum-or-a-minimum"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "ar-1",
+  "question": "ما هو تعريف العدد المشتق؟",
+  "language": "ARABIC",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "العدد المشتق هو العدد الذي يسميه الفيزيائيون نسبة التغير. يُعرّف على أنه عندما نقترب من الصفر، تقترب النسبة بين (f(a + h) − f(a)) / h من عدد حقيقي، ونسمّيه العدد المشتق للدالة f في النقطة a ونرمز له بـ f'(a).",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "mochtaqa.ar#تعريف-العدد-المشتق",
+   "mochtaqa.ar#مشتقات-الدوال-المألوفة"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "ar-2",
+  "question": "متى تكون الدالة تزايدية أو تناقصية؟",
+  "language": "ARABIC",
+  "outcome": "ungrounded_formula",
+  "reasons": [
+   "ungrounded_formula"
+  ],
+  "body": "إذا كانت المشتقة موجبةً على مجال، فإنّ الدالة تزايدية على هذا المجال. وإذا كانت المشتقة سالبةً، فإنّ الدالة تناقصية.\n\nمثال: إذا كانت المشتقة f'(x) = 2x + 1، فإنّ الدالة f(x) = x^2 + x هي تزايدية على أي مجال.",
+  "wrong_math": [],
+  "ungrounded": [
+   "f'(x) = 2x + 1"
+  ],
+  "new_examples": [
+   "f(x) = x^2 + x"
+  ],
+  "sources": [
+   "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "dar-1",
+  "question": "شنوة مشتقة الدالة الثابتة و مشتقة x²؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée d'une constante est 0. Par exemple, si f(x) = 5, alors f'(x) = 0. Pour la dérivée de x², on utilise la formule : si f(x) = xⁿ avec n entier supérieur ou égal à 1, alors f'(x) = n·xⁿ⁻¹. Dans ce cas, n = 2, donc f'(x) = 2·x¹⁻¹ = 2·x⁻¹. Cela équivaut à 2/x.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#derivees-des-fonctions-usuelles",
+   "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "xdar-1",
+  "question": "كيفاش نكتب معادلة المماس في النقطة a؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée f'(a) est le coefficient directeur de la tangente à la courbe de f au point d'abscisse a. L'équation de la tangente au point d'abscisse a est y = f'(a)(x − a) + f(a). Par exemple, pour f(x) = x² en a = 1, on a f(1) = 1 et f'(1) = 2, donc la tangente a pour équation y = 2(x − 1) + 1, c'est-à-dire y = 2x − 1.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#interpretation-graphique-la-tangente"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "xdar-2",
+  "question": "شنية مشتقة الجذر المربع و مشتقة 1/x؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée de la racine carrée d'un nombre x, √x, est 1/(2√x). Cela signifie que si on prend la racine carrée d'un nombre, on multiplie par 1/(2√x) pour trouver sa dérivée.\n\nLa dérivée de 1/x est -1/x². Cela signifie que si on prend l'inverse d'un nombre x, on multiplie par -1/x² pour trouver sa dérivée.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#derivees-des-fonctions-usuelles"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "xdar-3",
+  "question": "كيفاش نشتق جداء زوز دوال u و v؟",
+  "language": "DARIJA",
+  "outcome": "ungrounded_formula",
+  "reasons": [
+   "ungrounded_formula"
+  ],
+  "body": "Pour dériver le produit de deux fonctions u et v, on utilise la formule (u·v)' = u'·v + u·v'. Cela signifie que nous devons trouver la dérivée de u et la multiplier par v, puis trouver la dérivée de v et la multiplier par u. Nous devons ensuite additionner les deux résultats. Par exemple, si u = x et v = x + 1, alors (x(x + 1))' = x'·(x + 1) + x·(x + 1)' = 2x + 1.",
+  "wrong_math": [],
+  "ungrounded": [
+   "(x(x + 1))' = x'·(x + 1) + x·(x + 1)'",
+   "x'·(x + 1) + x·(x + 1)' = 2x + 1"
+  ],
+  "new_examples": [],
+  "sources": [
+   "derivee-erreurs.fr#erreurs-avec-le-produit",
+   "derivee-formules.fr#somme-et-produit-par-une-constante"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "xdar-4",
+  "question": "كيفاش نحسب مشتقة خارج u على v؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La question ne concerne pas le cours. La dérivée est une notion mathématique qui décrit la vitesse à laquelle une fonction change. Elle est définie comme le quotient de la différence des valeurs de la fonction pour deux points proches, divisé par la différence des abscisses de ces points. Le cours ne traite pas de la dérivée d'une fonction en termes de nombres complexes ou d'espaces vectoriels.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+   "derivee-definition.fr#idee-intuitive"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "xazi-1",
+  "question": "kifech nekteb mo3adlet el mamas mta3 el courbe?",
+  "language": "ARABIZI",
+  "outcome": "explain_guard:degenerate",
+  "reasons": [
+   "explain_guard:degenerate"
+  ],
+  "body": null,
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#interpretation-graphique-la-tangente"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "xazi-2",
+  "question": "chnowa mochtaqet jather x w mochtaqet 1/x ?",
+  "language": "ARABIZI",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "Selon le cours, la dérivée de 1/x est -1/x², c'est-à-dire f'(x) = −1/x².",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#derivees-des-fonctions-usuelles",
+   "derivee-definition.fr#idee-intuitive"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "xazi-3",
+  "question": "3lech mochtaqet el jida2 moch jida2 el mochtaqat?",
+  "language": "ARABIZI",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée d'une somme est la somme des dérivées. Par exemple, si on a f(x) = x² + x, alors f'(x) = (x²)' + (x)'. D'après la formule de dérivation, (x²)' = 2x et (x)' = 1. Par conséquent, f'(x) = 2x + 1.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-erreurs.fr#erreurs-avec-le-produit",
+   "derivee-formules.fr#somme-et-produit-par-une-constante"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "xazi-4",
+  "question": "ki tkoun 3andek sor3et karhba, chnowa 3laqa m3a el mochtaqa?",
+  "language": "ARABIZI",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée d'une fonction est sa vitesse de variation. Si f(t) est la distance parcourue par une voiture au temps t, la dérivée f'(t) est sa vitesse instantanée. Par exemple, si f(t) = t^2, alors f'(t) = 2t. Cela signifie que la distance parcourue augmente à une vitesse de 2t unités par unité de temps.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#idee-intuitive"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "man-1",
+  "question": "شنوة معناها المشتقة؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La notation f' (lisez « f prime ») désigne la dérivée de la fonction f. Calculer une dérivée s'appelle dériver. Par exemple, si on a f(x) = x² + 7, la dérivée de f est notée f'(x) et vaut 2x.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#idee-intuitive",
+   "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"
+  ]
+ },
+ {
+  "run": 1,
+  "id": "man-2",
+  "question": "ma fhemtch el tangente",
+  "language": "ARABIZI",
+  "outcome": "ungrounded_formula",
+  "reasons": [
+   "ungrounded_formula"
+  ],
+  "body": "La tangente est la droite qui touche la courbe de f au point d'abscisse a en suivant sa direction. Elle a pour équation y = f'(a)(x − a) + f(a). C'est-à-dire que si on prend un exemple comme f(x) = x² avec a = 1, la tangente aura pour équation y = f'(1)(x − 1) + f(1), ce qui se simplifie en y = 2(x − 1) + 1, donc y = 2x − 1.",
+  "wrong_math": [],
+  "ungrounded": [
+   "y = f'(1)(x − 1) + f(1)"
+  ],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#interpretation-graphique-la-tangente"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "fr-1",
+  "question": "C'est quoi le taux d'accroissement et comment on obtient le nombre dérivé ?",
+  "language": "FRENCH",
+  "outcome": "explain_guard:degenerate",
+  "reasons": [
+   "explain_guard:degenerate"
+  ],
+  "body": null,
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "fr-2",
+  "question": "Comment trouver l'équation de la tangente à une courbe ?",
+  "language": "FRENCH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "Pour trouver l'équation de la tangente à une courbe, on utilise la formule : y = f'(a)(x − a) + f(a), où f'(a) est la dérivée de la fonction en a et f(a) est la valeur de la fonction en a. Cela signifie que nous devons d'abord trouver la dérivée de la fonction, puis remplacer les valeurs de a et f(a) dans la formule pour obtenir l'équation de la tangente. Dans l'exemple donné, pour f(x) = x², on a f'(1) = 2 et f(1) = 1, donc la tangente a pour équation y = 2(x − 1) + 1, c'est-à-dire y = 2x − 1.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#interpretation-graphique-la-tangente"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "fr-3",
+  "question": "À quoi sert une dérivée, intuitivement, avec la vitesse d'une voiture ?",
+  "language": "FRENCH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée mesure la vitesse à laquelle une fonction change. Si f(t) est la distance parcourue par une voiture au temps t, la dérivée f'(t) est sa vitesse instantanée : de combien la distance augmente pendant un tout petit intervalle de temps. Cela signifie que si la dérivée est positive, la voiture s'approche de sa destination, si elle est négative, elle s'éloigne, et si elle est nulle, elle est momentanément à l'arrêt.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#idee-intuitive"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "fr-4",
+  "question": "Quelle est la dérivée de racine de x et de 1/x ?",
+  "language": "FRENCH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée de racine carrée de x est 1/(2√x) puisque √x est une fonction usuelle pour x > 0.\n\nLa dérivée de 1/x est -1/x², puisque f(x) = 1/x est une fonction usuelle pour x différent de 0.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#derivees-des-fonctions-usuelles"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "fr-5",
+  "question": "Comment dériver un quotient u/v ?",
+  "language": "FRENCH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "Pour dériver un quotient u/v, on utilise la formule : (u/v)' = (u'·v − u·v') / v². C'est ce qui est indiqué dans le cours sous la rubrique \"Formules de dérivation — Produit et quotient\". L'exemple qui accompagne cette formule montre comment dériver la fonction f(x) = 1/(x + 2), qui est un quotient.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#produit-et-quotient",
+   "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "fr-6",
+  "question": "Pourquoi la dérivée de x(x+1) n'est pas 1 × 1 ?",
+  "language": "FRENCH",
+  "outcome": "explain_guard:degenerate",
+  "reasons": [
+   "explain_guard:degenerate"
+  ],
+  "body": null,
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#idee-intuitive"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "azi-1",
+  "question": "kifech nderivi polynome terme par terme, kima 3x² + 5x - 7 ?",
+  "language": "ARABIZI",
+  "outcome": "explain_guard:degenerate",
+  "reasons": [
+   "explain_guard:degenerate"
+  ],
+  "body": null,
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#somme-et-produit-par-une-constante"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "azi-2",
+  "question": "3lech dérivée mta3 constante hiya 0 ? ena ktebt f'(x) = 2x + 7",
+  "language": "ARABIZI",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée d'une constante est nulle. Dans l'exemple donné, f(x) = x² + 7, la dérivée de 7 est 0. Par conséquent, f'(x) ne doit pas contenir le terme + 7. La bonne réponse est f'(x) = 2x.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
+   "derivee-formules.fr#somme-et-produit-par-une-constante"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "azi-3",
+  "question": "ma fhemtech 3lech (x³)' = 3x² w moch x², chnowa el règle mta3 l'exposant",
+  "language": "ARABIZI",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La règle indique que pour dériver une puissance, on multiplie l'exposant par la constante qui se trouve devant la puissance, puis on baisse l'exposant de 1. Par exemple, pour (x³), on a 3 comme exposant, donc on multiplie 3 par x², ce qui donne 3x². Le x² reste avec l'exposant diminué de 1.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-erreurs.fr#erreurs-avec-les-puissances"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "en-1",
+  "question": "How do I know if a function is increasing using its derivative?",
+  "language": "ENGLISH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "To determine if a function is increasing using its derivative, look for where the derivative is greater than zero, denoted as f'(x) > 0. According to the material, this indicates that the function f is increasing on that interval. For example, in the worked example, it states that f is increasing on [2, +∞) because f'(x) = 2x − 4 is greater than zero for x > 2.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivative-variations.en#worked-example",
+   "derivative-variations.en#sign-of-the-derivative-and-monotonicity"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "en-2",
+  "question": "How can I find the minimum of x² − 4x + 1?",
+  "language": "ENGLISH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "To find the minimum of f(x) = x² − 4x + 1, we need to find the value of x where its derivative, f'(x) = 2x − 4, equals zero. This is because the derivative represents the rate of change of the function. When the derivative is zero, it means the function is neither increasing nor decreasing, indicating a minimum or maximum point. Setting f'(x) = 0, we get 2x − 4 = 0. Solving for x, we find x = 2.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivative-variations.en#worked-example"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "en-3",
+  "question": "When does a zero of the derivative give a local maximum?",
+  "language": "ENGLISH",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "A zero of the derivative gives a local maximum when the derivative changes from positive to negative at that point. This is because if f'(x) changes from positive to negative at x = a, then f has a local maximum at a: it goes up, then down.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivative-variations.en#finding-a-maximum-or-a-minimum"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "ar-1",
+  "question": "ما هو تعريف العدد المشتق؟",
+  "language": "ARABIC",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "العدد المشتق هو العدد الذي يوصف بميل المماس لمنحنى الدالة في النقطة التي فاصلتها a. ويمكن كتابته بالرمز f'(a). يُعرّف كالتالي: عندما يكون h قريبا من الصفر، فإن النسبة (f(a + h) − f(a)) / h تقترب من العدد المشتق.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "mochtaqa.ar#تعريف-العدد-المشتق",
+   "mochtaqa.ar#مشتقات-الدوال-المألوفة"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "ar-2",
+  "question": "متى تكون الدالة تزايدية أو تناقصية؟",
+  "language": "ARABIC",
+  "outcome": "ungrounded_formula",
+  "reasons": [
+   "ungrounded_formula"
+  ],
+  "body": "إذا كانت المشتقة موجبةً على مجال فإنّ الدالة تزايدية على هذا المجال، وإذا كانت سالبةً فإنّ الدالة تناقصية. \n\nمثال: إذا كانت المشتقة f'(x) = 2x + 1 موجبة على مجال [0, ∞)، فإنّ الدالة f(x) = x² + x تزيد على هذا المجال.",
+  "wrong_math": [],
+  "ungrounded": [
+   "f'(x) = 2x + 1"
+  ],
+  "new_examples": [
+   "f(x) = x² + x"
+  ],
+  "sources": [
+   "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "dar-1",
+  "question": "شنوة مشتقة الدالة الثابتة و مشتقة x²؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée d'une constante est 0. Par exemple, si f(x) = 5, alors f'(x) = 0. Pour la dérivée de x², on utilise la formule : si f(x) = xⁿ avec n entier supérieur ou égal à 1, alors f'(x) = n·xⁿ⁻¹. Dans ce cas, n = 2, donc f'(x) = 2x.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#derivees-des-fonctions-usuelles",
+   "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "xdar-1",
+  "question": "كيفاش نكتب معادلة المماس في النقطة a؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La tangente au point d'abscisse a a pour équation y = f'(a)(x − a) + f(a).",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#interpretation-graphique-la-tangente"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "xdar-2",
+  "question": "شنية مشتقة الجذر المربع و مشتقة 1/x؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée de la fonction racine carrée, √x, est donnée pour x > 0 : f'(x) = 1/(2√x).\n\nLa dérivée de la fonction 1/x est donnée pour x différent de 0 : f'(x) = −1/x².",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#derivees-des-fonctions-usuelles"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "xdar-3",
+  "question": "كيفاش نشتق جداء زوز دوال u و v؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "Pour dériver le produit de deux fonctions u et v, on utilise la formule (u·v)' = u'·v + u·v'. Cela signifie que nous devons trouver la dérivée de u et la multiplier par v, puis trouver la dérivée de v et la multiplier par u, et enfin additionner les deux résultats. Par exemple, si nous voulons dériver le produit x(x + 1), nous pouvons le développer en x² + x, puis dériver terme par terme pour obtenir 2x + 1.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-erreurs.fr#erreurs-avec-le-produit",
+   "derivee-formules.fr#somme-et-produit-par-une-constante"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "xdar-4",
+  "question": "كيفاش نحسب مشتقة خارج u على v؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La question ne concerne pas le cours. Le cours ne couvre que la notion de dérivée d'une fonction et son calcul, et ne traite pas du cas spécifique d'une fonction composée.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+   "derivee-definition.fr#idee-intuitive"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "xazi-1",
+  "question": "kifech nekteb mo3adlet el mamas mta3 el courbe?",
+  "language": "ARABIZI",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La tangente est la droite qui touche la courbe en ce point en suivant sa direction. Elle a pour équation y = f'(a)(x − a) + f(a). Dans l'exemple de f(x) = x², la tangente au point d'abscisse a = 1 a pour équation y = 2(x − 1) + 1, c'est-à-dire y = 2x − 1. Le coefficient directeur de cette tangente est f'(1) = 2.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#interpretation-graphique-la-tangente"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "xazi-2",
+  "question": "chnowa mochtaqet jather x w mochtaqet 1/x ?",
+  "language": "ARABIZI",
+  "outcome": "ungrounded_formula",
+  "reasons": [
+   "ungrounded_formula"
+  ],
+  "body": "La dérivée de 1/x est -1/x². C'est une conséquence de la formule générale donnée pour la dérivée de f(x) = xⁿ, où n est un entier supérieur ou égal à 1. Dans ce cas, n = -1 (puisque 1/x = x⁻¹), donc la dérivée est -1·x⁻² = -1/x².",
+  "wrong_math": [],
+  "ungrounded": [
+   "1/x = x⁻¹)"
+  ],
+  "new_examples": [],
+  "sources": [
+   "derivee-formules.fr#derivees-des-fonctions-usuelles",
+   "derivee-definition.fr#idee-intuitive"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "xazi-3",
+  "question": "3lech mochtaqet el jida2 moch jida2 el mochtaqat?",
+  "language": "ARABIZI",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La dérivée d'une somme est la somme des dérivées. Par exemple, si on a f(x) = x² + x, alors f'(x) = (x²)' + (x)' = 2x + 1.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-erreurs.fr#erreurs-avec-le-produit",
+   "derivee-formules.fr#somme-et-produit-par-une-constante"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "xazi-4",
+  "question": "ki tkoun 3andek sor3et karhba, chnowa 3laqa m3a el mochtaqa?",
+  "language": "ARABIZI",
+  "outcome": "explain_guard:degenerate",
+  "reasons": [
+   "explain_guard:degenerate"
+  ],
+  "body": null,
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#idee-intuitive"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "man-1",
+  "question": "شنوة معناها المشتقة؟",
+  "language": "DARIJA",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La notation f' signifie la dérivée de f. C'est une notation commune pour désigner la dérivée d'une fonction. Par exemple, si nous avons une fonction f(x) = x² + 7, sa dérivée est notée f'(x) = 2x.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#idee-intuitive",
+   "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"
+  ]
+ },
+ {
+  "run": 2,
+  "id": "man-2",
+  "question": "ma fhemtch el tangente",
+  "language": "ARABIZI",
+  "outcome": "ok",
+  "reasons": [],
+  "body": "La tangente est la droite qui touche la courbe de la fonction f en un point spécifique, appelé point d'abscisse a. Elle suit la direction de la courbe en ce point. La pente de la tangente est égale à la dérivée f'(a) de la fonction f en a.\n\nL'équation de la tangente au point d'abscisse a est donnée par y = f'(a)(x − a) + f(a). Par exemple, pour la fonction f(x) = x², si on prend a = 1, alors la tangente a pour équation y = 2(x − 1) + 1, ce qui se simplifie en y = 2x − 1.",
+  "wrong_math": [],
+  "ungrounded": [],
+  "new_examples": [],
+  "sources": [
+   "derivee-definition.fr#interpretation-graphique-la-tangente"
+  ]
+ }
+]
