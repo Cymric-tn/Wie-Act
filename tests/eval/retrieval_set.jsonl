@@ -1,0 +1,19 @@
+{"id": "fr-1", "language": "FRENCH", "question": "C'est quoi le taux d'accroissement et comment on obtient le nombre dérivé ?", "expected": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"}
+{"id": "fr-2", "language": "FRENCH", "question": "Comment trouver l'équation de la tangente à une courbe ?", "expected": "derivee-definition.fr#interpretation-graphique-la-tangente"}
+{"id": "fr-3", "language": "FRENCH", "question": "À quoi sert une dérivée, intuitivement, avec la vitesse d'une voiture ?", "expected": "derivee-definition.fr#idee-intuitive"}
+{"id": "fr-4", "language": "FRENCH", "question": "Quelle est la dérivée de racine de x et de 1/x ?", "expected": "derivee-formules.fr#derivees-des-fonctions-usuelles"}
+{"id": "fr-5", "language": "FRENCH", "question": "Comment dériver un quotient u/v ?", "expected": "derivee-formules.fr#produit-et-quotient"}
+{"id": "fr-6", "language": "FRENCH", "question": "Pourquoi la dérivée de x(x+1) n'est pas 1 × 1 ?", "expected": "derivee-erreurs.fr#erreurs-avec-le-produit"}
+{"id": "azi-1", "language": "ARABIZI", "question": "kifech nderivi polynome terme par terme, kima 3x² + 5x - 7 ?", "expected": "derivee-formules.fr#somme-et-produit-par-une-constante"}
+{"id": "azi-2", "language": "ARABIZI", "question": "3lech dérivée mta3 constante hiya 0 ? ena ktebt f'(x) = 2x + 7", "expected": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"}
+{"id": "azi-3", "language": "ARABIZI", "question": "ma fhemtech 3lech (x³)' = 3x² w moch x², chnowa el règle mta3 l'exposant", "expected": "derivee-erreurs.fr#erreurs-avec-les-puissances"}
+{"id": "en-1", "language": "ENGLISH", "question": "How do I know if a function is increasing using its derivative?", "expected": "derivative-variations.en#sign-of-the-derivative-and-monotonicity"}
+{"id": "en-2", "language": "ENGLISH", "question": "How can I find the minimum of x² − 4x + 1?", "expected": "derivative-variations.en#worked-example"}
+{"id": "en-3", "language": "ENGLISH", "question": "When does a zero of the derivative give a local maximum?", "expected": "derivative-variations.en#finding-a-maximum-or-a-minimum"}
+{"id": "ar-1", "language": "ARABIC", "question": "ما هو تعريف العدد المشتق؟", "expected": "mochtaqa.ar#تعريف-العدد-المشتق"}
+{"id": "ar-2", "language": "ARABIC", "question": "متى تكون الدالة تزايدية أو تناقصية؟", "expected": "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة"}
+{"id": "dar-1", "language": "DARIJA", "question": "شنوة مشتقة الدالة الثابتة و مشتقة x²؟", "expected": "mochtaqa.ar#مشتقات-الدوال-المألوفة", "expected_french": ["derivee-formules.fr#derivees-des-fonctions-usuelles", "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"]}
+{"id": "neg-1", "language": "FRENCH", "question": "Qui a gagné le match de foot hier soir ?", "expected": null}
+{"id": "neg-2", "language": "ENGLISH", "question": "The function in my Python code is slow, why?", "expected": null}
+{"id": "neg-3", "language": "DARIJA", "question": "شنوة أحسن فيلم هالعام؟", "expected": null}
+{"id": "neg-4", "language": "ARABIZI", "question": "kifech ninstalli python 3la windows?", "expected": null}

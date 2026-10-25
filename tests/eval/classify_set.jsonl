@@ -1,0 +1,19 @@
+{"id": "dar-1", "message": "شنوة معناها الدالة الأصلية؟ ما فهمتش كيفاش نلقاها", "intent": "EXPLAIN", "language": "DARIJA"}
+{"id": "dar-2", "message": "عطيني تمرين صغير على المشتقات باش نتدرب", "intent": "QUIZ", "language": "DARIJA"}
+{"id": "dar-3", "message": "حليت المعادلة 2x - 8 = 0 ولقيت x = 4، صحيح ولا لا؟", "intent": "ANSWER_ATTEMPT", "language": "DARIJA"}
+{"id": "azi-1", "message": "chnowa ya3ni limite? ma fhemt chay fel cours", "intent": "EXPLAIN", "language": "ARABIZI"}
+{"id": "azi-2", "message": "3andi exercice fi les suites w ma na3rech kifech nebda, a3tini indice", "intent": "HINT", "language": "ARABIZI"}
+{"id": "azi-3", "message": "ya5i el match mta3 lbara7 chkoun rbe7?", "intent": "OFF_TOPIC", "language": "ARABIZI"}
+{"id": "fr-1", "message": "Tu peux me poser 3 questions sur les fractions pour voir si j'ai compris ?", "intent": "QUIZ", "language": "FRENCH"}
+{"id": "fr-2", "message": "J'ai trouvé que la dérivée de 3x² est 6x, c'est bon ?", "intent": "ANSWER_ATTEMPT", "language": "FRENCH"}
+{"id": "fr-3", "message": "Je bloque sur cet exercice de probabilités, donne-moi juste une piste sans la réponse", "intent": "HINT", "language": "FRENCH"}
+{"id": "ar-1", "message": "ما هو الفرق بين المتتالية الحسابية والمتتالية الهندسية؟", "intent": "EXPLAIN", "language": "ARABIC"}
+{"id": "ar-2", "message": "حللت المعادلة فوجدت نتيجة خاطئة، أين الخطأ في خطواتي؟", "intent": "HINT", "language": "ARABIC", "relabeled": "DIAGNOSTIC -> HINT (2026-10: DIAGNOSTIC = level testing only)"}
+{"id": "ar-3", "message": "مرحبا، شكرا جزيلا على مساعدتك اليوم", "intent": "CHITCHAT", "language": "ARABIC"}
+{"id": "en-1", "message": "My Python loop prints the last item twice, can you find what's wrong in my code?", "intent": "HINT", "language": "ENGLISH", "relabeled": "DIAGNOSTIC -> HINT (2026-10: DIAGNOSTIC = level testing only)"}
+{"id": "en-2", "message": "Hi! How are you doing today?", "intent": "CHITCHAT", "language": "ENGLISH"}
+{"id": "en-3", "message": "Can you give me a hint for this integral without solving it?", "intent": "HINT", "language": "ENGLISH"}
+{"id": "man-1", "group": "manual-2026-10", "message": "شنوة معناها المشتقة؟", "intent": "EXPLAIN", "language": "DARIJA", "complexity_max": 2}
+{"id": "man-2", "group": "manual-2026-10", "message": "ma fhemtch el tangente", "intent": "EXPLAIN", "language": "ARABIZI", "complexity_max": 2}
+{"id": "man-3", "group": "manual-2026-10", "message": "teste mon niveau", "intent": "DIAGNOSTIC", "language": "FRENCH"}
+{"id": "man-4", "group": "manual-2026-10", "message": "donne moi un exercice", "intent": "QUIZ", "language": "FRENCH"}

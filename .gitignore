@@ -1,0 +1,25 @@
+# secrets: every env file except the placeholder template
+.env
+.env.*
+!.env.example
+
+# environments / tooling
+myenv/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# runtime artefacts (cache, metrics, probe logs)
+*.sqlite
+*.sqlite-journal
+*.jsonl
+!tests/eval/*.jsonl
+recon_summary.json
+
+# data/: only runtime state is ignored; the course docs, exercise bank, glossary and templates are source.
+data/*.sqlite
+data/*.sqlite-journal
+metrics/*.summary.json
+_legacy/*.sqlite

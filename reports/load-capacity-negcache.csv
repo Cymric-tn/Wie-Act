@@ -1,0 +1,54 @@
+section,metric,capacity_v1,capacity_negcache
+volume,engine.run calls (caller-visible),69,69
+volume,nested compress runs,0,0
+volume,provider requests (all attempts),27,28
+volume,provider requests ok,24,24
+volume,duration (s),358.6,358.6
+volume,provider requests / min,4.5,4.7
+calls per model,llama3.1:8b (midsize) ok / attempts,6 / 9,5 / 9
+calls per model,llama3.2:3b (compact) ok / attempts,18 / 18,19 / 19
+class split (ok calls),compact,18 (75%),19 (79%)
+class split (ok calls),midsize,6 (25%),5 (21%)
+class split (ok calls),purpose: framing,1,2
+class split (ok calls),purpose: task,23,22
+tokens,input tokens,14848,14383
+tokens,output tokens,1349,1235
+tokens,input tokens / ok call,619,599
+cache,cache hits / runs,42 / 69,41 / 69
+cache,cache hit rate,61%,59%
+cache,"negative cache hits (fast mode, 0 requests)",0,0
+cache,repeated identical provider requests,1,0
+refusals -> handling,refused attempts (total),3,4
+refusals -> handling,saturated -> raise,1,2
+refusals -> handling,saturated -> retry_after_interval,2,2
+fallbacks / degradation,degraded runs,2,3
+fallbacks / degradation,degraded: midsize_saturated,1,2
+fallbacks / degradation,degraded: ungrounded_formula,1,
+fallbacks / degradation,explain served fast_extractive,1,3
+fallbacks / degradation,explain served full (generated),10,8
+fallbacks / degradation,route decision: breaker_open,1,2
+fallbacks / degradation,route decision: midsize_saturated,1,2
+fallbacks / degradation,degraded: breaker_open,,1
+circuit breaker,trips (closed -> open),1,1
+circuit breaker,re-opened after failed probe,0,0
+circuit breaker,closed after probe,1,1
+"latency (uncached runs, ms)",classify p50 / p95 (n),5588 / 7946 (13),5670 / 13500 (13)
+"latency (uncached runs, ms)",explain p50 / p95 (n),26785 / 41136 (10),17314 / 49169 (11)
+"latency (uncached runs, ms)",hint p50 / p95 (n),3189 / 5160 (4),3190 / 5881 (4)
+"latency (uncached runs, ms)",prio: BACKGROUND p50 / p95 (n),4522 / 5423 (3),4545 / 25855 (4)
+"latency (uncached runs, ms)",prio: INTERACTIVE p50 / p95 (n),5648 / 38315 (24),5670 / 29292 (24)
+capacity (per learner turn),learner turns,40,40
+capacity (per learner turn),engine calls / turn,1.73,1.73
+capacity (per learner turn),provider requests / turn (all attempts),0.68,0.7
+capacity (per learner turn),ok provider calls / turn,0.6,0.6
+capacity (per learner turn),cold turns (no cache hit): n / requests per turn,13 / 2.00,13 / 2.00
+capacity (per learner turn),learner wait per turn p50 / p95 (ms),2 / 37980,4 / 31926
+"capacity estimate (one key, 20 req/min)",mean provider latency (s),11.5,11.0
+"capacity estimate (one key, 20 req/min)","concurrency ceiling (2 x 60 / latency, req/min)",10.4,10.9
+"capacity estimate (one key, 20 req/min)",binding limit (req/min),10.4 (concurrency),10.9 (concurrency)
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / 120 s: quota-bound (observed / cold),59 / 20,57 / 20
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / 120 s: at observed latency (observed / cold),31 / 10,31 / 11
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / min: quota-bound (observed / cold),30 / 10,29 / 10
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / min: at observed latency (observed / cold),15 / 5,16 / 5
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / 30 s: quota-bound (observed / cold),15 / 5,14 / 5
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / 30 s: at observed latency (observed / cold),8 / 3,8 / 3
