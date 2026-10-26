@@ -3,6 +3,7 @@ pydantic>=2.6
 python-dotenv>=1.0
 pyyaml>=6.0
 sympy>=1.12
+Pillow>=10.0                # scripts/probe_felcloud.py renders the image probes
 # dev
 pytest>=8
 pytest-asyncio>=0.23
