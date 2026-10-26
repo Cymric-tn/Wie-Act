@@ -83,6 +83,8 @@ class _Run:
         self.decision: Decision | None = None
         self.glossary: list[str] = []
         self.negative_hit = False
+        self.silent = False                      # a run that finishes after its caller left: no "run" metrics record
+        self.started = asyncio.get_running_loop().time()    # the deadline is measured on the event loop's clock
 
     def emit(self, name: str, data: Mapping[str, Any] | None = None) -> None:
         ev = Event(name=name, t_ms=round((self.clock() - self.t0) * 1000, 1), data=dict(data or {}))
@@ -155,6 +157,7 @@ class Engine:
         self._index_lock = asyncio.Lock()
         self._inflight: dict[str, asyncio.Event] = {}     # cache key -> done, for identical concurrent requests
         self._probes: set[asyncio.Task] = set()           # half-open breaker probes in flight
+        self._background: set[asyncio.Task] = set()       # generations that outlived the interactive deadline
         self.prompts: dict[str, PromptTemplate] = {
             s.name: load_prompt(settings.prompts_dir, s.prompt) for s in self.registry}   # fail fast
 
@@ -172,7 +175,7 @@ class Engine:
         return cls(settings, caller, cache, sink, registry, clock, retriever)
 
     async def aclose(self) -> None:
-        for t in list(self._probes):
+        for t in list(self._probes) + list(self._background):
             t.cancel()
         await self.caller.queue.aclose()
         await self.caller.client.aclose()
@@ -275,11 +278,62 @@ class Engine:
             run.emit("partial_result", {"excerpts": fast_excerpts(str(inputs["question"]),
                                                                   [h.chunk for h in hits], PARTIAL_SENTENCES)})
         done = self._inflight[key] = asyncio.Event()
+        if self._has_deadline(spec, prio, decision):
+            return await self._produce_by_deadline(spec, prompt, inputs, tctx, prio, run, ctx, decision, hits, key,
+                                                   messages, done)
         try:
             return await self._produce(spec, prompt, inputs, tctx, prio, run, ctx, decision, hits, key, messages)
         finally:
             done.set()
             del self._inflight[key]
+
+    def _has_deadline(self, spec: TaskSpec, prio: Priority, d: Decision) -> bool:
+        """Only a learner waiting for a full explanation from mid-size has a deadline (INTERACTIVE_DEADLINE_S)."""
+        return (prio is Priority.INTERACTIVE and spec.grounded and d.model_class is d.preferred
+                and d.fallback is not None and self.settings.interactive_deadline_s > 0)
+
+    async def _produce_by_deadline(self, spec, prompt, inputs, tctx, prio, run: "_Run", ctx, decision, hits, key,
+                                   messages, done: asyncio.Event) -> Result:
+        """The generation runs as a task of its own. If it has not produced a body by INTERACTIVE_DEADLINE_S, the
+        learner gets fast mode now (degrade_reason "deadline", followup_available) and the task goes on: when
+        mid-size answers, the full explanation lands in the cache and the learner's next ask is a cache hit."""
+        loop = asyncio.get_running_loop()
+        attached = [True]
+
+        def forward(ev: Event) -> None:           # until the learner is answered, its events show the generation
+            if attached[0]:
+                run.emit(ev.name, ev.data)
+        bg = _Run(self._clock, forward)
+        bg.t0, bg.started = run.t0, run.started
+        bg_ctx = CallContext(request_id=ctx.request_id, task=ctx.task, priority=ctx.priority, purpose=ctx.purpose,
+                             on_event=bg.emit, queue_seq=ctx.queue_seq, turn_id=ctx.turn_id)
+        d = replace(decision, reason=decision.reason + "; completes after the learner's deadline")
+        bg.decision = d
+        task = loop.create_task(self._produce(spec, prompt, inputs, tctx, prio, bg, bg_ctx, d, hits, key, messages))
+        self._background.add(task)
+
+        def finished(t: asyncio.Task) -> None:
+            self._background.discard(t)
+            done.set()
+            self._inflight.pop(key, None)
+            if not t.cancelled() and t.exception() is not None:
+                log.error("%s %s: generation failed after the deadline: %r", ctx.request_id, ctx.task, t.exception())
+        task.add_done_callback(finished)
+        remaining = max(0.0, self.settings.interactive_deadline_s - (loop.time() - run.started))
+        await asyncio.wait({task}, timeout=remaining)
+        attached[0] = False
+        if task.done():
+            res = task.result()             # its run record (same request) was written by the generation itself
+            res.events = run.events         # the learner's timeline: retrieval + everything forwarded from the task
+            return res
+        bg.silent = True                    # the learner is answered below: the late finish writes no second record
+        run.degrade("deadline")
+        run.emit("deadline", {"deadline_s": self.settings.interactive_deadline_s, "generation_continues": True})
+        log.warning("%s %s: no body after %.0f s, serving extracts; the generation continues into the cache",
+                    ctx.request_id, ctx.task, self.settings.interactive_deadline_s)
+        return await self._fast_extractive(prompt, inputs, tctx, [h.chunk for h in hits], {}, ctx, run,
+                                           replace(decision, reason=decision.reason + "; interactive deadline"),
+                                           llm_framing=False)
 
     async def _produce(self, spec: TaskSpec, prompt: PromptTemplate, inputs: dict, tctx: TaskContext,
                        prio: Priority, run: "_Run", ctx: CallContext, decision: Decision, hits: list[Hit],
@@ -721,6 +775,8 @@ class Engine:
                      safe_default=status == "safe_default", notes=notes, mode=mode,
                      followup_available=followup_available)
         outcome = "degraded" if res.degraded else "cache_hit" if from_cache else status
+        if run.silent:
+            return res
         self.sink.write(CallRecord(
             request_id=ctx.request_id, turn_id=ctx.turn_id, kind="run", task=ctx.task, priority=ctx.priority,
             model_class=res.model_class_used, model=res.model, outcome=outcome, from_cache=from_cache,
