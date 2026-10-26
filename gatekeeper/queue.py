@@ -53,7 +53,8 @@ class PriorityQueue:
         self._wake: dict[str, asyncio.Event] = {}
         self._tasks: dict[str, asyncio.Task] = {}
         self.ewma_hold_s = initial_hold_s          # how long a request holds a slot (for ETAs)
-        limiter.on_change = self.poke
+        if limiter is not None:
+            limiter.on_change = self.poke
 
     # ------------------------------------------------------------ introspection
     def depth(self, kind: Kind = "chat") -> int:
