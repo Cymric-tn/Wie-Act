@@ -970,7 +970,7 @@ cache hit rate, repeated identical requests, refusals and how each was handled, 
 breaker trips, latency percentiles per task and priority, and a per-turn capacity estimate.
 
 % ================================================================== 13
-\section{Measured behaviour (engine v1)}
+\section{Measured behaviour (engine v1 local, v1.1 on FelCloud)}
 \label{sec:numbers}
 
 Load tests run real Ollama models (llama3.2:3b compact, llama3.1:8b mid-size, on CPU) behind the
@@ -1033,8 +1033,51 @@ repeated identical provider requests & 0 & 0 & 0 & 1 → 0$^*$\\
 \textbf{Capacity.} A learner turn costs 1.73 engine calls, and \textbf{2.00 provider requests when nothing
 is cached}. At 20 requests/min per key that is about 20 active learners sending one message every 2
 minutes, 10 at one per minute. Locally the binding limit is concurrency, not quota (11.5 s mean latency
-→ 10.4 req/min); FelCloud recon latencies (compact 0.3–3.4 s, mid-size 6–8 s) suggest quota will bind
-there, which still needs to be confirmed in a FelCloud slot.
+→ 10.4 req/min); on FelCloud (v1.1, see below) the quota binds instead.
+
+\subsection{The same measurements on FelCloud (engine v1.1, 26 Oct)}
+
+Real provider, simulator off (\texttt{reports/felcloud-capacity-quality-2026-10-26.md}); the local column is the table above (Ollama behind the simulator). The capacity run is 40 learner turns at about 15 engine calls/min.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}L{5.6cm} Y Y@{}}
+\toprule
+& \textbf{local v1 (Ollama)} & \textbf{FelCloud v1.1}\\
+\midrule
+engine calls per turn & 1.73 & 1.73\\
+provider requests per turn, observed & 0.68 & 0.57\\
+provider requests per \emph{cold} turn & 2.00 & 1.77\\
+cache hit rate (small question pool) & 61\,\% & 62\,\%\\
+mean provider latency & 11.5 s & 5.4 s\\
+binding limit & concurrency, 10.4 req/min & quota, 20 req/min (concurrency ceiling 22.3)\\
+cold-turn latency p50 / p95 & n/a & 10.3 / 16.6 s\\
+active learners, 1 message / 2 min (cold) & 20 (quota), 10 (at local latency) & 23\\
+active learners, 1 message / min (cold) & 10 & 11\\
+refusals, degraded runs, exceptions & 3, 2, 0 & 0, 0, 0\\
+\bottomrule
+\end{tabularx}
+\caption{Capacity. Plan on the cold-turn rows: the cache rate comes from a 14-message pool. The quota binds only slightly, so a slower mid-size model moves the limit back to concurrency.}
+\end{table}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}L{5.6cm} Y Y@{}}
+\toprule
+\textbf{Explain quality} & \textbf{local (Ollama 8B, 91 answers)} & \textbf{FelCloud llama3.1-8b, 35 answers}\\
+\midrule
+new examples & 10 (11\,\%) & 3 (9\,\%)\\
+wrong\_math & 1 & 1\\
+ungrounded\_formula & 2 & 3 (one also wrong\_math)\\
+loop guard & 2/50 (4\,\%) & 4/35 (11\,\%); one reproduced false positive\\
+language drift, contamination, truncated output & n/a & 0, 0, 0\\
+output tokens / latency & n/a & mean 110 tokens; p50 9.3 s, p95 12.2 s\\
+\bottomrule
+\end{tabularx}
+\caption{Of the flagged formulas: 2 real model errors (wrong power rule, an invented muddled example), 1 checker limitation (a cut span), 1 false positive ($f(0)=1$) whose answer also contains an undetected sign error. One run, temperature 0.3: differences of one or two answers are noise.}
+\end{table}
+
+\textbf{Priority and outages.} At 40 arrivals/min (n=60) the INTERACTIVE \texttt{engine.run} p95 was 26.8 s, made of limiter and queue wait rather than provider time; BACKGROUND absorbed the queueing (about 28 s in the queue against 0.8 s median for interactive). During a mid-size outage (26 Oct, about 40 minutes of timeouts) the breaker never opened on timeouts and two hung explains blocked classify calls for up to 190 s; see \texttt{reports/midsize-outage-2026-10-26.md} and the change list there.
 
 \begin{table}[H]
 \centering\small
