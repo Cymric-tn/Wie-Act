@@ -9,6 +9,18 @@ from gatekeeper.limiter import Limiter, SlidingWindow
 from tests.conftest import make_settings
 
 LIMIT, WINDOW = 20, 60.0
+MAX_SPINS = 1000                    # a wait loop that needs more iterations than this is stuck: fail, never hang
+
+
+def wait_until_taken(vt, take):
+    """Advance the virtual clock by each stated wait until take() succeeds; bounded."""
+    for _ in range(MAX_SPINS):
+        if (w := take()) <= 0:
+            return
+        before = vt.t
+        vt.t += w
+        assert vt.t > before, f"the virtual clock cannot advance by a wait of {w!r}"
+    pytest.fail(f"no slot after {MAX_SPINS} waits")
 
 
 def serve(vt, take, arrivals):
@@ -17,8 +29,7 @@ def serve(vt, take, arrivals):
     t0, sends = vt.t, []
     for a in sorted(arrivals):
         vt.t = max(vt.t, t0 + a)
-        while (w := take()) > 0:
-            vt.t += w
+        wait_until_taken(vt, take)
         sends.append(vt.t - t0)
     return sends
 
@@ -30,7 +41,7 @@ def densest_window(sends, window=WINDOW):
 def patterns():
     rng = random.Random(11)
     poisson, t = [], 0.0
-    while t < 300:
+    while t < 300:                                           # expovariate > 0, so t strictly grows
         t += rng.expovariate(90 / 60)                       # 90 arrivals/min, far above the 20/min limit
         poisson.append(t)
     return {
@@ -163,8 +174,7 @@ def test_server_never_refuses_a_client_that_reads_the_headers(vt):
     w = SlidingWindow(LIMIT, WINDOW, vt.clock, 0.5)
     t0 = vt.t
     for _ in range(60):
-        while (wait := w.try_take()) > 0:
-            vt.t += wait
+        wait_until_taken(vt, w.try_take)
         remaining = serve_request(vt.t)
         assert remaining is not None
         w.sync_remaining(remaining, at=vt.t)
@@ -192,7 +202,7 @@ async def test_a_window_slot_is_only_taken_with_a_concurrency_slot(vt):
         await asyncio.sleep(0)
     assert lim.concurrency.locked() and len(lim.buckets["chat"]._log) == 1    # b waits and has not spent a slot
     release.set()
-    await asyncio.gather(a, b)
+    await asyncio.wait_for(asyncio.gather(a, b), timeout=5)
     assert len(lim.buckets["chat"]._log) == 2
 
 
