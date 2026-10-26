@@ -119,6 +119,13 @@ def analyze(recs: list[dict]) -> dict[Row, object]:
     m[(sec, "input tokens")] = sum(r.get("tokens_in") or 0 for r in ok)
     m[(sec, "output tokens")] = sum(r.get("tokens_out") or 0 for r in ok)
     m[(sec, "input tokens / ok call")] = round(m[(sec, "input tokens")] / len(ok)) if ok else 0
+    m[(sec, "output tokens / ok call")] = round(m[(sec, "output tokens")] / len(ok), 1) if ok else 0
+    m[(sec, "outputs cut at the cap (completion_tokens >= cap)")] = sum(1 for r in ok if r.get("truncated_output"))
+    sec = "limiter"
+    waits = [r.get("wait_ms") or 0 for r in attempts]
+    m[(sec, "attempts that waited on the limiter (> 100 ms)")] = sum(1 for w in waits if w > 100)
+    m[(sec, "max limiter wait (s)")] = round(max(waits, default=0) / 1000, 1)
+    sec = "tokens"
 
     sec = "cache"
     hits = [r for r in top if r.get("from_cache")]
