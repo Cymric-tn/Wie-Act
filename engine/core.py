@@ -305,6 +305,7 @@ class Engine:
                 run.emit(ev.name, ev.data)
         bg = _Run(self._clock, forward)
         bg.t0, bg.started = run.t0, run.started
+        bg.glossary = list(run.glossary)         # state the retrieval already put on the learner's run
         bg_ctx = CallContext(request_id=ctx.request_id, task=ctx.task, priority=ctx.priority, purpose=ctx.purpose,
                              on_event=bg.emit, queue_seq=ctx.queue_seq, turn_id=ctx.turn_id)
         d = replace(decision, reason=decision.reason + "; completes after the learner's deadline")
