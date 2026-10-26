@@ -64,9 +64,12 @@ def test_quota_delay_from_header():
     assert isinstance(e, QuotaExhausted) and e.retry_after_s == 17
 
 
-def test_quota_delay_from_message_when_no_header():
+def test_quota_delay_is_the_header_only_never_the_message():
     e = classify_response(error(429, "rate_limit_error", "Team quota exhausted. Retry in 12.5s"))
-    assert isinstance(e, QuotaExhausted) and e.retry_after_s == 12.5
+    assert isinstance(e, QuotaExhausted) and e.retry_after_s is None
+    e = classify_response(error(429, "rate_limit_error", "Rate limit exceeded. Retry in 12.5s",
+                                {"retry-after": "60"}))
+    assert e.retry_after_s == 60.0
 
 
 def test_quota_without_any_delay():

@@ -19,6 +19,10 @@ BASE_ENV = {
     "SIM_LATENCY_SCALE": "0",
     "SIM_SATURATION_PROB": "0",
     "SIM_SEED": "7",
+    # the fake providers report arbitrary prompt_tokens; the input-truncation detector has its own tests
+    "INPUT_TRUNCATION_CHARS_PER_TOKEN": "0",
+    # the budget tests were written against 2 chars/token; the estimator default (2.3) has its own tests
+    "ESTIMATE_CHARS_PER_TOKEN": "2.0",
 }
 
 
@@ -99,6 +103,14 @@ class FakeProvider(httpx.AsyncBaseTransport):
 @pytest.fixture
 def vt():
     return VirtualTime()
+
+
+@pytest.fixture(autouse=True)
+def _estimator_default():
+    """The token estimator is process-wide (set by the caller from its settings): start every test at the
+    value BASE_ENV uses, so direct estimate_tokens / assemble calls do not depend on test order."""
+    from gatekeeper.client import set_chars_per_token
+    set_chars_per_token(float(BASE_ENV["ESTIMATE_CHARS_PER_TOKEN"]))
 
 
 class FnProvider(FakeProvider):

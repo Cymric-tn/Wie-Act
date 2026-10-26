@@ -49,16 +49,26 @@ class Settings:
     api_key: str = field(repr=False)
     models: Mapping[ModelClass, tuple[str, ...]]   # in-class preference order
     embed_model: str
-    rate_per_min: float = 20.0
-    rate_burst: int = 20
+    rate_per_min: float = 20.0                # sliding window: at most this many sends in any rate_window_s
+    rate_burst: int = 20                      # deprecated: the sliding window has no separate burst (simulator only)
+    rate_window_s: float = 60.0
     embed_rate_per_min: float = 60.0
-    embed_burst: int = 60
+    embed_burst: int = 60                     # deprecated, as rate_burst
+    embed_rate_window_s: float = 60.0
+    rate_window_slack_s: float = 0.5          # a send frees its slot this long after the window, for clock/latency skew
     max_concurrent: int = 2
     max_tokens: Mapping[ModelClass, int] = field(default_factory=lambda: {
         ModelClass.COMPACT: 300, ModelClass.MIDSIZE: 550})
-    input_token_budget: int = 1800
+    output_cap_mode: str = "both"             # options | max_tokens | both (how the output cap is sent, see client.py)
+    input_token_budget: int = 2800
+    estimate_chars_per_token: float = 2.3     # token estimator; Arabizi is the worst measured case (2.31)
+    context_window: int = 4096                # FelCloud truncates the prompt start above this (measured 2026-10-26)
+    context_fill: float = 0.85                # estimated prompt + output cap must fit context_window * context_fill
+    truncation_chars_per_token: float = 5.0   # prompt_tokens < prompt chars / this = the provider cut the input; 0 = off
     request_timeout_s: float = 85.0
-    max_retry_wait_s: float = 30.0
+    max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
+    max_retry_wait_s_background: float = 65.0  # BACKGROUND: the observed quota delay is 60 s
+    concurrency_retry_wait_s: float = 2.0     # a concurrency 429 states 60 s, but the slot frees at once
     max_attempts: int = 4
     saturation_retries: int = 1               # mid-size: then the router falls back to compact
     compact_max_retries: int = 3              # compact: no fallback, so retry harder
@@ -81,7 +91,8 @@ class Settings:
     exercises_path: str = "data/exercises/derivees.yaml"   # exercise bank for quiz / grade / stored hints
     templates_path: str = "data/templates.yaml"            # openers, practice line, generic feedback
     task_frequency_penalty: Mapping[str, float] = field(default_factory=lambda: {"explain": 0.3})
-    task_max_tokens: Mapping[str, int] = field(default_factory=lambda: {"explain": 350})
+    task_max_tokens: Mapping[str, int] = field(default_factory=lambda: {
+        "classify": 50, "hint": 80, "grade": 120, "compress": 30, "explain": 350, "quiz_intro": 60, "framing": 40})
     breaker_threshold: int = 3                # saturations within the window that open the breaker
     breaker_window_s: float = 60.0
     breaker_cooldown_s: float = 30.0          # open this long, then half-open (one probe)
@@ -158,7 +169,14 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     if sim.saturation_dialect not in ("annex", "litellm"):
         raise ConfigError("SIM_SATURATION_DIALECT must be 'annex' or 'litellm'")
 
+    if e.get("OUTPUT_CAP_MODE") and e["OUTPUT_CAP_MODE"].strip().lower() not in ("options", "max_tokens", "both"):
+        raise ConfigError("OUTPUT_CAP_MODE must be 'options', 'max_tokens' or 'both'")
+
     defaults = Settings(base_url="", api_key="", models={}, embed_model="")
+    task_caps = {name: get(var, int, defaults.task_max_tokens[name]) for name, var in (
+        ("classify", "CLASSIFY_MAX_TOKENS"), ("hint", "HINT_MAX_TOKENS"), ("grade", "GRADE_MAX_TOKENS"),
+        ("compress", "COMPRESS_MAX_TOKENS"), ("explain", "EXPLAIN_MAX_TOKENS"),
+        ("quiz_intro", "QUIZ_INTRO_MAX_TOKENS"), ("framing", "FRAMING_MAX_TOKENS"))}
     return Settings(
         base_url=req("LLM_BASE_URL").rstrip("/"),
         api_key=req("LLM_API_KEY"),
@@ -167,14 +185,24 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         embed_model=e.get("MODEL_EMBED", ""),
         rate_per_min=get("RATE_LIMIT_PER_MIN", float, defaults.rate_per_min),
         rate_burst=get("RATE_BURST", int, defaults.rate_burst),
+        rate_window_s=get("RATE_WINDOW_S", float, defaults.rate_window_s),
+        rate_window_slack_s=get("RATE_WINDOW_SLACK_S", float, defaults.rate_window_slack_s),
         embed_rate_per_min=get("EMBED_RATE_LIMIT_PER_MIN", float, defaults.embed_rate_per_min),
         embed_burst=get("EMBED_BURST", int, defaults.embed_burst),
+        embed_rate_window_s=get("EMBED_RATE_WINDOW_S", float, defaults.embed_rate_window_s),
         max_concurrent=get("MAX_CONCURRENT", int, defaults.max_concurrent),
         max_tokens={ModelClass.COMPACT: get("MAX_TOKENS_COMPACT", int, 300),
                     ModelClass.MIDSIZE: get("MAX_TOKENS_MIDSIZE", int, 550)},
+        output_cap_mode=get("OUTPUT_CAP_MODE", lambda v: v.strip().lower(), defaults.output_cap_mode),
         input_token_budget=get("INPUT_TOKEN_BUDGET", int, defaults.input_token_budget),
+        estimate_chars_per_token=get("ESTIMATE_CHARS_PER_TOKEN", float, defaults.estimate_chars_per_token),
+        context_window=get("CONTEXT_WINDOW", int, defaults.context_window),
+        context_fill=get("CONTEXT_FILL", float, defaults.context_fill),
+        truncation_chars_per_token=get("INPUT_TRUNCATION_CHARS_PER_TOKEN", float, defaults.truncation_chars_per_token),
         request_timeout_s=get("REQUEST_TIMEOUT_S", float, defaults.request_timeout_s),
         max_retry_wait_s=get("MAX_RETRY_WAIT_S", float, defaults.max_retry_wait_s),
+        max_retry_wait_s_background=get("MAX_RETRY_WAIT_S_BACKGROUND", float, defaults.max_retry_wait_s_background),
+        concurrency_retry_wait_s=get("CONCURRENCY_RETRY_WAIT_S", float, defaults.concurrency_retry_wait_s),
         max_attempts=get("MAX_ATTEMPTS", int, defaults.max_attempts),
         saturation_retries=get("SATURATION_RETRIES", int, defaults.saturation_retries),
         compact_max_retries=get("COMPACT_MAX_RETRIES", int, defaults.compact_max_retries),
@@ -197,7 +225,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         exercises_path=e.get("EXERCISES_PATH", defaults.exercises_path).strip(),
         templates_path=e.get("TEMPLATES_PATH", defaults.templates_path).strip(),
         task_frequency_penalty={"explain": get("EXPLAIN_FREQUENCY_PENALTY", float, 0.3)},
-        task_max_tokens={"explain": get("EXPLAIN_MAX_TOKENS", int, 350)},
+        task_max_tokens=task_caps,
         breaker_threshold=get("BREAKER_THRESHOLD", int, defaults.breaker_threshold),
         breaker_window_s=get("BREAKER_WINDOW_S", float, defaults.breaker_window_s),
         breaker_cooldown_s=get("BREAKER_COOLDOWN_S", float, defaults.breaker_cooldown_s),

@@ -3,20 +3,27 @@ Retry policy — what to do with each typed error from errors.py (the platform c
 
   | error             | action                                                              |
   |-------------------|---------------------------------------------------------------------|
-  | QuotaExhausted    | wait the STATED delay (bucket blocked), retry same model.           |
-  |                   | Delay > MAX_RETRY_WAIT_S -> raise with the delay; never hop models  |
+  | QuotaExhausted    | the delay is the Retry-After header only (observed: 60 s). The      |
+  |                   | window is blocked until it expires, whatever the priority.          |
+  |                   | BACKGROUND waits up to MAX_RETRY_WAIT_S_BACKGROUND (65), INTERACTIVE|
+  |                   | up to MAX_RETRY_WAIT_S (30); a longer delay -> raise with it (the   |
+  |                   | engine degrades with eta = remaining delay). Never hop models       |
   |                   | (quota is per key, another model would be refused too).             |
   | ModelSaturated    | mid-size: retry after Retry-After up to SATURATION_RETRIES, then    |
   |                   | raise so the router can fall back to compact.                       |
   |                   | compact: no fallback exists, so up to COMPACT_MAX_RETRIES, honoring |
   |                   | Retry-After each time, then raise (the engine degrades, never 500s).|
-  | ConcurrencyLimited| wait Retry-After, retry.                                            |
+  | ConcurrencyLimited| wait min(Retry-After, CONCURRENCY_RETRY_WAIT_S), retry (the 429     |
+  |                   | states 60 s but the slot frees as soon as a request ends).          |
   | CeilingExceeded   | fix the request once (trim max_tokens / context), retry once.       |
   | TransientError    | exponential backoff + full jitter (only when no delay is stated).   |
   | FatalError        | raise immediately.                                                  |
 
-Before the first attempt the input is checked against INPUT_TOKEN_BUDGET, because FelCloud
-silently truncates long prompts (recon: 6k-token prompt -> 200 with prompt_tokens=2050).
+Before the first attempt the estimated input is checked against INPUT_TOKEN_BUDGET and against the
+context window (estimate + output cap <= CONTEXT_WINDOW * CONTEXT_FILL), because FelCloud silently drops
+the START of a prompt above about 4096 tokens (recon and probe C: 200 with prompt_tokens=2050).
+After the answer: prompt_tokens < prompt chars / 5 means the input was cut (reported, not cached by the
+engine), and completion_tokens >= the cap means the output was cut (finish_reason says "stop" either way).
 Every attempt writes one CallRecord and emits progress events.
 """
 from __future__ import annotations
@@ -32,8 +39,8 @@ from typing import Any, Awaitable, Callable
 import httpx
 
 from config import ModelClass, Settings
-from gatekeeper.client import (CHARS_PER_TOKEN, ChatRequest, EmbedRequest, LLMClient, estimate_tokens,
-                               parse_chat, parse_embed, request_hash)
+from gatekeeper.client import (ChatRequest, EmbedRequest, LLMClient, chars_per_token, estimate_tokens,
+                               parse_chat, parse_embed, request_hash, set_chars_per_token)
 from gatekeeper.errors import (CeilingExceeded, ConcurrencyLimited, FatalError, LLMError, ModelSaturated,
                                QuotaExhausted, QuotaInfo, TransientError, classify_exception,
                                classify_response, parse_quota)
@@ -48,7 +55,9 @@ FixFn = Callable[[ChatRequest, CeilingExceeded], "ChatRequest | None"]
 @dataclass(frozen=True)
 class RetryPolicy:
     max_attempts: int = 4
-    max_wait_s: float = 30.0
+    max_wait_s: float = 30.0              # INTERACTIVE: longest stated delay it will wait for
+    max_wait_background_s: float = 65.0   # BACKGROUND: the observed quota delay is 60 s
+    concurrency_wait_s: float = 2.0       # cap on a concurrency 429's stated delay
     saturation_retries: int = 1           # mid-size
     compact_saturation_retries: int = 3
     backoff_base_s: float = 0.5
@@ -57,6 +66,7 @@ class RetryPolicy:
     @classmethod
     def from_settings(cls, s: Settings) -> "RetryPolicy":
         return cls(max_attempts=s.max_attempts, max_wait_s=s.max_retry_wait_s,
+                   max_wait_background_s=s.max_retry_wait_s_background, concurrency_wait_s=s.concurrency_retry_wait_s,
                    saturation_retries=s.saturation_retries, compact_saturation_retries=s.compact_max_retries)
 
     @property
@@ -98,6 +108,8 @@ class ChatResult:
     request: ChatRequest                 # the request actually sent (may have been trimmed)
     trimmed: bool = False
     quota: QuotaInfo = field(default_factory=QuotaInfo)
+    truncated: bool = False              # completion_tokens >= the cap: the output was cut (finish_reason is unreliable)
+    input_truncated: bool = False        # prompt_tokens far below the prompt size: the provider cut the input
 
 
 @dataclass
@@ -117,7 +129,7 @@ MIN_MAX_TOKENS = 16
 def _trim_messages(req: ChatRequest, target_tokens: int) -> ChatRequest | None:
     """Shorten the longest non-system message (keep its head) until the estimate fits."""
     msgs = [dict(m) for m in req.messages]
-    excess_chars = math.ceil((estimate_tokens(msgs) - target_tokens) * CHARS_PER_TOKEN)
+    excess_chars = math.ceil((estimate_tokens(msgs) - target_tokens) * chars_per_token())
     if excess_chars <= 0:
         return req
     idx = [i for i, m in enumerate(msgs) if m.get("role") != "system"]
@@ -159,6 +171,11 @@ class RetryingCaller:
         # (model_class, error or None) after every chat attempt: feeds the router's circuit breakers
         self.observer: Callable[[ModelClass, LLMError | None], None] | None = None
         self.input_token_budget = input_token_budget
+        cfg = getattr(client, "settings", None)
+        if cfg is not None:
+            set_chars_per_token(cfg.estimate_chars_per_token)
+        self.context_limit = int(cfg.context_window * cfg.context_fill) if cfg is not None else None
+        self.truncation_cpt = cfg.truncation_chars_per_token if cfg is not None else 5.0   # real text packs <= ~4
         self._clock, self._sleep = clock, sleep
         self._rng = rng or random.Random()
 
@@ -170,10 +187,13 @@ class RetryingCaller:
         trimmed = False
 
         est = estimate_tokens(req.messages)
-        if est > self.input_token_budget:
-            local = CeilingExceeded(message=f"input ~{est} tokens > client budget {self.input_token_budget}",
-                                    ceiling="prompt_tokens", limit=self.input_token_budget)
-            ctx.emit("trimming_input", estimated_tokens=est, budget=self.input_token_budget)
+        budget = self.input_token_budget
+        if self.context_limit is not None:      # the prompt AND the answer must fit the context window
+            budget = min(budget, self.context_limit - (req.max_tokens or 0))
+        if est > budget:
+            local = CeilingExceeded(message=f"input ~{est} tokens > client budget {budget}",
+                                    ceiling="prompt_tokens", limit=budget)
+            ctx.emit("trimming_input", estimated_tokens=est, budget=budget)
             fixed = fix_request(req, local)
             if fixed is None:
                 self._write(ctx, req, attempt=0, outcome="ceiling", action="raise", detail=local.message)
@@ -193,11 +213,21 @@ class RetryingCaller:
             raise TransientError(status=resp.status_code, message=f"malformed response: {e}",
                                  attempts=attempt) from e
         req = state["req"]
+        chars = sum(len(m.get("content") or "") for m in req.messages)
+        truncated = tout is not None and req.max_tokens is not None and tout >= req.max_tokens
+        input_cut = bool(self.truncation_cpt) and tin is not None and tin < chars / self.truncation_cpt
+        detail = f"input_truncated: prompt_tokens={tin} for {chars} chars" if input_cut else None
+        if truncated:
+            ctx.emit("output_truncated", completion_tokens=tout, cap=req.max_tokens)
+        if input_cut:
+            ctx.emit("input_truncated", prompt_tokens=tin, prompt_chars=chars)
         self._write(ctx, req, attempt=attempt, status=resp.status_code, outcome="ok",
-                    latency_ms=latency_ms, wait_ms=wait_ms, tokens_in=tin, tokens_out=tout, quota=quota)
+                    latency_ms=latency_ms, wait_ms=wait_ms, tokens_in=tin, tokens_out=tout, quota=quota,
+                    detail=detail, truncated_output=truncated)
         return ChatResult(text=text, model=req.model, model_class=req.model_class.value, tokens_in=tin,
                           tokens_out=tout, attempts=attempt, latency_ms=latency_ms, wait_ms=total_wait_ms,
-                          request=req, trimmed=trimmed or state["fixed"], quota=quota)
+                          request=req, trimmed=trimmed or state["fixed"], quota=quota, truncated=truncated,
+                          input_truncated=input_cut)
 
     async def embed(self, req: EmbedRequest, ctx: CallContext | None = None) -> EmbedResult:
         ctx = ctx or CallContext()
@@ -217,6 +247,7 @@ class RetryingCaller:
     async def _run(self, kind, ctx: CallContext, state: dict, send: Callable[[Any], Awaitable[httpx.Response]],
                    fix_request: FixFn | None):
         state["saturation_budget"] = ctx.saturation_retries
+        state["priority"] = ctx.priority
         p = self.policy
         extra_wait = total_wait_ms = 0.0
         for attempt in range(1, p.hard_cap + 1):
@@ -235,7 +266,8 @@ class RetryingCaller:
             extra_wait = 0.0
             total_wait_ms += wait_ms
             quota = parse_quota(resp.headers) if resp is not None else QuotaInfo()
-            self.limiter.observe(kind, quota)
+            if err is None:                # phantom entries only from a 200; a refusal states its own delay
+                self.limiter.observe(kind, quota, t0)
             if kind == "chat" and self.observer is not None:
                 self.observer(req.model_class, err)
             if err is None:
@@ -262,9 +294,10 @@ class RetryingCaller:
         last = attempt >= p.max_attempts
         if isinstance(err, QuotaExhausted):
             delay = err.retry_after_s if err.retry_after_s is not None else p.backoff(attempt, self._rng)
-            if delay > p.max_wait_s or last:
-                return "raise", 0.0
-            self.limiter.block(kind, delay)
+            self.limiter.block(kind, delay)        # in every case nothing is sent before the delay expires
+            cap = p.max_wait_background_s if state.get("priority") == "BACKGROUND" else p.max_wait_s
+            if delay > cap or last:
+                return "raise", 0.0                # the engine degrades with eta = the remaining delay
             return "wait_stated_delay", delay
         if isinstance(err, ModelSaturated):
             state["saturated"] += 1
@@ -282,7 +315,8 @@ class RetryingCaller:
                 return "raise", 0.0
             return "retry_after_interval", delay
         if isinstance(err, ConcurrencyLimited):
-            return ("raise", 0.0) if last else ("wait_slot", err.retry_after_s or 1.0)
+            wait = min(err.retry_after_s or 1.0, p.concurrency_wait_s)
+            return ("raise", 0.0) if last else ("wait_slot", wait)
         if isinstance(err, CeilingExceeded):
             if state["fixed"] or fix_request is None or last:
                 return "raise", 0.0
@@ -302,7 +336,7 @@ class RetryingCaller:
     def _write(self, ctx: CallContext, req, *, attempt: int, outcome: str, status: int | None = None,
                action: str | None = None, latency_ms: float = 0.0, wait_ms: float = 0.0,
                tokens_in: int | None = None, tokens_out: int | None = None, quota: QuotaInfo | None = None,
-               detail: str | None = None, kind: str = "chat") -> None:
+               detail: str | None = None, kind: str = "chat", truncated_output: bool = False) -> None:
         if isinstance(req, ChatRequest):
             body, model, cls = self.client.chat_body(req), req.model, req.model_class.value
         else:
@@ -314,7 +348,8 @@ class RetryingCaller:
             purpose=ctx.purpose,
             model_class=cls, model=model, request_hash=request_hash(body), status=status, outcome=outcome,
             action=action, wait_ms=round(wait_ms, 1), latency_ms=round(latency_ms, 1), tokens_in=tokens_in,
-            tokens_out=tokens_out, quota_remaining=quota.remaining_requests if quota else None, detail=detail))
+            tokens_out=tokens_out, quota_remaining=quota.remaining_requests if quota else None, detail=detail,
+            truncated_output=truncated_output))
 
 
 def build_caller(settings: Settings, sink: MetricsSink, client: LLMClient | None = None) -> RetryingCaller:
