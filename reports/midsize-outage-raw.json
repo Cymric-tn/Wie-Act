@@ -1,0 +1,690 @@
+{
+ "phase1_end_s": 279.5,
+ "phase2_start_s": 279.5,
+ "calls": [
+  {
+   "label": "explain1",
+   "task": "explain",
+   "start_s": 0.1,
+   "events": [
+    [
+     0.1,
+     "retrieving",
+     {}
+    ],
+    [
+     0.1,
+     "checking_cache",
+     {}
+    ],
+    [
+     0.1,
+     "partial_result",
+     {
+      "excerpts": [
+       {
+        "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+        "text": "Pour une fonction f et un nombre a, le taux d'accroissement entre a et a + h est le quotient (f(a + h) − f(a)) / h."
+       },
+       {
+        "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+        "text": "Quand h devient de plus en plus petit (h tend vers 0), si ce quotient se rapproche d'un nombre fini, ce nombre s'appelle le nombre dérivé de f en a et se note f'(a)."
+       },
+       {
+        "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+        "text": "Exemple : pour f(x) = x², le taux d'accroissement vaut (2ah + h²) / h = 2a + h, qui tend vers 2a quand h tend vers 0."
+       }
+      ]
+     }
+    ],
+    [
+     0.1,
+     "queued",
+     {
+      "position": 0,
+      "eta_s": 2.0
+     }
+    ],
+    [
+     0.1,
+     "generating",
+     {
+      "attempt": 1,
+      "model_class": "midsize"
+     }
+    ],
+    [
+     85.3,
+     "backoff",
+     {
+      "error": "transient",
+      "seconds": 0.2,
+      "attempt": 1
+     }
+    ],
+    [
+     85.5,
+     "queued",
+     {
+      "position": 0,
+      "eta_s": 49.8
+     }
+    ],
+    [
+     100.1,
+     "generating",
+     {
+      "attempt": 2,
+      "model_class": "midsize"
+     }
+    ],
+    [
+     185.1,
+     "backoff",
+     {
+      "error": "transient",
+      "seconds": 0.6,
+      "attempt": 2
+     }
+    ],
+    [
+     185.7,
+     "queued",
+     {
+      "position": 0,
+      "eta_s": 71.5
+     }
+    ],
+    [
+     187.5,
+     "generating",
+     {
+      "attempt": 3,
+      "model_class": "midsize"
+     }
+    ],
+    [
+     272.5,
+     "backoff",
+     {
+      "error": "transient",
+      "seconds": 0.0,
+      "attempt": 3
+     }
+    ],
+    [
+     272.5,
+     "queued",
+     {
+      "position": 0,
+      "eta_s": 43.1
+     }
+    ],
+    [
+     272.5,
+     "generating",
+     {
+      "attempt": 4,
+      "model_class": "midsize"
+     }
+    ]
+   ],
+   "end_s": 279.5,
+   "cancelled": true
+  },
+  {
+   "label": "explain2",
+   "task": "explain",
+   "start_s": 0.1,
+   "events": [
+    [
+     0.1,
+     "retrieving",
+     {}
+    ],
+    [
+     0.1,
+     "checking_cache",
+     {}
+    ],
+    [
+     0.1,
+     "partial_result",
+     {
+      "excerpts": [
+       {
+        "chunk_id": "derivee-definition.fr#interpretation-graphique-la-tangente",
+        "text": "Le nombre dérivé f'(a) est le coefficient directeur, c'est-à-dire la pente, de la tangente à la courbe de f au point d'abscisse a."
+       },
+       {
+        "chunk_id": "derivee-definition.fr#interpretation-graphique-la-tangente",
+        "text": "La tangente est la droite qui touche la courbe en ce point en suivant sa direction."
+       },
+       {
+        "chunk_id": "derivee-definition.fr#interpretation-graphique-la-tangente",
+        "text": "L'équation de la tangente au point d'abscisse a est y = f'(a)(x − a) + f(a)."
+       }
+      ]
+     }
+    ],
+    [
+     0.1,
+     "queued",
+     {
+      "position": 1,
+      "eta_s": 4.0
+     }
+    ],
+    [
+     0.1,
+     "generating",
+     {
+      "attempt": 1,
+      "model_class": "midsize"
+     }
+    ],
+    [
+     85.3,
+     "backoff",
+     {
+      "error": "transient",
+      "seconds": 0.3,
+      "attempt": 1
+     }
+    ],
+    [
+     85.6,
+     "queued",
+     {
+      "position": 1,
+      "eta_s": 66.5
+     }
+    ],
+    [
+     100.4,
+     "generating",
+     {
+      "attempt": 2,
+      "model_class": "midsize"
+     }
+    ],
+    [
+     185.4,
+     "backoff",
+     {
+      "error": "transient",
+      "seconds": 0.0,
+      "attempt": 2
+     }
+    ],
+    [
+     185.4,
+     "queued",
+     {
+      "position": 0,
+      "eta_s": 71.5
+     }
+    ],
+    [
+     194.2,
+     "generating",
+     {
+      "attempt": 3,
+      "model_class": "midsize"
+     }
+    ],
+    [
+     279.2,
+     "backoff",
+     {
+      "error": "transient",
+      "seconds": 0.4,
+      "attempt": 3
+     }
+    ]
+   ],
+   "end_s": 279.5,
+   "cancelled": true
+  },
+  {
+   "label": "classify1",
+   "task": "classify",
+   "start_s": 0.1,
+   "events": [
+    [
+     0.1,
+     "checking_cache",
+     {}
+    ],
+    [
+     0.1,
+     "queued",
+     {
+      "position": 2,
+      "eta_s": 6.0
+     }
+    ],
+    [
+     85.3,
+     "generating",
+     {
+      "attempt": 1,
+      "model_class": "compact"
+     }
+    ]
+   ],
+   "end_s": 100.4,
+   "cancelled": false,
+   "request_id": "6a65bd6d7843",
+   "latency_ms": 100299.8,
+   "degraded": false,
+   "degrade_reason": null,
+   "mode": null,
+   "model_class_used": "compact",
+   "eta_seconds": null,
+   "from_cache": false
+  },
+  {
+   "label": "classify2",
+   "task": "classify",
+   "start_s": 0.1,
+   "events": [
+    [
+     0.1,
+     "checking_cache",
+     {}
+    ],
+    [
+     0.1,
+     "queued",
+     {
+      "position": 3,
+      "eta_s": 8.0
+     }
+    ],
+    [
+     85.3,
+     "generating",
+     {
+      "attempt": 1,
+      "model_class": "compact"
+     }
+    ]
+   ],
+   "end_s": 100.1,
+   "cancelled": false,
+   "request_id": "202eb777a17d",
+   "latency_ms": 99997.0,
+   "degraded": false,
+   "degrade_reason": null,
+   "mode": null,
+   "model_class_used": "compact",
+   "eta_seconds": null,
+   "from_cache": false
+  },
+  {
+   "label": "classify3",
+   "task": "classify",
+   "start_s": 0.1,
+   "events": [
+    [
+     0.1,
+     "checking_cache",
+     {}
+    ],
+    [
+     0.1,
+     "queued",
+     {
+      "position": 4,
+      "eta_s": 10.0
+     }
+    ],
+    [
+     185.1,
+     "generating",
+     {
+      "attempt": 1,
+      "model_class": "compact"
+     }
+    ]
+   ],
+   "end_s": 187.5,
+   "cancelled": false,
+   "request_id": "d39b938fbff2",
+   "latency_ms": 187413.5,
+   "degraded": false,
+   "degrade_reason": null,
+   "mode": null,
+   "model_class_used": "compact",
+   "eta_seconds": null,
+   "from_cache": false
+  },
+  {
+   "label": "classify4",
+   "task": "classify",
+   "start_s": 10.0,
+   "events": [
+    [
+     10.0,
+     "checking_cache",
+     {}
+    ],
+    [
+     10.0,
+     "queued",
+     {
+      "position": 3,
+      "eta_s": 12.0
+     }
+    ],
+    [
+     185.4,
+     "generating",
+     {
+      "attempt": 1,
+      "model_class": "compact"
+     }
+    ]
+   ],
+   "end_s": 194.2,
+   "cancelled": false,
+   "request_id": "59ea44346c76",
+   "latency_ms": 184222.5,
+   "degraded": false,
+   "degrade_reason": null,
+   "mode": null,
+   "model_class_used": "compact",
+   "eta_seconds": null,
+   "from_cache": false
+  },
+  {
+   "label": "explain_after",
+   "task": "explain",
+   "start_s": 279.5,
+   "events": [
+    [
+     279.5,
+     "retrieving",
+     {}
+    ],
+    [
+     279.5,
+     "checking_cache",
+     {}
+    ],
+    [
+     279.5,
+     "partial_result",
+     {
+      "excerpts": [
+       {
+        "chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+        "text": "La dérivée d'un produit n'est pas le produit des dérivées."
+       },
+       {
+        "chunk_id": "derivee-erreurs.fr#erreurs-avec-les-puissances",
+        "text": "Erreur fréquente : écrire que la dérivée de x² est x, ou que la dérivée de x³ est x²."
+       },
+       {
+        "chunk_id": "derivee-erreurs.fr#erreurs-avec-les-puissances",
+        "text": "Autre piège : la dérivée de 5x² est 10x, et non 10 tout seul."
+       }
+      ]
+     }
+    ],
+    [
+     279.5,
+     "queued",
+     {
+      "position": 0,
+      "eta_s": 21.3
+     }
+    ],
+    [
+     279.5,
+     "generating",
+     {
+      "attempt": 1,
+      "model_class": "midsize"
+     }
+    ],
+    [
+     279.7,
+     "wait_slot",
+     {
+      "error": "concurrency_limited",
+      "seconds": 2.0,
+      "attempt": 1
+     }
+    ],
+    [
+     281.7,
+     "queued",
+     {
+      "position": 0,
+      "eta_s": 17.1
+     }
+    ],
+    [
+     281.7,
+     "generating",
+     {
+      "attempt": 2,
+      "model_class": "midsize"
+     }
+    ],
+    [
+     281.7,
+     "wait_slot",
+     {
+      "error": "concurrency_limited",
+      "seconds": 2.0,
+      "attempt": 2
+     }
+    ]
+   ],
+   "end_s": 282.5,
+   "cancelled": true
+  }
+ ],
+ "attempts": [
+  {
+   "request_id": "e76937a87d7b",
+   "task": "explain",
+   "attempt": 1,
+   "class": "midsize",
+   "outcome": "transient",
+   "action": "backoff",
+   "wait_ms": 0.0,
+   "latency_ms": 85191.6,
+   "detail": "timeout: ReadTimeout",
+   "ts": 85.29337859153748
+  },
+  {
+   "request_id": "9d724a215000",
+   "task": "explain",
+   "attempt": 1,
+   "class": "midsize",
+   "outcome": "transient",
+   "action": "backoff",
+   "wait_ms": 0.0,
+   "latency_ms": 85206.0,
+   "detail": "timeout: ReadTimeout",
+   "ts": 85.29446172714233
+  },
+  {
+   "request_id": "202eb777a17d",
+   "task": "classify",
+   "attempt": 1,
+   "class": "compact",
+   "outcome": "ok",
+   "action": null,
+   "wait_ms": 0.0,
+   "latency_ms": 14787.1,
+   "detail": null,
+   "ts": 100.08412098884583
+  },
+  {
+   "request_id": "6a65bd6d7843",
+   "task": "classify",
+   "attempt": 1,
+   "class": "compact",
+   "outcome": "ok",
+   "action": null,
+   "wait_ms": 85206.5,
+   "latency_ms": 15091.4,
+   "detail": null,
+   "ts": 100.38674902915955
+  },
+  {
+   "request_id": "9d724a215000",
+   "task": "explain",
+   "attempt": 2,
+   "class": "midsize",
+   "outcome": "transient",
+   "action": "backoff",
+   "wait_ms": 14995.1,
+   "latency_ms": 85003.7,
+   "detail": "timeout: ReadTimeout",
+   "ts": 185.08895301818848
+  },
+  {
+   "request_id": "e76937a87d7b",
+   "task": "explain",
+   "attempt": 2,
+   "class": "midsize",
+   "outcome": "transient",
+   "action": "backoff",
+   "wait_ms": 586.4,
+   "latency_ms": 85004.9,
+   "detail": "timeout: ReadTimeout",
+   "ts": 185.39312171936035
+  },
+  {
+   "request_id": "d39b938fbff2",
+   "task": "classify",
+   "attempt": 1,
+   "class": "compact",
+   "outcome": "ok",
+   "action": null,
+   "wait_ms": 84701.5,
+   "latency_ms": 2411.6,
+   "detail": null,
+   "ts": 187.50126218795776
+  },
+  {
+   "request_id": "59ea44346c76",
+   "task": "classify",
+   "attempt": 1,
+   "class": "compact",
+   "outcome": "ok",
+   "action": null,
+   "wait_ms": 304.1,
+   "latency_ms": 8829.4,
+   "detail": null,
+   "ts": 194.22350454330444
+  },
+  {
+   "request_id": "9d724a215000",
+   "task": "explain",
+   "attempt": 3,
+   "class": "midsize",
+   "outcome": "transient",
+   "action": "backoff",
+   "wait_ms": 2742.7,
+   "latency_ms": 85002.8,
+   "detail": "timeout: ReadTimeout",
+   "ts": 272.5047171115875
+  },
+  {
+   "request_id": "e76937a87d7b",
+   "task": "explain",
+   "attempt": 3,
+   "class": "midsize",
+   "outcome": "transient",
+   "action": "backoff",
+   "wait_ms": 6723.1,
+   "latency_ms": 85004.5,
+   "detail": "timeout: ReadTimeout",
+   "ts": 279.2293939590454
+  },
+  {
+   "request_id": "d4e21490a9fd",
+   "task": "explain",
+   "attempt": 1,
+   "class": "midsize",
+   "outcome": "concurrency_limited",
+   "action": "wait_slot",
+   "wait_ms": 0.0,
+   "latency_ms": 201.6,
+   "detail": "Rate limit exceeded for api_key: <key-hash>. Limit type: max_parallel_requests. Current limit: 2, Remaining: 0. Limit resets at: 2026-10-26 19:51:",
+   "ts": 279.66306591033936
+  },
+  {
+   "request_id": "d4e21490a9fd",
+   "task": "explain",
+   "attempt": 2,
+   "class": "midsize",
+   "outcome": "concurrency_limited",
+   "action": "wait_slot",
+   "wait_ms": 2000.0,
+   "latency_ms": 73.1,
+   "detail": "Rate limit exceeded for api_key: <key-hash>. Limit type: max_parallel_requests. Current limit: 2, Remaining: 0. Limit resets at: 2026-10-26 19:51:",
+   "ts": 281.73783564567566
+  }
+ ],
+ "route_and_breaker": [
+  {
+   "kind": "route",
+   "task": "explain",
+   "outcome": "routed",
+   "detail": "table: explain -> midsize",
+   "ts": 0.1
+  },
+  {
+   "kind": "route",
+   "task": "explain",
+   "outcome": "routed",
+   "detail": "table: explain -> midsize",
+   "ts": 0.1
+  },
+  {
+   "kind": "route",
+   "task": "classify",
+   "outcome": "routed",
+   "detail": "table: classify -> compact",
+   "ts": 0.1
+  },
+  {
+   "kind": "route",
+   "task": "classify",
+   "outcome": "routed",
+   "detail": "table: classify -> compact",
+   "ts": 0.1
+  },
+  {
+   "kind": "route",
+   "task": "classify",
+   "outcome": "routed",
+   "detail": "table: classify -> compact",
+   "ts": 0.1
+  },
+  {
+   "kind": "route",
+   "task": "classify",
+   "outcome": "routed",
+   "detail": "table: classify -> compact",
+   "ts": 10.0
+  },
+  {
+   "kind": "route",
+   "task": "explain",
+   "outcome": "routed",
+   "detail": "table: explain -> midsize",
+   "ts": 279.5
+  }
+ ],
+ "total_attempts": 12,
+ "breaker": null
+}
