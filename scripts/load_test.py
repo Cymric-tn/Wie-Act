@@ -126,14 +126,21 @@ async def main() -> None:
     ap.add_argument("--rate", type=float, default=None,
                     help="arrivals per minute (Poisson); capacity: offered engine calls per minute")
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--real", action="store_true",
+                    help="real provider (FelCloud host only), simulator off; --sim-profile then only picks the "
+                         "arrival shape (capacity = learner turns)")
+    ap.add_argument("--out", default=None, help="metrics file (default metrics/load_<profile>.jsonl)")
     a = ap.parse_args()
 
-    out = f"metrics/load_{a.sim_profile}.jsonl"
+    out = a.out or f"metrics/load_{a.sim_profile}.jsonl"
     if os.path.exists(out):
         os.remove(out)
     env = {**dotenv_values(os.environ.get("ENV_FILE", ".env")), **os.environ,
-           "SIMULATE_CONSTRAINTS": "true", "METRICS_PATH": out, "SIM_SEED": str(a.seed), **env_overrides(a.sim_profile)}
+           "SIMULATE_CONSTRAINTS": "false" if a.real else "true", "METRICS_PATH": out, "SIM_SEED": str(a.seed),
+           **({} if a.real else env_overrides(a.sim_profile))}
     s = load_settings({k: v for k, v in env.items() if v is not None})
+    if a.real and "felcloud" not in s.base_url:
+        raise SystemExit("--real is for the FelCloud host only: refusing to run")
     rng = random.Random(a.seed)
     a.rate = a.rate or DEFAULT_RATE.get(a.sim_profile, 30.0)
     turns = a.sim_profile == "capacity"
@@ -180,7 +187,7 @@ async def main() -> None:
     for e in errors:
         print("  EXCEPTION", e)
     with open(out.replace(".jsonl", ".summary.json"), "w") as f:
-        json.dump({"profile": a.sim_profile, "n": a.n, "unit": "turns" if turns else "calls", "rate": a.rate,
+        json.dump({"profile": a.sim_profile + ("+real" if a.real else ""), "n": a.n, "unit": "turns" if turns else "calls", "rate": a.rate,
                    "wall_s": round(wall, 1), "exceptions": errors}, f)
 
 
