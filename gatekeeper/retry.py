@@ -43,7 +43,8 @@ import httpx
 from config import ModelClass, Settings
 from gatekeeper.client import (ChatRequest, EmbedRequest, LLMClient, chars_per_token, estimate_tokens,
                                parse_chat, parse_embed, request_hash, set_chars_per_token)
-from gatekeeper.errors import (CeilingExceeded, ConcurrencyLimited, FatalError, LLMError, ModelSaturated,
+from gatekeeper.errors import (CeilingExceeded, ClassUnavailable, ConcurrencyLimited, FatalError, LLMError,
+                               ModelSaturated,
                                QuotaExhausted, QuotaInfo, TransientError, classify_exception,
                                classify_response, parse_quota)
 from gatekeeper.limiter import Clock, Limiter, Sleep
@@ -64,6 +65,7 @@ class RetryPolicy:
     timeout_midsize_background_s: float = 85.0
     timeout_compact_s: float = 30.0
     probe_timeout_s: float = 15.0         # the breaker's half-open probe
+    server_timeout_s: float = 90.0        # the proxy still counts an abandoned request until then (ghost slot)
     saturation_retries: int = 1           # mid-size
     compact_saturation_retries: int = 3
     backoff_base_s: float = 0.5
@@ -76,7 +78,8 @@ class RetryPolicy:
                    saturation_retries=s.saturation_retries, compact_saturation_retries=s.compact_max_retries,
                    timeout_midsize_interactive_s=s.timeout_midsize_interactive_s,
                    timeout_midsize_background_s=s.timeout_midsize_background_s,
-                   timeout_compact_s=s.timeout_compact_s, probe_timeout_s=s.breaker_probe_timeout_s)
+                   timeout_compact_s=s.timeout_compact_s, probe_timeout_s=s.breaker_probe_timeout_s,
+                   server_timeout_s=s.server_timeout_s)
 
     def timeout_for(self, model_class: ModelClass, priority: str | None, purpose: str | None = None) -> float:
         """Seconds a chat request may go without an answer: per class and priority, all under the server's 90 s.
@@ -190,6 +193,9 @@ class RetryingCaller:
         self.queue = queue or PriorityQueue(limiter, clock)
         # (model_class, error or None) after every chat attempt: feeds the router's circuit breakers
         self.observer: Callable[[ModelClass, LLMError | None], None] | None = None
+        # model class -> seconds until it is probed again, or None while it is usable (the router's breaker):
+        # a request waiting for a slot of a class that goes down is failed with ClassUnavailable, nothing sent
+        self.availability: Callable[[ModelClass], float | None] | None = None
         self.input_token_budget = input_token_budget
         cfg = getattr(client, "settings", None)
         if cfg is not None:
@@ -273,16 +279,30 @@ class RetryingCaller:
         extra_wait = total_wait_ms = 0.0
         for attempt in range(1, p.hard_cap + 1):
             req = state["req"]
-            async with self.queue.slot(kind, ctx.priority, ctx) as slot:
-                ctx.emit("generating" if kind == "chat" else "embedding", attempt=attempt,
-                         model_class=getattr(getattr(req, "model_class", None), "value", None))
-                t0 = self._clock()
-                try:
-                    resp: httpx.Response | None = await send(req)
-                    err = classify_response(resp)
-                except httpx.HTTPError as exc:
-                    resp, err = None, classify_exception(exc)
-                latency_ms = (self._clock() - t0) * 1000
+            cls = req.model_class if kind == "chat" else None
+            gate = None
+            if cls is not None and self.availability is not None and ctx.purpose != "probe":
+                gate = lambda c=cls: self.availability(c)           # a probe is how a down class is tested
+            try:
+                async with self.queue.slot(kind, ctx.priority, ctx, model_class=cls, unavailable=gate) as slot:
+                    ctx.emit("generating" if kind == "chat" else "embedding", attempt=attempt,
+                             model_class=getattr(getattr(req, "model_class", None), "value", None))
+                    t0 = self._clock()
+                    try:
+                        resp: httpx.Response | None = await send(req)
+                        err = classify_response(resp)
+                    except httpx.HTTPError as exc:
+                        resp, err = None, classify_exception(exc)
+                        if getattr(err, "timeout", False):          # the server still counts it: a ghost slot
+                            slot.ghost_for_s = max(0.0, p.server_timeout_s - (self._clock() - t0))
+                    except asyncio.CancelledError:                   # abandoned mid-flight: same, the server went on
+                        slot.ghost_for_s = max(0.0, p.server_timeout_s - (self._clock() - t0))
+                        raise
+                    latency_ms = (self._clock() - t0) * 1000
+            except ClassUnavailable as cu:                           # the breaker opened while we waited: nothing sent
+                ctx.emit("gave_up", error=cu.kind, retry_after_s=cu.retry_after_s)
+                cu.attempts = attempt - 1
+                raise
             wait_ms = (slot.wait_s + extra_wait) * 1000
             extra_wait = 0.0
             total_wait_ms += wait_ms
@@ -292,6 +312,8 @@ class RetryingCaller:
             if kind == "chat" and self.observer is not None:
                 self.observer(req.model_class, err)
             if err is None:
+                if cls is not None:
+                    self.limiter.clear_ghosts(cls)      # the class answers again: its old counts are gone
                 return resp, attempt, latency_ms, wait_ms, total_wait_ms, quota
 
             action, delay = self._decide(kind, err, attempt, state, fix_request)
@@ -338,6 +360,10 @@ class RetryingCaller:
                 return "raise", 0.0
             return "retry_after_interval", delay
         if isinstance(err, ConcurrencyLimited):
+            cls = state["req"].model_class if kind == "chat" else None
+            if cls is ModelClass.MIDSIZE and self.limiter.ghost_count(cls):
+                err.after_timeout = True           # the server still counts our timed-out request: not a retry
+                return "raise", 0.0                # case, not a breaker case; the engine falls back
             wait = min(err.retry_after_s or 1.0, p.concurrency_wait_s)
             return ("raise", 0.0) if last else ("wait_slot", wait)
         if isinstance(err, CeilingExceeded):

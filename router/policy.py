@@ -89,6 +89,7 @@ class Router:
                  breaker_threshold: int = 3, breaker_window_s: float = 60.0, breaker_cooldown_s: float = 30.0,
                  clock=time.monotonic, breaker_timeout_threshold: int = 1):
         self.sink, self.quota_low_threshold, self.routes = sink, quota_low_threshold, routes
+        self.cooldown_s = breaker_cooldown_s
         # one breaker per class that some task can fall back FROM (today: mid-size)
         self.breakers: dict[ModelClass, CircuitBreaker] = {
             cls: CircuitBreaker(breaker_threshold, breaker_window_s, breaker_cooldown_s, clock,
@@ -163,6 +164,15 @@ class Router:
         no probe out). The engine sends one tiny BACKGROUND request per class; the breaker closes or re-opens
         on its outcome. can_probe(cls) is checked first so a refused probe does not use up the grant."""
         return [cls for cls, br in self.breakers.items() if not br.closed and can_probe(cls) and br.allow()]
+
+    def unavailable_for(self, cls: ModelClass) -> float | None:
+        """None while the class is usable; else the seconds until it is probed again (never 0: a half-open class
+        is still unavailable to learners). Wired to the retry layer so queued requests of a class that goes down
+        are failed at once."""
+        br = self.breakers.get(cls)
+        if br is None or br.closed:
+            return None
+        return br.retry_in() or self.cooldown_s
 
     def retry_in(self, cls: ModelClass) -> float:
         """Seconds until the class is probed again (0 if its breaker is closed or already half-open)."""

@@ -73,6 +73,8 @@ class Settings:
     timeout_midsize_interactive_s: float = 40.0   # explain p95 is about 23 s, the 350-token cap about 30 s
     timeout_midsize_background_s: float = 85.0
     timeout_compact_s: float = 30.0
+    midsize_max_slots: int = 1                # mid-size may hold at most this many concurrency slots (ghosts included); 0 = no cap
+    interactive_deadline_s: float = 25.0      # an INTERACTIVE explain without a body by then is answered in fast mode
     max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
     max_retry_wait_s_background: float = 65.0  # BACKGROUND: the observed quota delay is 60 s
     concurrency_retry_wait_s: float = 2.0     # a concurrency 429 states 60 s, but the slot frees at once
@@ -224,6 +226,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         timeout_midsize_interactive_s=get("TIMEOUT_MIDSIZE_INTERACTIVE_S", float, defaults.timeout_midsize_interactive_s),
         timeout_midsize_background_s=get("TIMEOUT_MIDSIZE_BACKGROUND_S", float, defaults.timeout_midsize_background_s),
         timeout_compact_s=get("TIMEOUT_COMPACT_S", float, defaults.timeout_compact_s),
+        midsize_max_slots=get("MIDSIZE_MAX_SLOTS", int, defaults.midsize_max_slots),
+        interactive_deadline_s=get("INTERACTIVE_DEADLINE_S", float, defaults.interactive_deadline_s),
         max_retry_wait_s=get("MAX_RETRY_WAIT_S", float, defaults.max_retry_wait_s),
         max_retry_wait_s_background=get("MAX_RETRY_WAIT_S_BACKGROUND", float, defaults.max_retry_wait_s_background),
         concurrency_retry_wait_s=get("CONCURRENCY_RETRY_WAIT_S", float, defaults.concurrency_retry_wait_s),

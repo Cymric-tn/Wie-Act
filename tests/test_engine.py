@@ -191,8 +191,10 @@ async def test_both_classes_saturated_explain_still_gets_extractive_answer(vt):
     assert fake.models() == ["mid-a"] * 2 + ["compact-a"]                # framing: no saturation retries
     assert Result.model_validate(r.model_dump()) == r                    # well-formed, serializable
     assert runs(sink)[-1].mode == "fast_extractive"
-    await eng.run("explain", Q_EXPLAIN)
-    assert len(fake.requests) == 6                                       # never cached
+    r2 = await eng.run("explain", Q_EXPLAIN)
+    # never cached: mid-size is asked again. Its saturation is the 3rd within the window, so the breaker opens, the
+    # retry is not sent (the request waiting for a slot is failed at once) and the fast mode makes no framing call
+    assert fake.models()[3:] == ["mid-a"] and r2.mode == "fast_extractive"
 
 
 async def test_midsize_saturated_explain_falls_back_to_fast_mode_visibly(vt):
