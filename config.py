@@ -70,6 +70,9 @@ class Settings:
     truncation_chars_per_token: float = 5.0   # prompt_tokens < prompt chars / this = the provider cut the input; 0 = off
     request_timeout_s: float = 85.0
     server_timeout_s: float = 90.0            # FelCloud's proxy cuts a request at 90 s and still counts it for a while
+    timeout_midsize_interactive_s: float = 40.0   # explain p95 is about 23 s, the 350-token cap about 30 s
+    timeout_midsize_background_s: float = 85.0
+    timeout_compact_s: float = 30.0
     max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
     max_retry_wait_s_background: float = 65.0  # BACKGROUND: the observed quota delay is 60 s
     concurrency_retry_wait_s: float = 2.0     # a concurrency 429 states 60 s, but the slot frees at once
@@ -182,6 +185,14 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         raise ConfigError("OUTPUT_CAP_MODE must be 'options', 'max_tokens' or 'both'")
 
     defaults = Settings(base_url="", api_key="", models={}, embed_model="")
+    server_s = get("SERVER_TIMEOUT_S", float, defaults.server_timeout_s)
+    for var, dflt in (("TIMEOUT_MIDSIZE_INTERACTIVE_S", defaults.timeout_midsize_interactive_s),
+                      ("TIMEOUT_MIDSIZE_BACKGROUND_S", defaults.timeout_midsize_background_s),
+                      ("TIMEOUT_COMPACT_S", defaults.timeout_compact_s), ("REQUEST_TIMEOUT_S", defaults.request_timeout_s),
+                      ("BREAKER_PROBE_TIMEOUT_S", defaults.breaker_probe_timeout_s)):
+        if get(var, float, dflt) >= server_s:
+            raise ConfigError(f"{var} must stay under SERVER_TIMEOUT_S ({server_s:g} s): a client that waits as long "
+                              f"as the proxy never sees its error")
     task_caps = {name: get(var, int, defaults.task_max_tokens[name]) for name, var in (
         ("classify", "CLASSIFY_MAX_TOKENS"), ("hint", "HINT_MAX_TOKENS"), ("grade", "GRADE_MAX_TOKENS"),
         ("compress", "COMPRESS_MAX_TOKENS"), ("explain", "EXPLAIN_MAX_TOKENS"),
@@ -210,6 +221,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         truncation_chars_per_token=get("INPUT_TRUNCATION_CHARS_PER_TOKEN", float, defaults.truncation_chars_per_token),
         request_timeout_s=get("REQUEST_TIMEOUT_S", float, defaults.request_timeout_s),
         server_timeout_s=get("SERVER_TIMEOUT_S", float, defaults.server_timeout_s),
+        timeout_midsize_interactive_s=get("TIMEOUT_MIDSIZE_INTERACTIVE_S", float, defaults.timeout_midsize_interactive_s),
+        timeout_midsize_background_s=get("TIMEOUT_MIDSIZE_BACKGROUND_S", float, defaults.timeout_midsize_background_s),
+        timeout_compact_s=get("TIMEOUT_COMPACT_S", float, defaults.timeout_compact_s),
         max_retry_wait_s=get("MAX_RETRY_WAIT_S", float, defaults.max_retry_wait_s),
         max_retry_wait_s_background=get("MAX_RETRY_WAIT_S_BACKGROUND", float, defaults.max_retry_wait_s_background),
         concurrency_retry_wait_s=get("CONCURRENCY_RETRY_WAIT_S", float, defaults.concurrency_retry_wait_s),

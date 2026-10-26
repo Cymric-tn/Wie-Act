@@ -60,6 +60,10 @@ class RetryPolicy:
     max_wait_s: float = 30.0              # INTERACTIVE: longest stated delay it will wait for
     max_wait_background_s: float = 65.0   # BACKGROUND: the observed quota delay is 60 s
     concurrency_wait_s: float = 2.0       # cap on a concurrency 429's stated delay
+    timeout_midsize_interactive_s: float = 40.0
+    timeout_midsize_background_s: float = 85.0
+    timeout_compact_s: float = 30.0
+    probe_timeout_s: float = 15.0         # the breaker's half-open probe
     saturation_retries: int = 1           # mid-size
     compact_saturation_retries: int = 3
     backoff_base_s: float = 0.5
@@ -69,7 +73,21 @@ class RetryPolicy:
     def from_settings(cls, s: Settings) -> "RetryPolicy":
         return cls(max_attempts=s.max_attempts, max_wait_s=s.max_retry_wait_s,
                    max_wait_background_s=s.max_retry_wait_s_background, concurrency_wait_s=s.concurrency_retry_wait_s,
-                   saturation_retries=s.saturation_retries, compact_saturation_retries=s.compact_max_retries)
+                   saturation_retries=s.saturation_retries, compact_saturation_retries=s.compact_max_retries,
+                   timeout_midsize_interactive_s=s.timeout_midsize_interactive_s,
+                   timeout_midsize_background_s=s.timeout_midsize_background_s,
+                   timeout_compact_s=s.timeout_compact_s, probe_timeout_s=s.breaker_probe_timeout_s)
+
+    def timeout_for(self, model_class: ModelClass, priority: str | None, purpose: str | None = None) -> float:
+        """Seconds a chat request may go without an answer: per class and priority, all under the server's 90 s.
+        A learner waiting (INTERACTIVE) is given less than background work; the breaker probe the least."""
+        if model_class is ModelClass.COMPACT:
+            base = self.timeout_compact_s
+        elif priority == "BACKGROUND":
+            base = self.timeout_midsize_background_s
+        else:
+            base = self.timeout_midsize_interactive_s
+        return min(base, self.probe_timeout_s) if purpose == "probe" else base
 
     @property
     def hard_cap(self) -> int:
@@ -205,7 +223,7 @@ class RetryingCaller:
         state = {"fixed": False, "saturated": 0, "req": req}
 
         async def send(r: ChatRequest) -> httpx.Response:
-            return await self.client.chat(r)
+            return await self.client.chat(r, timeout=self.policy.timeout_for(r.model_class, ctx.priority, ctx.purpose))
 
         resp, attempt, latency_ms, wait_ms, total_wait_ms, quota = await self._run(
             "chat", ctx, state, send, fix_request)
