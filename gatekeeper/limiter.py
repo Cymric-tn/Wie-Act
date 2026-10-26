@@ -144,7 +144,7 @@ class SlidingWindow(_Gate):
     def _prune(self) -> float:
         now = self._clock()
         cut = 0
-        while cut < len(self._log) and self._log[cut][0] + self._span() <= now + _EPS:
+        while cut < len(self._log) and self._log[cut][0] + self._span() <= now:      # exact: no early admission
             cut += 1
         del self._log[:cut]
         return now
@@ -155,12 +155,15 @@ class SlidingWindow(_Gate):
         return 0.0 if self._blocked_until > now else float(max(0, self.limit - len(self._log)))
 
     def wait_time(self, n: float = 1.0) -> float:
+        """Seconds until n more sends fit. A wait overshoots by _EPS (1 ns, far above the float resolution of the
+        clock) so that sleeping it always reaches the exact expiry: no early admission, and no sleep that cannot
+        advance the clock."""
         now = self._prune()
-        w = max(0.0, self._blocked_until - now)
+        w = self._blocked_until - now
         need = len(self._log) + int(n) - self.limit      # sends that must expire before n more may go
         if need > 0:
             w = max(w, self._log[min(need, len(self._log)) - 1][0] + self._span() - now)
-        return 0.0 if w <= _EPS else w
+        return w + _EPS if w > 0 else 0.0
 
     def try_take(self, n: float = 1.0) -> float:
         """Record n sends now if the window has room and return 0, else return the seconds to wait."""

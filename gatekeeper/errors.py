@@ -169,7 +169,7 @@ def classify_response(resp: httpx.Response) -> LLMError | None:
     if 200 <= s < 300:
         return None
     etype, msg = _error_fields(resp)
-    low = f"{etype} {msg}".lower()
+    low = f"{etype} {msg} {resp.headers.get('rate_limit_type', '')}".lower()   # FelCloud 429s name the limit type in a header too
     ra = parse_retry_after(resp, msg)
 
     # CONFIRMED(felcloud, recon_log.jsonl 2026-10-22 15:18:57): LiteLLM cooldown arrives as
