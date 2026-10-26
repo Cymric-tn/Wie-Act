@@ -1,0 +1,84 @@
+{
+ "classify": {
+  "n": 5,
+  "p50_ms": 1852.3,
+  "max_ms": 7054.8,
+  "over_60s": []
+ },
+ "explain": {
+  "n": 3,
+  "p50_ms": 12848.4,
+  "max_ms": 14176.0,
+  "over_60s": []
+ },
+ "repeat": {
+  "from_cache": true,
+  "provider_requests": 0
+ },
+ "calls": [
+  {
+   "task": "classify",
+   "lang": "FRENCH",
+   "latency_ms": 1852.3,
+   "cache": false,
+   "degraded": false,
+   "reason": null
+  },
+  {
+   "task": "classify",
+   "lang": "ENGLISH",
+   "latency_ms": 1580.2,
+   "cache": false,
+   "degraded": false,
+   "reason": null
+  },
+  {
+   "task": "classify",
+   "lang": "ARABIC",
+   "latency_ms": 7054.8,
+   "cache": false,
+   "degraded": false,
+   "reason": null
+  },
+  {
+   "task": "classify",
+   "lang": "DARIJA-AR",
+   "latency_ms": 6594.6,
+   "cache": false,
+   "degraded": false,
+   "reason": null
+  },
+  {
+   "task": "classify",
+   "lang": "ARABIZI",
+   "latency_ms": 1593.6,
+   "cache": false,
+   "degraded": false,
+   "reason": null
+  },
+  {
+   "task": "explain",
+   "lang": "FRENCH",
+   "latency_ms": 14176.0,
+   "cache": false,
+   "degraded": false,
+   "reason": null
+  },
+  {
+   "task": "explain",
+   "lang": "ENGLISH",
+   "latency_ms": 12848.4,
+   "cache": false,
+   "degraded": false,
+   "reason": null
+  },
+  {
+   "task": "explain",
+   "lang": "ARABIC",
+   "latency_ms": 11012.0,
+   "cache": false,
+   "degraded": false,
+   "reason": null
+  }
+ ]
+}
