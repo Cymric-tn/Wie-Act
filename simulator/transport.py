@@ -9,6 +9,9 @@ Constraint simulator: an httpx transport that sits in front of the real provider
   |                           | litellm: 429 all_deployments_in_cooldown + Retry-After     |
   | too many in flight        | 429 concurrency_limit + Retry-After                         |
   | beyond a ceiling          | 400 naming the ceiling (max_tokens / prompt tokens)         |
+  | class hangs (outage)      | no answer: the client times out (httpx.ReadTimeout at its    |
+  |                           | read timeout) while the "server" keeps counting the request  |
+  |                           | in flight until SERVER_TIMEOUT_S (or hang_s) after arrival   |
   | normal                    | provider's 200 + quota headers, after extra per-class delay |
 
 Ported from mock_server.py (which stays usable as a standalone HTTP mock).
@@ -50,6 +53,7 @@ class ConstraintSimulator(httpx.AsyncBaseTransport):
         self.in_flight = 0
         self.midsize_in_flight = 0
         self.stats = SimStats()
+        self._bg: set[asyncio.Task] = set()     # server-side bookkeeping of hung requests
         self.force: str | None = None    # tests/demo: "quota" | "saturated" | "ceiling" | "transient"
 
     def apply_profile(self, name: str) -> None:
@@ -76,6 +80,8 @@ class ConstraintSimulator(httpx.AsyncBaseTransport):
         return await self.inner.handle_async_request(request)
 
     async def aclose(self) -> None:
+        for t in list(self._bg):
+            t.cancel()
         await self.inner.aclose()
 
     # ------------------------------------------------------------------ helpers
@@ -158,6 +164,8 @@ class ConstraintSimulator(httpx.AsyncBaseTransport):
             return self._refuse(request, 500, "server_error", "upstream error")
 
         is_mid = cls is ModelClass.MIDSIZE
+        if (is_mid and self.cfg.hang_midsize) or (cls is ModelClass.COMPACT and self.cfg.hang_compact):
+            return await self._hang(request)
         self.in_flight += 1
         self.midsize_in_flight += is_mid
         self.stats.max_in_flight = max(self.stats.max_in_flight, self.in_flight)
@@ -173,6 +181,33 @@ class ConstraintSimulator(httpx.AsyncBaseTransport):
             for k, v in self._quota_headers(self.chat_bucket).items():
                 resp.headers[k] = v
         return resp
+
+    async def _hang(self, request: httpx.Request) -> httpx.Response:
+        """The class accepts the request and never answers (hang_s=None) or answers after hang_s seconds.
+        The client gives up at its read timeout (httpx.ReadTimeout, as the real client does); the "server"
+        keeps the request in flight until it ends by itself (hang_s, or the proxy's SERVER_TIMEOUT_S), whether
+        or not the client is still there: this is why a retry right after a timeout is refused with a 429."""
+        hang_s, server_s = self.cfg.hang_s, self.settings.server_timeout_s
+        self.in_flight += 1
+        self.stats.max_in_flight = max(self.stats.max_in_flight, self.in_flight)
+
+        async def server_side() -> None:
+            try:
+                await self._sleep(min(hang_s, server_s) if hang_s is not None else server_s)
+            finally:
+                self.in_flight -= 1
+        task = asyncio.get_running_loop().create_task(server_side())
+        self._bg.add(task)
+        task.add_done_callback(self._bg.discard)
+
+        read_timeout = (request.extensions.get("timeout") or {}).get("read")
+        if hang_s is not None and (read_timeout is None or hang_s <= read_timeout):
+            await self._sleep(hang_s)
+            return await self._forward(request)
+        await self._sleep(read_timeout if read_timeout is not None else server_s)
+        if read_timeout is None:
+            return self._refuse(request, 504, "gateway_timeout", "upstream timed out")
+        raise httpx.ReadTimeout("simulated hang: no answer", request=request)
 
     # ------------------------------------------------------------------ embeddings
     async def _embed(self, request: httpx.Request) -> httpx.Response:
