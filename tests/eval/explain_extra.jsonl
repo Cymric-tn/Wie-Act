@@ -1,0 +1,10 @@
+{"id": "x-fr-1", "language": "FRENCH", "question": "Comment dériver un quotient u/v ?", "expected": "derivee-formules.fr#produit-et-quotient"}
+{"id": "x-fr-2", "language": "FRENCH", "question": "Pourquoi la dérivée d'une constante est-elle nulle ?", "expected": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"}
+{"id": "x-fr-3", "language": "FRENCH", "question": "Que représente graphiquement le nombre dérivé en un point ?", "expected": "derivee-definition.fr#interpretation-graphique-la-tangente"}
+{"id": "x-fr-4", "language": "FRENCH", "question": "Comment dériver un polynôme terme par terme ?", "expected": "derivee-formules.fr#somme-et-produit-par-une-constante"}
+{"id": "x-en-1", "language": "ENGLISH", "question": "How does the sign of the derivative tell me whether a function is increasing?", "expected": "derivative-variations.en#sign-of-the-derivative-and-monotonicity"}
+{"id": "x-en-2", "language": "ENGLISH", "question": "How do I find where a function has a minimum?", "expected": "derivative-variations.en#finding-a-maximum-or-a-minimum"}
+{"id": "x-en-3", "language": "ENGLISH", "question": "Can you show me a worked example of finding an extremum?", "expected": "derivative-variations.en#worked-example"}
+{"id": "x-ar-1", "language": "ARABIC", "question": "ما علاقة إشارة المشتقة باتجاه تغير الدالة؟", "expected": "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة"}
+{"id": "x-ar-2", "language": "ARABIC", "question": "ما هي مشتقة x تربيع و x تكعيب؟", "expected": "mochtaqa.ar#مشتقات-الدوال-المألوفة"}
+{"id": "x-ar-3", "language": "ARABIC", "question": "كيف أحسب العدد المشتق باستعمال معدل التغير؟", "expected": "mochtaqa.ar#تعريف-العدد-المشتق"}

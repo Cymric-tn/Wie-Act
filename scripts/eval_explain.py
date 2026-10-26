@@ -25,19 +25,22 @@ from metrics import MemorySink
 
 DATASETS = ["tests/eval/retrieval_set.jsonl", "tests/eval/retrieval_crosslang.jsonl",
             "tests/eval/retrieval_manual.jsonl"]
+EXTRA = "tests/eval/explain_extra.jsonl"       # 10 more FRENCH / ENGLISH / ARABIC questions (--extra)
 
 
 async def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=int, default=1, help="repeat the whole set (fresh cache each run)")
     ap.add_argument("--out", default="reports/eval_explain.json")
+    ap.add_argument("--extra", action="store_true", help=f"also ask the questions of {EXTRA}")
     a = ap.parse_args()
     env = {**dotenv_values(os.environ.get("ENV_FILE", ".env")), **os.environ, "SIMULATE_CONSTRAINTS": "false"}
     s = load_settings({k: v for k, v in env.items() if v is not None})
-    items = [json.loads(line) for p in DATASETS for line in open(p, encoding="utf-8") if line.strip()]
+    items = [json.loads(line) for p in DATASETS + ([EXTRA] if a.extra else []) for line in open(p, encoding="utf-8") if line.strip()]
     items = [x for x in items if x["expected"]]
 
     outcomes, counts, saved = Counter(), Counter(), []
+    lat, tout = [], []
     for run_no in range(1, a.runs + 1):
         async with Engine.create(s, sink=MemorySink(), cache=ExactCache(":memory:", s.cache_ttl_s)) as engine:
             for x in items:
@@ -53,10 +56,20 @@ async def main() -> None:
                     counts["loop_fast_mode"] += "explain_guard:degenerate" in reasons
                     for key in ("wrong_math", "ungrounded", "new_examples"):
                         counts[key] += bool(r.notes.get(key))
+                    counts["language_drift"] += "explain_guard:language_drift" in reasons
+                    counts["contamination"] += any(x.endswith(":contamination") for x in reasons)
+                    counts["truncated_output"] += bool(r.notes.get("truncated_output"))
+                    counts["formulas_verified"] += r.notes.get("formulas_verified") or 0
+                    counts["answers_with_verified"] += bool(r.notes.get("formulas_verified"))
+                    if not r.from_cache:
+                        lat.append(r.latency_ms / 1000)
+                        tout.append(r.tokens_out)
                 spans = {k: r.notes[k] for k in ("wrong_math", "ungrounded", "new_examples") if r.notes.get(k)}
                 print(f"run{run_no} {x['id']:7} {x['language']:8} {kind:30} {r.latency_ms / 1000:5.1f}s  {spans}")
                 saved.append({"run": run_no, "id": x["id"], "question": x["question"], "language": x["language"],
-                              "outcome": kind, "reasons": reasons, "body": (r.data or {}).get("body"),
+                              "outcome": kind, "reasons": reasons, "latency_s": round(r.latency_ms / 1000, 1),
+                              "tokens_out": r.tokens_out, "from_cache": r.from_cache,
+                              "truncated_output": bool(r.notes.get("truncated_output")), "body": (r.data or {}).get("body"),
                               **{k: r.notes.get(k, []) for k in ("wrong_math", "ungrounded", "new_examples")},
                               "sources": r.notes.get("sources", [])})
 
@@ -73,6 +86,14 @@ async def main() -> None:
     print(f"new examples:     {pct(counts['new_examples'], n)} answers")
     print(f"wrong_math:       {pct(counts['wrong_math'], n)}")
     print(f"ungrounded:       {pct(counts['ungrounded'], n)}")
+    print(f"language_drift:   {pct(counts['language_drift'], n)}")
+    print(f"contamination:    {pct(counts['contamination'], n)}")
+    print(f"truncated_output: {pct(counts['truncated_output'], n)}")
+    print(f"formulas verified (sympy): {counts['formulas_verified']} in {counts['answers_with_verified']} answers")
+    if tout:
+        q = lambda v, f: sorted(v)[min(len(v) - 1, round(f * (len(v) - 1)))]
+        print(f"output tokens / generated answer: mean {sum(tout) / len(tout):.1f} (n={len(tout)}); "
+              f"latency p50 {q(lat, .5):.1f}s p95 {q(lat, .95):.1f}s")
     print(f"outcomes: {dict(outcomes)}")
 
 
