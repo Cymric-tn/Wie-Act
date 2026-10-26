@@ -1,8 +1,8 @@
 """Load run against the REAL provider (simulator off). Same question pools and Poisson arrivals as load_test.
 
-    ENV_FILE=<felcloud profile> python -m scripts.load_felcloud --n 30 [--rate 30] [--seed 1]
+    ENV_FILE=<felcloud profile> python -m scripts.load_felcloud --n 30 [--rate 30] [--seed 1] [--out metrics/load_felcloud.jsonl]
 
-Writes metrics/load_felcloud.jsonl (truncated at start) and metrics/load_felcloud.summary.json.
+Writes --out (default metrics/load_felcloud.jsonl; truncated at start) and metrics/load_felcloud.summary.json.
 Refuses to run if SIMULATE_CONSTRAINTS is on or the base URL is not the FelCloud host.
 """
 from __future__ import annotations
@@ -29,9 +29,10 @@ async def main() -> None:
     ap.add_argument("--mix", default="interactive:0.8,background:0.2")
     ap.add_argument("--rate", type=float, default=30.0, help="arrivals per minute (Poisson)")
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--out", default="metrics/load_felcloud.jsonl")
     a = ap.parse_args()
 
-    out = "metrics/load_felcloud.jsonl"
+    out = a.out
     if os.path.exists(out):
         os.remove(out)
     env = {**dotenv_values(os.environ.get("ENV_FILE", ".env")), **os.environ,
