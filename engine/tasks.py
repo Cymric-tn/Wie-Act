@@ -470,6 +470,18 @@ def _explain_render(p: PromptTemplate, inputs: Mapping, ctx: TaskContext, chunks
     return msgs
 
 
+_SENTENCE_END = re.compile(r"[.!?…؟](?:[\"')\]»”*_]*)(?=\s|$)")
+
+
+def trim_to_last_sentence(text: str) -> str:
+    """Cut a reply that hit its output cap back to its last complete sentence. A reply with no sentence
+    end (or only one very early) is returned whole: a cut answer beats an empty one."""
+    ends = [m.end() for m in _SENTENCE_END.finditer(text)]
+    if not ends or ends[-1] < 0.3 * len(text.rstrip()) and len(text) > 200:
+        return text.strip()
+    return text[:ends[-1]].strip()
+
+
 def _explain_finalize(text: str, p: PromptTemplate, inputs: Mapping, ctx: TaskContext) -> tuple[str, str | None]:
     t = text.strip()
     if not t:

@@ -73,7 +73,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\sffamily\small\color{slate}EdNova LLM Engine — integration \& technical guide}
-\fancyhead[R]{\sffamily\small\color{slate}v1 (frozen)}
+\fancyhead[R]{\sffamily\small\color{slate}v1.1}
 \fancyfoot[C]{\sffamily\small\color{slate}\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
@@ -137,7 +137,7 @@
 {\small IEEE WIE ACT 5.0 · EdNova Technical Challenge}\\[0.9em]
 {\fontsize{30}{34}\selectfont\bfseries EdNova LLM Engine}\\[0.6em]
 {\Large Integration and technical guide}\\[0.4em]
-{\normalsize engine v1 (frozen 2026-10-24)}\par}
+{\normalsize engine v1.1 (v1 frozen 2026-10-24; v1.1 2026-10-26)}\par}
 \vspace{3.4cm}
 
 \begin{minipage}{0.92\textwidth}
@@ -158,7 +158,7 @@ Tasks & classify · hint · explain (RAG) · grade · quiz · compress (+ your o
 Model classes & \textit{compact} (default for everything) and \textit{mid-size} (explain only)\\
 Guarantee & never raises a provider error: every failure comes back as a degraded \texttt{Result} with a reason\\
 Platform & any OpenAI-compatible API (FelCloud, Ollama); switching = editing \texttt{.env}\\
-Tests & 351 unit + 5 integration, all passing\\
+Tests & 444 unit + 5 integration, all passing\\
 Measured & 0 exceptions in 4 load profiles · 75–100\,\% of calls on compact · 28–61\,\% cache hits\\
 \end{tabularx}
 \end{tcolorbox}
@@ -197,7 +197,7 @@ limits, how to ground an explanation in course material, and how to measure all 
   \node[tbox, below=0.9cm of core.south, minimum width=13.2cm, text width=12.8cm] (cache) {\textbf{Cache} (SQLite): exact answers (7 days) · negative markers (10 min) · identical in-flight requests coalesced};
   % gatekeeper
   \node[box, below=0.95cm of cache.south west, anchor=north west, minimum width=2.65cm, minimum height=1.25cm] (queue) {\textbf{Priority queue}\\[-1pt]{\scriptsize interactive first}};
-  \node[box, right=0.32cm of queue, minimum width=2.65cm, minimum height=1.25cm] (lim) {\textbf{Limiter}\\[-1pt]\scriptsize token bucket\\+ semaphore};
+  \node[box, right=0.32cm of queue, minimum width=2.65cm, minimum height=1.25cm] (lim) {\textbf{Limiter}\\[-1pt]\scriptsize sliding window\\+ semaphore};
   \node[box, right=0.32cm of lim, minimum width=2.65cm, minimum height=1.25cm] (retry) {\textbf{Retry}\\[-1pt]\scriptsize contract-driven\\actions};
   \node[box, right=0.32cm of retry, minimum width=2.65cm, minimum height=1.25cm] (err) {\textbf{Errors}\\[-1pt]\scriptsize response →\\typed error};
   \node[box, right=0.32cm of err, minimum width=2.65cm, minimum height=1.25cm] (cli) {\textbf{Client}\\[-1pt]\scriptsize OpenAI-compatible\\httpx};
@@ -250,7 +250,7 @@ Requirements: Python 3.10+ (the code avoids 3.11-only features), and the package
 pip install -r requirements.txt
 cp .env.example .env            # then fill LLM_BASE_URL, LLM_API_KEY, MODEL_* (see section 13)
 python -m scripts.index_docs    # chunk data/docs/*.md into data/index/chunks.json (no LLM call)
-pytest -q                       # 351 unit tests, no LLM needed
+pytest -q                       # 444 unit tests, no LLM needed
 python -m scripts.smoke         # one real call per task
 python -m scripts.chat          # interactive console: one line = one learner turn
 \end{lstlisting}
@@ -609,7 +609,8 @@ quota\_low & local quota tokens < \texttt{QUOTA\_LOW\_THRESHOLD}: explain sent t
 breaker\_open & mid-size had 3 saturations in 60 s: skipped for 30 s & same\\
 midsize\_saturated & mid-size refused after retries: runtime fallback & same\\
 service\_busy & every class saturated / concurrency refused (\texttt{eta\_seconds} set) & ``busy, retry in N s''\\
-quota\_exhausted & quota wait longer than \texttt{MAX\_RETRY\_WAIT\_S} (\texttt{eta\_seconds} set) & same\\
+quota\_exhausted & stated quota delay longer than \texttt{MAX\_RETRY\_WAIT\_S} (BACKGROUND: \texttt{\_BACKGROUND}); \texttt{eta\_seconds} = the remaining block & same\\
+input\_truncated & the provider cut the start of the prompt (\texttt{prompt\_tokens} far below the prompt size); never cached & show a fallback; shorten the input\\
 service\_unavailable & transient 5xx/network errors exhausted (\texttt{eta\_seconds} set) & same\\
 request\_too\_large & prompt cannot be trimmed under the ceiling & shorten history/input\\
 provider\_error & other 4xx (bad key, unknown model\dots) & alert; check config\\
@@ -694,13 +695,13 @@ this is what makes the metrics trustworthy.
 \centering
 \begin{tikzpicture}[node distance=0.55cm]
   \node[box, minimum width=2.4cm, minimum height=1.4cm] (q) {\textbf{Priority queue}\\\scriptsize INTERACTIVE ≺\\BACKGROUND, FIFO};
-  \node[box, right=of q, minimum width=2.6cm, minimum height=1.4cm] (b) {\textbf{Token bucket}\\\scriptsize 20/min, burst 20\\continuous refill};
+  \node[box, right=of q, minimum width=2.6cm, minimum height=1.4cm] (b) {\textbf{Sliding window}\\\scriptsize 20 per 60 s\\any rolling minute};
   \node[box, right=of b, minimum width=2.4cm, minimum height=1.4cm] (sem) {\textbf{Semaphore}\\\scriptsize max 2\\in flight};
   \node[box, right=of sem, minimum width=2.2cm, minimum height=1.4cm] (c) {\textbf{Client}\\\scriptsize POST\\/chat/completions};
   \node[rbox, right=of c, minimum width=1.9cm, minimum height=1.4cm] (p) {\textbf{Provider}};
   \node[abox, below=1.1cm of sem, minimum width=4.6cm] (e) {\texttt{errors.classify\_response}\\{\scriptsize status + body + headers → typed error}};
   \node[abox, left=0.9cm of e, minimum width=3.6cm] (r) {\texttt{retry.\_decide}\\{\scriptsize one action per error}};
-  \node[tbox, above=0.7cm of b, minimum width=5.6cm] (h) {quota headers on 200 → bucket can only go \emph{down}};
+  \node[tbox, above=0.7cm of b, minimum width=5.6cm] (h) {quota headers on 200 → phantom entries, never above server};
   \draw[arr] (q) -- (b); \draw[arr] (b) -- (sem); \draw[arr] (sem) -- (c); \draw[arr] (c) -- (p);
   \draw[arr] (p.south) |- (e.east);
   \draw[arr] (e) -- (r);
@@ -708,23 +709,24 @@ this is what makes the metrics trustworthy.
   \draw[darr] (p.north) |- (h.east);
   \draw[darr] (h.south) -- (b.north);
 \end{tikzpicture}
-\caption{The gatekeeper path of one attempt. Quota waits happen in the bucket and never hold a concurrency slot.}
+\caption{The gatekeeper path of one attempt. Quota waits happen in the window and never hold a concurrency slot.}
 \label{fig:gatekeeper}
 \end{figure}
 
 \subsection{Rate and concurrency are two mechanisms}
 
 \begin{itemize}
-  \item \textbf{Token bucket} (rate): capacity \texttt{RATE\_BURST} (20), refilled continuously at
-  \texttt{RATE\_LIMIT\_PER\_MIN}/60 tokens per second. A request needs one token. Embeddings have their own
-  bucket (60/min), because the platform has a separate embeddings quota.
+  \item \textbf{Sliding window} (rate): a log of send times; at most \texttt{RATE\_LIMIT\_PER\_MIN} (20) sends in
+  any rolling \texttt{RATE\_WINDOW\_S} (60) seconds. FelCloud keeps the key closed for the full minute after the
+  21st request, so a bucket with a burst reserve overshoots it. Embeddings have their own window (60/min),
+  because the platform has a separate embeddings quota.
   \item \textbf{Semaphore} (concurrency): at most \texttt{MAX\_CONCURRENT} (2) requests in flight, shared by
   chat and embeddings (assumed per key).
-  \item A request waits for a rate token \emph{before} taking a slot, and spends the token only once
+  \item A request waits for a free window slot \emph{before} taking a concurrency slot, and records its send only once
   it has the slot. So a quota wait never blocks a slot, and requests queued on the semaphore cannot
-  burst past the bucket.
-  \item \textbf{Server feedback}: \texttt{x-ratelimit-api\_key-remaining-requests} on every 200 can only
-  \emph{lower} the local count; a stated quota delay blocks the bucket until it expires.
+  burst past the window.
+  \item \textbf{Server feedback}: \texttt{x-ratelimit-api\_key-remaining-requests} on every 200 adds phantom
+  entries when it is below the local free count, so local never exceeds the server; a stated quota delay blocks the window until it expires.
 \end{itemize}
 
 \subsection{Priority queue}
@@ -748,9 +750,9 @@ of how long requests hold a slot, which gives the \texttt{eta\_s} of \texttt{que
 \toprule
 \textbf{Provider says} & \textbf{Typed error} & \textbf{Action} & \textbf{Event}\\
 \midrule
-429 quota (any 429 that is not cooldown/concurrency) & \texttt{QuotaExhausted} & wait the stated delay on the \emph{same} model (never hop: the quota is per key); > 30 s → give up with \texttt{eta} & \texttt{wait\_stated\_delay}\\
+429 quota (\texttt{rate\_limit\_type: requests}, \texttt{retry-after: 60}; any 429 that is not cooldown/concurrency) & \texttt{QuotaExhausted} & delay = the \texttt{retry-after} header only; the window is blocked until it expires; BACKGROUND waits up to 65 s, INTERACTIVE up to 30 s, otherwise give up with \texttt{eta} = the remaining block; never hop models (the quota is per key) & \texttt{wait\_stated\_delay}\\
 503 + Retry-After, or LiteLLM 429 \texttt{all\_deployments\_in\_cooldown} & \texttt{ModelSaturated} & mid-size: retry once, then the router falls back. compact: up to 3 retries & \texttt{retry\_after\_interval}\\
-429 parallel/concurrent & \texttt{ConcurrencyLimited} & wait Retry-After & \texttt{wait\_slot}\\
+429 parallel/concurrent (\texttt{rate\_limit\_type: max\_parallel\_requests}) & \texttt{ConcurrencyLimited} & wait \texttt{min(Retry-After, CONCURRENCY\_RETRY\_WAIT\_S)} = 2 s (it states 60 s) & \texttt{wait\_slot}\\
 400 naming a ceiling & \texttt{CeilingExceeded} & fix once (trim \texttt{max\_tokens} or the longest message), retry once & \texttt{fix\_request}\\
 5xx, network, timeout & \texttt{TransientError} & exponential backoff + full jitter (only when no delay is stated) & \texttt{backoff}\\
 other 4xx & \texttt{FatalError} & give up immediately & \texttt{gave\_up}\\
@@ -765,9 +767,11 @@ FelCloud is a LiteLLM proxy behind Caddy (server timeout 90 s → client timeout
 arrived as \textbf{429 \texttt{all\_deployments\_in\_cooldown}} with \texttt{Retry-After: 5}, not the annex's
 503, so both are mapped to \texttt{ModelSaturated}. There was \textbf{no 400 for long prompts}: input was
 \textbf{silently truncated near 2048 tokens}. The client therefore enforces its own input budget
-(\texttt{INPUT\_TOKEN\_BUDGET}=1800, estimated at 2 characters per token, a measured upper bound) and trims
-\emph{before} sending. The quota-exhausted shape was never triggered: it is marked
-\texttt{ASSUMPTION(felcloud)} in \texttt{errors.py}, where a contract change is a one-line fix.
+(\texttt{INPUT\_TOKEN\_BUDGET}=1800 then) and trims \emph{before} sending.
+\end{note}
+
+\begin{note}[Updated by the probes of 26 Oct (engine v1.1)]
+Both 429 refusals were observed: status 429, \texttt{retry-after: 60}, \texttt{rate\_limit\_type} \texttt{requests} or \texttt{max\_parallel\_requests}; \texttt{Limit resets at} in the body is the refusal time plus 60 s and is ignored. Both are \texttt{CONFIRMED(felcloud)} in \texttt{errors.py}, with the real responses as test fixtures. The input window is about \textbf{4,096 tokens}, and overflow silently drops the \emph{start} of the prompt, so the engine checks estimated prompt + output cap against \texttt{CONTEXT\_WINDOW} × 0.85, estimates at 2.3 characters per token (Arabizi, the worst measured case), raises \texttt{INPUT\_TOKEN\_BUDGET} to 2800, and degrades any answer whose \texttt{prompt\_tokens} shows the input was cut (\texttt{input\_truncated}). \texttt{max\_tokens} is ignored; only a top-level \texttt{options.num\_predict} caps the output, and \texttt{finish\_reason} stays \texttt{stop} when it cuts, so \texttt{completion\_tokens} $\ge$ cap means cut.
 \end{note}
 
 % ================================================================== 8
@@ -1068,15 +1072,23 @@ MODEL\_EMBED & empty & embedding model (only for \texttt{RETRIEVER=embedding})\\
 MODELS\_WITHOUT\_JSON\_MODE & empty & models that break on \texttt{response\_format}\\
 REQUEST\_TIMEOUT\_S & 85 & FelCloud's server timeout is 90 s\\
 \multicolumn{3}{@{}l}{\textbf{\color{navy}Platform limits (client side)}}\\
-RATE\_LIMIT\_PER\_MIN, RATE\_BURST & 20, 20 & chat token bucket\\
-EMBED\_RATE\_LIMIT\_PER\_MIN, EMBED\_BURST & 60, 60 & embeddings bucket (separate quota)\\
+RATE\_LIMIT\_PER\_MIN, RATE\_WINDOW\_S & 20, 60 & chat sliding window: at most 20 sends in any 60 s\\
+RATE\_WINDOW\_SLACK\_S & 0.5 & a send frees its slot this long after the window\\
+EMBED\_RATE\_LIMIT\_PER\_MIN, EMBED\_RATE\_WINDOW\_S & 60, 60 & embeddings window (separate quota)\\
+RATE\_BURST, EMBED\_BURST & 20, 60 & deprecated (simulator bucket only)\\
 MAX\_CONCURRENT & 2 & requests in flight\\
 MAX\_TOKENS\_COMPACT, MAX\_TOKENS\_MIDSIZE & 300, 550 & output caps per class\\
-INPUT\_TOKEN\_BUDGET & 1800 & input cap enforced before sending\\
+OUTPUT\_CAP\_MODE & both & \texttt{options} (\texttt{options.num\_predict}), \texttt{max\_tokens} or both; FelCloud honours only \texttt{num\_predict}\\
+INPUT\_TOKEN\_BUDGET & 2800 & estimated input cap enforced before sending\\
+ESTIMATE\_CHARS\_PER\_TOKEN & 2.3 & token estimator (worst measured case, Arabizi)\\
+CONTEXT\_WINDOW, CONTEXT\_FILL & 4096, 0.85 & estimated prompt + output cap must fit window × fill\\
+INPUT\_TRUNCATION\_CHARS\_PER\_TOKEN & 5 & \texttt{prompt\_tokens} below chars/this = input cut (\texttt{input\_truncated}); 0 = off\\
 BUDGET\_SAFETY\_MARGIN & 0.1 & prompts assembled within budget × (1 − margin)\\
 \multicolumn{3}{@{}l}{\textbf{\color{navy}Retry and routing}}\\
 MAX\_ATTEMPTS & 4 & attempts per request\\
-MAX\_RETRY\_WAIT\_S & 30 & longest single wait before giving up to the caller\\
+MAX\_RETRY\_WAIT\_S & 30 & INTERACTIVE: longest stated quota delay it waits for, else degraded with an eta\\
+MAX\_RETRY\_WAIT\_S\_BACKGROUND & 65 & BACKGROUND: the observed quota delay is 60 s\\
+CONCURRENCY\_RETRY\_WAIT\_S & 2 & cap on a concurrency 429's wait (it states 60 s)\\
 SATURATION\_RETRIES & 1 & mid-size retries before fallback\\
 COMPACT\_MAX\_RETRIES & 3 & compact retries (no fallback exists)\\
 QUOTA\_LOW\_THRESHOLD & 2 & local tokens below this → explain goes to fast mode\\
@@ -1097,6 +1109,7 @@ TERMS\_AR\_PATH & data/\allowbreak{}terms\_ar.yaml & Arabic math terms for MSA a
 EXERCISES\_PATH & data/\allowbreak{}exercises/\allowbreak{}derivees.yaml & exercise bank\\
 TEMPLATES\_PATH & data/\allowbreak{}templates.yaml & openers, practice lines, feedback\\
 EXPLAIN\_MAX\_TOKENS & 350 & explain output cap\\
+CLASSIFY\_, HINT\_, GRADE\_, COMPRESS\_, QUIZ\_INTRO\_, FRAMING\_MAX\_TOKENS & 50, 80, 120, 30, 60, 40 & per-task output caps (cut text is trimmed to the last sentence)\\
 EXPLAIN\_FREQUENCY\_PENALTY & 0.3 & discourages loops; dropped automatically if rejected\\
 \multicolumn{3}{@{}l}{\textbf{\color{navy}Metrics and simulator}}\\
 METRICS\_PATH & metrics/\allowbreak{}calls.jsonl & JSONL metrics\\
@@ -1231,7 +1244,7 @@ sharing one API key would each believe they have 20 requests/min. Run a single e
 \toprule
 \textbf{Limitation} & \textbf{Idea}\\
 \midrule
-in-memory limiter/queue/breaker & a Redis-backed token bucket and breaker for multi-process deployments\\
+in-memory limiter/queue/breaker & a Redis-backed sliding window and breaker for multi-process deployments\\
 no semantic cache (no embedding model on FelCloud) & add it for explain once an embedding model exists; keep the key on language + level + style; threshold 0.94\\
 quota-exhausted shape unconfirmed & confirm in a FelCloud slot; one-line change in \texttt{errors.py}\\
 local latency ≠ FelCloud & rerun \texttt{load\_test} and capacity in a FelCloud slot\\
@@ -1266,7 +1279,7 @@ simulator/ & constraint transport, profiles\\
 prompts/ & classify, hint, explain, grade, compress, quiz (versioned)\\
 data/ & docs, index, glossary, exercises, templates, Arabic terms\\
 scripts/ & smoke, chat, load\_test, metrics\_report, eval\_*, index\_docs, recon\\
-tests/ & 351 unit tests + 5 integration tests (\texttt{-m integration})\\
+tests/ & 444 unit tests + 5 integration tests (\texttt{-m integration})\\
 DECISIONS.md & every non-obvious design choice, with evidence\\
 \bottomrule
 \end{tabularx}

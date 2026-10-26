@@ -56,3 +56,19 @@ def test_capacity_requests_per_turn_and_learner_estimate():
     assert m[(sec, "binding limit (req/min)")] == "20.0 (quota)"
     assert m[(sec, "active learners @ 1 turn / 120 s: quota-bound (observed / cold)")] == "20 / 16"
     assert capacity([rec(kind="run")], 20, 2, [1]) == {}
+
+
+def test_analyze_reports_truncated_outputs_limiter_waits_and_input_truncation():
+    recs = [
+        rec(ts=0, kind="chat", model="c", model_class="compact", outcome="ok", request_hash="a", tokens_in=100,
+            tokens_out=50, truncated_output=True, wait_ms=0),
+        rec(ts=1, kind="chat", model="c", model_class="compact", outcome="ok", request_hash="b", tokens_in=100,
+            tokens_out=30, wait_ms=2500),
+        rec(ts=2, kind="run", task="hint", latency_ms=10, degraded=True, degrade_reason="input_truncated"),
+    ]
+    m = analyze(recs)
+    assert m[("tokens", "output tokens / ok call")] == 40.0
+    assert m[("tokens", "outputs cut at the cap (completion_tokens >= cap)")] == 1
+    assert m[("limiter", "attempts that waited on the limiter (> 100 ms)")] == 1
+    assert m[("limiter", "max limiter wait (s)")] == 2.5
+    assert m[("fallbacks / degradation", "degraded: input_truncated")] == 1

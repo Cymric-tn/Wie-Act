@@ -1,0 +1,32 @@
+section,metric,felcloud
+volume,engine.run calls (caller-visible),30
+volume,nested compress runs,0
+volume,provider requests (all attempts),16
+volume,provider requests ok,16
+volume,duration (s),61.9
+volume,provider requests / min,15.5
+calls per model,llama3.1-8b (midsize) ok / attempts,6 / 6
+calls per model,llama3.2-3b (compact) ok / attempts,10 / 10
+class split (ok calls),compact,10 (62%)
+class split (ok calls),midsize,6 (38%)
+class split (ok calls),purpose: task,16
+tokens,input tokens,8403
+tokens,output tokens,1147
+tokens,input tokens / ok call,525
+cache,cache hits / runs,11 / 30
+cache,cache hit rate,37%
+cache,"negative cache hits (fast mode, 0 requests)",3
+cache,repeated identical provider requests,0
+refusals -> handling,refused attempts (total),0
+fallbacks / degradation,degraded runs,4
+fallbacks / degradation,degraded: ungrounded_formula,4
+fallbacks / degradation,explain served fast_extractive,3
+fallbacks / degradation,explain served full (generated),12
+circuit breaker,trips (closed -> open),0
+circuit breaker,re-opened after failed probe,0
+circuit breaker,closed after probe,0
+"latency (uncached runs, ms)",classify p50 / p95 (n),1565 / 11897 (6)
+"latency (uncached runs, ms)",explain p50 / p95 (n),10039 / 22844 (9)
+"latency (uncached runs, ms)",hint p50 / p95 (n),1747 / 11057 (4)
+"latency (uncached runs, ms)",prio: BACKGROUND p50 / p95 (n),1747 / 16691 (4)
+"latency (uncached runs, ms)",prio: INTERACTIVE p50 / p95 (n),8441 / 22844 (15)

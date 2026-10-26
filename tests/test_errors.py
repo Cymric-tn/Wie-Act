@@ -64,9 +64,12 @@ def test_quota_delay_from_header():
     assert isinstance(e, QuotaExhausted) and e.retry_after_s == 17
 
 
-def test_quota_delay_from_message_when_no_header():
+def test_quota_delay_is_the_header_only_never_the_message():
     e = classify_response(error(429, "rate_limit_error", "Team quota exhausted. Retry in 12.5s"))
-    assert isinstance(e, QuotaExhausted) and e.retry_after_s == 12.5
+    assert isinstance(e, QuotaExhausted) and e.retry_after_s is None
+    e = classify_response(error(429, "rate_limit_error", "Rate limit exceeded. Retry in 12.5s",
+                                {"retry-after": "60"}))
+    assert e.retry_after_s == 60.0
 
 
 def test_quota_without_any_delay():
@@ -116,3 +119,88 @@ def test_exceptions():
 def test_error_str_is_short_and_has_no_headers():
     s = str(classify_response(REAL_COOLDOWN))
     assert s.startswith("saturated[429]") and len(s) < 220
+
+
+# ---------------------------------------------------------------------------------------------------
+# The two 429s FelCloud answered on 2026-10-26 (reports/felcloud-2026-10-26.md, probes A and 6): real status,
+# headers and body. Only the hash of the API key in the body is redacted (<key-hash>); content-length is
+# the original value, so it no longer matches the redacted body.
+REAL_429 = {
+    "concurrency": {
+        "status": 429,
+        "headers": {
+            "alt-svc": "h3=\":443\"; ma=2592000",
+            "content-length": "282",
+            "content-security-policy": "frame-ancestors 'none'",
+            "content-type": "application/json",
+            "date": "Mon, 26 Oct 2026 17:01:24 GMT",
+            "rate_limit_type": "max_parallel_requests",
+            "reset_at": "2026-10-26 17:02:25 UTC",
+            "retry-after": "60",
+            "vary": "Origin",
+            "via": "1.1 Caddy",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY",
+            "x-litellm-call-id": "6c59c0ab-e654-4b50-9edc-26c854f0540b",
+            "x-litellm-key-rpm-limit": "20",
+            "x-litellm-key-spend": "0.0",
+            "x-litellm-response-cost": "0"
+        },
+        "body": "{\"error\":{\"message\":\"Rate limit exceeded for api_key: <key-hash>. Limit type: max_parallel_requests. Current limit: 2, Remaining: 0. Limit resets at: 2026-10-26 17:02:25 UTC\",\"type\":\"throttling_error\",\"param\":null,\"code\":\"429\"}}"
+    },
+    "quota": {
+        "status": 429,
+        "headers": {
+            "alt-svc": "h3=\":443\"; ma=2592000",
+            "content-length": "270",
+            "content-security-policy": "frame-ancestors 'none'",
+            "content-type": "application/json",
+            "date": "Mon, 26 Oct 2026 17:02:33 GMT",
+            "rate_limit_type": "requests",
+            "reset_at": "2026-10-26 17:03:34 UTC",
+            "retry-after": "60",
+            "vary": "Origin",
+            "via": "1.1 Caddy",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY",
+            "x-litellm-call-id": "ef80a0bd-70fc-4f91-8242-d63939dc2919",
+            "x-litellm-key-rpm-limit": "20",
+            "x-litellm-key-spend": "0.0",
+            "x-litellm-response-cost": "0"
+        },
+        "body": "{\"error\":{\"message\":\"Rate limit exceeded for api_key: <key-hash>. Limit type: requests. Current limit: 20, Remaining: 0. Limit resets at: 2026-10-26 17:03:34 UTC\",\"type\":\"throttling_error\",\"param\":null,\"code\":\"429\"}}"
+    }
+}
+
+
+def real_429(kind: str) -> httpx.Response:
+    r = REAL_429[kind]
+    return httpx.Response(r["status"], headers=r["headers"], content=r["body"].encode())
+
+
+def test_real_quota_429_is_quota_exhausted_with_the_header_delay():
+    e = classify_response(real_429("quota"))
+    assert isinstance(e, QuotaExhausted) and (e.status, e.retry_after_s) == (429, 60.0)
+    assert "Limit type: requests" in e.message
+
+
+def test_real_concurrency_429_is_concurrency_limited():
+    e = classify_response(real_429("concurrency"))
+    assert isinstance(e, ConcurrencyLimited) and (e.status, e.retry_after_s) == (429, 60.0)
+    assert "max_parallel_requests" in e.message
+
+
+def test_real_quota_429_ignores_limit_resets_at_in_the_body():
+    """'Limit resets at' is always the refusal time + 60 s: with no retry-after header there is no delay."""
+    r = REAL_429["quota"]
+    headers = {k: v for k, v in r["headers"].items() if k.lower() != "retry-after"}
+    e = classify_response(httpx.Response(429, headers=headers, content=r["body"].encode()))
+    assert isinstance(e, QuotaExhausted) and e.retry_after_s is None
+
+
+def test_limit_type_header_alone_tells_concurrency_from_quota():
+    for kind, cls in (("quota", QuotaExhausted), ("concurrency", ConcurrencyLimited)):
+        r = REAL_429[kind]
+        bare = httpx.Response(429, headers={"retry-after": "60", "rate_limit_type": r["headers"]["rate_limit_type"]},
+                              json={"error": {"message": "Rate limit exceeded", "type": "throttling_error"}})
+        assert isinstance(classify_response(bare), cls)

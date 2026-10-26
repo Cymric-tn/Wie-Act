@@ -34,7 +34,7 @@ from engine.exercises import ExerciseBank
 from engine.grounding import check_formulas
 from engine.language import ARABIC_SCRIPT, arabic_ratio, contamination, latin_words
 from engine.tasks import (Messages, Registry, TaskContext, TaskSpec, best_sentence, default_registry,
-                          fast_excerpts, load_templates, load_terms_ar)
+                          fast_excerpts, load_templates, load_terms_ar, trim_to_last_sentence)
 
 log = logging.getLogger("ednova.engine")
 PARTIAL_SENTENCES = 3
@@ -133,7 +133,9 @@ class Engine:
         self.router = Router.from_settings(sink, settings, clock)
         caller.observer = self.router.observe
         self._clock = clock
-        self.limit = limit_for(settings.input_token_budget, settings.budget_safety_margin)
+        # prompt assembly must also leave room for the longest answer inside the context window
+        window_room = int(settings.context_window * settings.context_fill) - max(settings.task_max_tokens.values())
+        self.limit = min(limit_for(settings.input_token_budget, settings.budget_safety_margin), window_room)
         self.retriever = retriever or make_retriever(settings.retriever, settings.rag_min_coverage, self._embed,
                                                      settings.glossary_weight)
         self.glossary = Glossary.load(settings.glossary_path) \
@@ -283,11 +285,16 @@ class Engine:
 
         text = data = None
         status, notes = "ok", {}
-        if spec.output_schema is not None:
+        if spec.output_schema is not None:      # a cut JSON reply is invalid: the repair ladder handles it
             data, status, notes = await self._json_output(spec, prompt, chat, messages, inputs, tctx, ctx, run)
         else:
-            out = spec.finalize_text(chat.text, prompt, inputs, tctx) if spec.finalize_text \
-                else (chat.text.strip(), None)
+            reply = chat.text
+            if chat.truncated:                   # hit the output cap: keep whole sentences only
+                reply = trim_to_last_sentence(reply)
+                notes = {"truncated_output": True}
+                run.emit("output_trimmed", {"completion_tokens": chat.tokens_out})
+            out = spec.finalize_text(reply, prompt, inputs, tctx) if spec.finalize_text \
+                else (reply.strip(), None)
             text, guard, detail = (*out, None)[:3]
             if guard and guard.endswith(("degenerate", "loop_truncated")):
                 ground_notes = {**ground_notes, "model_text": chat.text[:3000]}   # kept for review / evals
@@ -408,12 +415,16 @@ class Engine:
         fctx = CallContext(request_id=ctx.request_id, turn_id=ctx.turn_id, task=ctx.task, priority=ctx.priority,
                            purpose=purpose, on_event=run.emit, queue_seq=ctx.queue_seq, saturation_retries=0)
         try:
-            chat = await self.caller.chat(ChatRequest(ModelClass.COMPACT, tuple(msgs), max_tokens=40,
+            cap = self.settings.task_max_tokens["quiz_intro" if kind == "intro" else "framing"]
+            chat = await self.caller.chat(ChatRequest(ModelClass.COMPACT, tuple(msgs), max_tokens=cap,
                                                       temperature=0.2), fctx)
         except LLMError:
             return template
         run.took(chat)
-        line = chat.text.strip().splitlines()[0].strip().strip('"“”«»') if chat.text.strip() else ""
+        if self._input_cut(run, ctx, chat):
+            return template                      # never cached
+        text = trim_to_last_sentence(chat.text) if chat.truncated else chat.text
+        line = text.strip().splitlines()[0].strip().strip('"“”«»') if text.strip() else ""
         drift = (arabic_ratio(line) >= 0.5) != (lang in ARABIC_SCRIPT)
         if not line or len(line.split()) > 30 or drift or contamination(line, set(self.course_words)):
             return template
@@ -538,6 +549,17 @@ class Engine:
             log.warning("provider rejected frequency_penalty (%s); sending requests without it", e.message[:120])
             return await self.caller.chat(req.with_(frequency_penalty=None), ctx)
 
+    def _input_cut(self, run: "_Run", ctx: CallContext, chat: ChatResult) -> bool:
+        """The provider silently dropped the start of the prompt: the answer is unreliable, so the result is
+        degraded (which keeps it out of the cache) and the case is logged."""
+        if not chat.input_truncated:
+            return False
+        if "input_truncated" not in run.reasons:
+            run.degrade("input_truncated")
+        log.warning("%s %s: provider truncated the input (prompt_tokens=%s)", ctx.request_id, ctx.task,
+                    chat.tokens_in)
+        return True
+
     async def _generate(self, spec, d: Decision, messages, ctx, run: _Run) -> ChatResult:
         run.model_class = d.model_class.value
         try:
@@ -553,6 +575,7 @@ class Engine:
             run.model_class = fb.model_class.value
             chat = await self._chat(spec, fb.model_class, messages, ctx)
         run.took(chat)
+        self._input_cut(run, ctx, chat)
         return chat
 
     def _parse(self, spec: TaskSpec, text: str) -> tuple[dict | None, str | None]:
@@ -582,6 +605,7 @@ class Engine:
             try:   # repair is always compact (the cheap class), deterministic
                 rchat = await self.caller.chat(self._request(spec, ModelClass.COMPACT, repair, temperature=0.0), rctx)
                 run.took(rchat)
+                self._input_cut(run, ctx, rchat)
                 data, err = self._parse(spec, rchat.text)
                 status = "repaired"
             except LLMError as e:
@@ -624,7 +648,11 @@ class Engine:
                      e: LLMError) -> Result:
         reason, retryable = next((r, rt) for t, r, rt in _UNAVAILABLE if isinstance(e, t))
         eta = None
-        if retryable:
+        if retryable and isinstance(e, QuotaExhausted):
+            # the limiter is blocked until the stated delay expires: that remaining delay is when to come back
+            wait = self.caller.limiter.wait_time("chat") or (e.retry_after_s or DEFAULT_RETRY_AFTER_S)
+            eta = round(wait, 1)
+        elif retryable:
             wait = e.retry_after_s if e.retry_after_s is not None else DEFAULT_RETRY_AFTER_S
             eta = round(wait + self.caller.queue.eta_s(self.caller.queue.depth()), 1)
         run.degrade(reason, terminal=True)

@@ -45,14 +45,19 @@ async def test_row_normal_200_quota_headers_read_and_paced(vt):
 
 
 async def test_row_quota_exhausted_waits_stated_delay_then_retries(vt):
+    """Another client of the same key spent the provider's quota: our limiter cannot know, so the refusal arrives
+    (a client that saw the quota headers would have waited locally instead: see test_limiter)."""
     rc, sim, fake, sink = stack(vt, SIM_RATE_PER_MIN=6, SIM_BURST=1)
-    await rc.chat(ChatRequest(ModelClass.COMPACT, MSG))
+    other = RetryingCaller(LLMClient(rc.client.settings, sim), Limiter(rc.client.settings, vt.clock, vt.sleep),
+                           MemorySink(), RetryPolicy.from_settings(rc.client.settings),
+                           rc.input_token_budget, vt.clock, vt.sleep, random.Random(2))
+    await other.chat(ChatRequest(ModelClass.COMPACT, MSG))
     t0 = vt.t
     r = await rc.chat(ChatRequest(ModelClass.COMPACT, MSG))
     assert r.attempts == 2
     assert vt.t - t0 == pytest.approx(10, abs=0.5)          # 6/min -> provider says 10 s
     assert sim.stats.refusals == {"429:quota_exhausted": 1}
-    assert [(x.outcome, x.action) for x in sink.records[1:]] == [
+    assert [(x.outcome, x.action) for x in sink.records] == [
         ("quota_exhausted", "wait_stated_delay"), ("ok", None)]
     assert {q["body"]["model"] for q in fake.requests} == {"compact-a"}   # same model, no hopping
 
