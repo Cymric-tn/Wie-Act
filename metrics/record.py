@@ -38,6 +38,7 @@ class CallRecord(BaseModel):
     degrade_reason: str | None = None
     mode: str | None = None               # run: "fast_extractive" when explain was served by extraction
     graded_by: str | None = None          # run (grade): "sympy" (deterministic) | "llm"
+    truncated_output: bool = False        # completion_tokens >= the output cap (finish_reason is unreliable on FelCloud)
     quota_remaining: int | None = None
     eta_s: float | None = None            # degraded "service_busy": when to try again
     detail: str | None = None             # short provider message, never secrets

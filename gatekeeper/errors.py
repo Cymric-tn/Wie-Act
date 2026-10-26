@@ -2,7 +2,8 @@
 Maps provider responses to typed errors. ALL knowledge of status codes, error types and
 header names lives here, so a FelCloud contract change is a one-line fix.
 
-Evidence: recon_log.jsonl (real FelCloud, 2026-10-22) — a LiteLLM 1.103 proxy.
+Evidence: recon_log.jsonl (real FelCloud, 2026-10-22) — a LiteLLM 1.103 proxy — and the quota / concurrency
+429s captured on 2026-10-26 (reports/felcloud-2026-10-26.md).
 """
 from __future__ import annotations
 
@@ -96,8 +97,8 @@ def parse_quota(headers: httpx.Headers) -> QuotaInfo:
 _SECONDS_IN_MSG = re.compile(r"(?:retry|try again)\s+(?:in|after)\s+(\d+(?:\.\d+)?)\s*s", re.I)
 
 
-def parse_retry_after(resp: httpx.Response, message: str = "") -> float | None:
-    """Retry-After (seconds or HTTP date) -> reset header -> 'try again in N seconds' in the message."""
+def retry_after_header(resp: httpx.Response) -> float | None:
+    """The Retry-After header alone (seconds or HTTP date)."""
     v = resp.headers.get(H_RETRY_AFTER)
     if v:
         try:
@@ -107,6 +108,13 @@ def parse_retry_after(resp: httpx.Response, message: str = "") -> float | None:
                 return max(0.0, email.utils.parsedate_to_datetime(v).timestamp() - time.time())
             except (TypeError, ValueError):
                 pass
+    return None
+
+
+def parse_retry_after(resp: httpx.Response, message: str = "") -> float | None:
+    """Retry-After (seconds or HTTP date) -> reset header -> 'try again in N seconds' in the message."""
+    if (h := retry_after_header(resp)) is not None:
+        return h
     v = resp.headers.get(H_RESET)
     if v:
         try:
@@ -177,11 +185,16 @@ def classify_response(resp: httpx.Response) -> LLMError | None:
                                   or "saturat" in low)):
         return ModelSaturated(status=s, message=msg, retry_after_s=ra if ra is not None else DEFAULT_RETRY_AFTER_S)
     if s == 429:
-        # ASSUMPTION(felcloud): concurrency refusals mention parallel/concurrent; unobserved so far.
+        # CONFIRMED(felcloud, probes 2026-10-26, reports/felcloud-raw.jsonl): the API-key limits answer
+        #   status 429, header retry-after: 60, body {"error": {"message": "Rate limit exceeded for api_key: <hash>.
+        #   Limit type: max_parallel_requests|requests. Current limit: N, Remaining: 0. Limit resets at: <UTC>",
+        #   "type": "throttling_error", "param": null, "code": "429"}}
+        # "Limit resets at" is always the refusal time + 60 s (not the real reset): never parse it.
+        # Concurrency: limit type max_parallel_requests (limit 2); the slot frees as soon as a request ends.
         if "parallel" in low or "concurren" in low:
             return ConcurrencyLimited(status=s, message=msg, retry_after_s=ra if ra is not None else 1.0)
-        # ASSUMPTION(felcloud): every other 429 is the team quota (shape unconfirmed by organizers).
-        return QuotaExhausted(status=s, message=msg, retry_after_s=ra)
+        # Quota: limit type requests (20 per rolling minute). The stated delay is the retry-after header only.
+        return QuotaExhausted(status=s, message=msg, retry_after_s=retry_after_header(resp))
     if s in (400, 413, 422):
         c = _ceiling(etype, msg)
         if c:
