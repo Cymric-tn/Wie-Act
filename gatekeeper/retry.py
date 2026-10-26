@@ -17,6 +17,8 @@ Retry policy — what to do with each typed error from errors.py (the platform c
   |                   | states 60 s but the slot frees as soon as a request ends).          |
   | CeilingExceeded   | fix the request once (trim max_tokens / context), retry once.       |
   | TransientError    | exponential backoff + full jitter (only when no delay is stated).   |
+  |  (mid-size timeout)| no retry: a hung model does not answer a second try; raise at once  |
+  |                   | so the engine falls back (compact keeps the retries above).         |
   | FatalError        | raise immediately.                                                  |
 
 Before the first attempt the estimated input is checked against INPUT_TOKEN_BUDGET and against the
@@ -329,6 +331,8 @@ class RetryingCaller:
             state["req"], state["fixed"] = fixed, True
             return "fix_request", 0.0
         if isinstance(err, TransientError):
+            if err.timeout and kind == "chat" and state["req"].model_class is ModelClass.MIDSIZE:
+                return "raise", 0.0                # a hung mid-size model will not answer a retry: fall back now
             if last:
                 return "raise", 0.0
             delay = err.retry_after_s if err.retry_after_s is not None else p.backoff(attempt, self._rng)

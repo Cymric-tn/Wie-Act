@@ -179,11 +179,19 @@ class Router:
 
     def on_saturated(self, d: Decision, ctx=None) -> Decision | None:
         """Runtime fallback after the retry layer gave up on a saturated class. None = no fallback."""
+        return self._runtime_fallback(d, "saturated", "saturated after retries", ctx)
+
+    def on_unavailable(self, d: Decision, ctx=None) -> Decision | None:
+        """Runtime fallback after the class timed out (no answer; no retry was spent) or its breaker opened while
+        the request waited. Reason `<class>_unavailable`. None = no fallback."""
+        return self._runtime_fallback(d, "unavailable", "timed out / unavailable", ctx)
+
+    def _runtime_fallback(self, d: Decision, what: str, why: str, ctx) -> Decision | None:
         if d.fallback is None or d.model_class is d.fallback:
-            self._log(replace(d, reason=f"{d.model_class.value} saturated; no fallback for {d.task}"), ctx)
+            self._log(replace(d, reason=f"{d.model_class.value} {what}; no fallback for {d.task}"), ctx)
             return None
-        fb = replace(d, model_class=d.fallback, degraded=True, degrade_reason=f"{d.model_class.value}_saturated",
-                     reason=f"{d.model_class.value} saturated after retries -> fallback {d.fallback.value}")
+        fb = replace(d, model_class=d.fallback, degraded=True, degrade_reason=f"{d.model_class.value}_{what}",
+                     reason=f"{d.model_class.value} {why} -> fallback {d.fallback.value}")
         self._log(fb, ctx)
         return fb
 
