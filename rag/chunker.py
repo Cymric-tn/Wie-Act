@@ -19,8 +19,14 @@ import os
 import re
 from dataclasses import asdict, dataclass
 
-from gatekeeper.client import estimate_text_tokens
+from gatekeeper.client import estimate_text_tokens as _estimate
 from rag.normalize import fold_latin, strip_arabic_diacritics
+
+CHUNK_CHARS_PER_TOKEN = 2.0       # chunk sizing is independent of the provider budget estimate: keeps the index stable
+
+
+def estimate_text_tokens(text: str) -> int:
+    return _estimate(text, CHUNK_CHARS_PER_TOKEN)
 
 _FRONT = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 _HEAD = re.compile(r"^## +(.+?) *$", re.M)

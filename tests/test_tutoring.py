@@ -187,7 +187,7 @@ async def test_quiz_intro_is_one_cached_compact_line(vt, index):
     r2 = await eng.run("quiz", {"message": "un exercice sur la tangente", "exclude": ["d12"], "intro": "llm"})
     r3 = await eng.run("quiz", {"message": "un exercice sur la tangente"})                 # default: template
     assert r1.text.startswith("Voici un exercice sur la tangente.") and r1.data["intro"]
-    assert len(fake.requests) == 1 and fake.requests[0]["body"]["max_tokens"] == 40   # intro cached
+    assert len(fake.requests) == 1 and fake.requests[0]["body"]["max_tokens"] == 60   # intro cached (QUIZ_INTRO_MAX_TOKENS)
     assert r3.data["intro"] == "Voici un exercice pour t'entraîner :" and len(fake.requests) == 1
 
 

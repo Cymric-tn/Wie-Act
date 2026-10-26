@@ -8,4 +8,6 @@ from engine.core import Engine
 from engine.result import Event, Result
 from gatekeeper.queue import Priority
 
-__all__ = ["Engine", "Event", "Priority", "Result"]
+__version__ = "1.1"
+
+__all__ = ["Engine", "Event", "Priority", "Result", "__version__"]

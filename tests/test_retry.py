@@ -170,7 +170,7 @@ def test_default_fixer_halves_when_limit_unknown():
 
 # ------------------------------------------------------------------ end to end through the simulator
 async def test_local_limiter_keeps_simulated_provider_from_refusing(vt):
-    """Same limits on both sides: 30 requests -> zero quota refusals, paced by our bucket."""
+    """Same limits on both sides: 30 requests -> zero quota refusals, paced by our sliding window."""
     s = make_settings(SIMULATE_CONSTRAINTS="true")
     sim = ConstraintSimulator(FakeProvider(), s, vt.clock, vt.sleep)
     sink = MemorySink()
@@ -180,7 +180,8 @@ async def test_local_limiter_keeps_simulated_provider_from_refusing(vt):
     rs = await asyncio.gather(*[rc.chat(ChatRequest(ModelClass.COMPACT, MSG)) for _ in range(30)])
     assert len(rs) == 30
     assert not sim.stats.refusals                                    # never tripped the provider
-    assert vt.t - t0 == pytest.approx(30, abs=0.5)                   # 20 burst + 10 x 3 s refill
+    # 20 go at once, the other 10 when the window frees (60 s + 0.5 s slack), not trickled in every 3 s
+    assert vt.t - t0 == pytest.approx(60.5, abs=0.5)
 
 
 @pytest.mark.parametrize("dialect", ["annex", "litellm"])

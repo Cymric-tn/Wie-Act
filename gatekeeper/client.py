@@ -40,15 +40,25 @@ class EmbedRequest:
     model: str | None = None
 
 
-# Measured on data/docs with llama3.2:3b and qwen2.5:3b (2026-10-24): 3.5 chars/token for English
-# prose, 3.0 French, 2.2-2.3 for math-heavy French and for Arabic. Stay below the worst case so the
-# estimate is an upper bound: FelCloud silently truncates input near 2048 tokens and will not warn us.
-CHARS_PER_TOKEN = 2.0
+# Measured on FelCloud (probes 2026-10-26, empty-prompt baseline of 26 tokens removed): French 3.9
+# chars/token, Arabic 2.84, Darija in Arabic script 2.54, Arabizi 2.31. The default stays at the worst
+# measured case so the estimate is an upper bound: FelCloud silently truncates the START of a prompt
+# above about 4096 tokens and will not warn us. ESTIMATE_CHARS_PER_TOKEN sets it (one engine per process).
+CHARS_PER_TOKEN = 2.3
 TOKENS_PER_MESSAGE = 4
 
 
-def estimate_text_tokens(text: str) -> int:
-    return math.ceil(len(text) / CHARS_PER_TOKEN)
+def set_chars_per_token(value: float) -> None:
+    global CHARS_PER_TOKEN
+    CHARS_PER_TOKEN = float(value)
+
+
+def chars_per_token() -> float:
+    return CHARS_PER_TOKEN
+
+
+def estimate_text_tokens(text: str, per_token: float | None = None) -> int:
+    return math.ceil(len(text) / (per_token or CHARS_PER_TOKEN))
 
 
 def estimate_tokens(messages) -> int:
@@ -86,10 +96,16 @@ class LLMClient:
         body: dict[str, Any] = {
             "model": req.model,
             "messages": list(req.messages),
-            "max_tokens": req.max_tokens,
             "temperature": req.temperature,
             "stream": False,                    # hard rule: FelCloud returns whole responses
         }
+        # FelCloud ignores max_tokens / max_completion_tokens / stop (probes 2026-10-26) but honours a top-level
+        # options.num_predict, so the cap goes out in the form OUTPUT_CAP_MODE selects (default: both).
+        mode = self.settings.output_cap_mode
+        if mode in ("max_tokens", "both"):
+            body["max_tokens"] = req.max_tokens
+        if mode in ("options", "both"):
+            body["options"] = {"num_predict": req.max_tokens}
         if req.json_mode:
             body["response_format"] = {"type": "json_object"}
         if req.frequency_penalty is not None:

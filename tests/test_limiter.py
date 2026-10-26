@@ -108,8 +108,8 @@ def test_observe_feeds_server_quota_into_bucket():
 
 
 async def test_30_requests_hold_concurrency_and_rate():
-    """Fire 30 at once through the caller: never more than 2 at the provider, burst of 20,
-    then ~20/min. Scaled clock: 1 real second = 20 virtual seconds (test runs ~1.5 s)."""
+    """Fire 30 at once through the caller: never more than 2 at the provider, 20 at once,
+    then the rest as the 60 s window frees. Scaled clock: 1 real second = 20 virtual seconds (test runs ~1.5 s)."""
     import random
     import time
 
@@ -139,11 +139,9 @@ async def test_30_requests_hold_concurrency_and_rate():
 
     sent = sorted(fake.sent)
     assert len(sent) == 30 and fake.max_in_flight == 2
-    assert sent[19] < 2.0                                    # burst reserve: 20 go at once (2 at a time)
-    steady = 60 * (len(sent[20:]) - 1) / (sent[29] - sent[20])
-    assert steady == pytest.approx(20, rel=0.1)              # then the sustained rate, ~20/min
-    assert sent[29] == pytest.approx(30, abs=1.5)            # 10 extra tokens at 3 s each
-    assert all(sum(t <= x < t + 60 for x in sent) <= 20 + 20 for t in sent)   # never > burst + rate/min
+    assert sent[19] < 2.0                                    # 20 go at once (2 at a time)
+    assert sent[20] - sent[0] >= 60                          # the 21st waits for the first send to leave the window
+    assert all(sum(t <= x < t + 60 for x in sent) <= 20 for t in sent)   # no 60 s window ever holds more than 20
 
 
 async def test_float_rounding_deficit_does_not_spin(vt):
