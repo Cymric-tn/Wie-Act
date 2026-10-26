@@ -40,6 +40,9 @@ class SimSettings:
     transient_error_prob: float = 0.0         # random 500
     max_tokens_ceiling: int = 2048
     prompt_tokens_ceiling: int = 2048
+    hang_midsize: bool = False               # mid-size requests never answer (or after hang_s), like the 26 Oct outage
+    hang_compact: bool = False
+    hang_s: float | None = None               # None = never; N = the answer arrives after N seconds
     seed: int | None = None
 
 
@@ -66,6 +69,7 @@ class Settings:
     context_fill: float = 0.85                # estimated prompt + output cap must fit context_window * context_fill
     truncation_chars_per_token: float = 5.0   # prompt_tokens < prompt chars / this = the provider cut the input; 0 = off
     request_timeout_s: float = 85.0
+    server_timeout_s: float = 90.0            # FelCloud's proxy cuts a request at 90 s and still counts it for a while
     max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
     max_retry_wait_s_background: float = 65.0  # BACKGROUND: the observed quota delay is 60 s
     concurrency_retry_wait_s: float = 2.0     # a concurrency 429 states 60 s, but the slot frees at once
@@ -162,6 +166,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         transient_error_prob=get("SIM_TRANSIENT_ERROR_PROB", float, d.transient_error_prob),
         max_tokens_ceiling=get("SIM_MAX_TOKENS_CEILING", int, d.max_tokens_ceiling),
         prompt_tokens_ceiling=get("SIM_PROMPT_TOKENS_CEILING", int, d.prompt_tokens_ceiling),
+        hang_midsize=get("SIM_HANG_MIDSIZE", _bool, d.hang_midsize),
+        hang_compact=get("SIM_HANG_COMPACT", _bool, d.hang_compact),
+        hang_s=get("SIM_HANG_S", float, d.hang_s),
         seed=get("SIM_SEED", int, None),
     )
     if e.get("RETRIEVER") and e["RETRIEVER"].strip().lower() not in ("bm25", "embedding"):
@@ -200,6 +207,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         context_fill=get("CONTEXT_FILL", float, defaults.context_fill),
         truncation_chars_per_token=get("INPUT_TRUNCATION_CHARS_PER_TOKEN", float, defaults.truncation_chars_per_token),
         request_timeout_s=get("REQUEST_TIMEOUT_S", float, defaults.request_timeout_s),
+        server_timeout_s=get("SERVER_TIMEOUT_S", float, defaults.server_timeout_s),
         max_retry_wait_s=get("MAX_RETRY_WAIT_S", float, defaults.max_retry_wait_s),
         max_retry_wait_s_background=get("MAX_RETRY_WAIT_S_BACKGROUND", float, defaults.max_retry_wait_s_background),
         concurrency_retry_wait_s=get("CONCURRENCY_RETRY_WAIT_S", float, defaults.concurrency_retry_wait_s),
