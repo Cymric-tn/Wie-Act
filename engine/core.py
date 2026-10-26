@@ -113,8 +113,9 @@ class _Run:
 class _FastMode(Exception):
     """Internal: a grounded task lost mid-size at runtime; serve it extractively instead."""
 
-    def __init__(self, decision: Decision):
+    def __init__(self, decision: Decision, eta: float | None = None):
         self.decision = decision
+        self.eta = eta                       # when the unavailable class is probed again
 
 
 def _extract_json(text: str) -> str:
@@ -290,8 +291,9 @@ class Engine:
         pieces: list = []
         if spec.grounded:
             if decision.model_class is not decision.preferred:     # quota_low / breaker_open: no mid-size
+                # a class known to be down gets no nicety calls either: the framing line is cached or a template
                 return await self._fast_extractive(prompt, inputs, tctx, [h.chunk for h in hits], {}, ctx, run,
-                                                   decision)
+                                                   decision, llm_framing=decision.degrade_reason != "breaker_open")
             try:
                 messages, ground_notes, pieces = await self._ground(spec, prompt, inputs, tctx, hits, prio, run)
                 tctx = replace(tctx, extra={**tctx.extra, "material": "\n".join(c.text for c in pieces)})
@@ -302,7 +304,8 @@ class Engine:
         try:
             chat = await self._generate(spec, decision, messages, ctx, run)
         except _FastMode as fm:
-            return await self._fast_extractive(prompt, inputs, tctx, pieces, ground_notes, ctx, run, fm.decision)
+            return await self._fast_extractive(prompt, inputs, tctx, pieces, ground_notes, ctx, run, fm.decision,
+                                               llm_framing=fm.eta is None, eta=fm.eta)
         except LLMError as e:
             return self._unavailable(spec, prompt, inputs, tctx, run, ctx, decision, e)
 
@@ -389,7 +392,7 @@ class Engine:
 
     async def _fast_extractive(self, prompt: PromptTemplate, inputs, tctx: TaskContext, chunks: list,
                                notes: dict, ctx: CallContext, run: "_Run", d: Decision,
-                               llm_framing: bool = True) -> Result:
+                               llm_framing: bool = True, eta: float | None = None) -> Result:
         """Mid-size unavailable: compact does NOT write the explanation. The learner gets the most relevant
         course sentences verbatim (formulas intact), introduced by one line. Never cached.
         llm_framing=False: the framing line comes from the cache or the template, never from a request."""
@@ -405,7 +408,8 @@ class Engine:
         order = [c.chunk_id for c in chunks]
         notes = {**notes, "sources": sorted({e["chunk_id"] for e in excerpts}, key=order.index)}
         return self._finish(run, ctx, text=text, data={"framing": framing, "excerpts": excerpts, **extra},
-                            route_reason=d.reason, notes=notes, mode="fast_extractive", followup_available=True)
+                            route_reason=d.reason, notes=notes, mode="fast_extractive", followup_available=True,
+                            eta=eta)
 
     async def _fast_framing(self, prompt: PromptTemplate, question: str, tctx: TaskContext, ctx: CallContext,
                             run: "_Run", allow_call: bool = True) -> str:
@@ -595,6 +599,20 @@ class Engine:
             run.emit("falling_back_to_compact", {"reason": fb.degrade_reason})
             if spec.grounded:
                 raise _FastMode(fb) from None
+            run.model_class = fb.model_class.value
+            chat = await self._chat(spec, fb.model_class, messages, ctx)
+        except TransientError as e:
+            if not e.timeout or d.fallback is None or d.model_class is d.fallback:
+                raise
+            # the class hung: no retry was spent (retry.py), the breaker is told; answer from the fallback now
+            fb = self.router.on_unavailable(d, ctx)
+            eta = self.router.retry_in(d.model_class) or self.settings.breaker_cooldown_s
+            run.degrade(fb.degrade_reason)
+            run.emit("falling_back_to_compact", {"reason": fb.degrade_reason})
+            if not self.router.breakers[d.model_class].closed:
+                run.emit("breaker_open", {"model_class": d.model_class.value, "retry_in_s": round(eta, 1)})
+            if spec.grounded:
+                raise _FastMode(fb, round(eta, 1)) from None
             run.model_class = fb.model_class.value
             chat = await self._chat(spec, fb.model_class, messages, ctx)
         run.took(chat)
