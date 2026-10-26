@@ -42,7 +42,7 @@ async def main() -> None:
     outcomes, counts, saved = Counter(), Counter(), []
     lat, tout = [], []
     for run_no in range(1, a.runs + 1):
-        async with Engine.create(s, sink=MemorySink(), cache=ExactCache(":memory:", s.cache_ttl_s)) as engine:
+        async with Engine.create(s, sink=None if os.environ.get("METRICS_PATH") else MemorySink(), cache=ExactCache(":memory:", s.cache_ttl_s)) as engine:
             for x in items:
                 r = await engine.run("explain", {"question": x["question"]}, {"language": x["language"]},
                                      Priority.BACKGROUND)

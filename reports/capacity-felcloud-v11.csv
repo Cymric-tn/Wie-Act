@@ -1,0 +1,50 @@
+section,metric,capacity-felcloud-v1.1
+volume,engine.run calls (caller-visible),69
+volume,nested compress runs,0
+volume,provider requests (all attempts),23
+volume,provider requests ok,23
+volume,duration (s),358.6
+volume,provider requests / min,3.8
+calls per model,llama3.1-8b (midsize) ok / attempts,5 / 5
+calls per model,llama3.2-3b (compact) ok / attempts,18 / 18
+class split (ok calls),compact,18 (78%)
+class split (ok calls),midsize,5 (22%)
+class split (ok calls),purpose: task,23
+tokens,input tokens,14399
+tokens,output tokens,1264
+tokens,input tokens / ok call,626
+tokens,output tokens / ok call,55.0
+tokens,outputs cut at the cap (completion_tokens >= cap),0
+limiter,attempts that waited on the limiter (> 100 ms),1
+limiter,max limiter wait (s),1.3
+cache,cache hits / runs,43 / 69
+cache,cache hit rate,62%
+cache,"negative cache hits (fast mode, 0 requests)",0
+cache,repeated identical provider requests,0
+refusals -> handling,refused attempts (total),0
+fallbacks / degradation,degraded runs,0
+fallbacks / degradation,explain served fast_extractive,0
+fallbacks / degradation,explain served full (generated),9
+circuit breaker,trips (closed -> open),0
+circuit breaker,re-opened after failed probe,0
+circuit breaker,closed after probe,0
+"latency (uncached runs, ms)",classify p50 / p95 (n),1978 / 10430 (13)
+"latency (uncached runs, ms)",explain p50 / p95 (n),8818 / 15125 (8)
+"latency (uncached runs, ms)",hint p50 / p95 (n),2343 / 2366 (5)
+"latency (uncached runs, ms)",prio: BACKGROUND p50 / p95 (n),2343 / 10272 (3)
+"latency (uncached runs, ms)",prio: INTERACTIVE p50 / p95 (n),1978 / 12225 (23)
+capacity (per learner turn),learner turns,40
+capacity (per learner turn),engine calls / turn,1.73
+capacity (per learner turn),provider requests / turn (all attempts),0.57
+capacity (per learner turn),ok provider calls / turn,0.57
+capacity (per learner turn),cold turns (no cache hit): n / requests per turn,13 / 1.77
+capacity (per learner turn),learner wait per turn p50 / p95 (ms),2 / 13254
+"capacity estimate (one key, 20 req/min)",mean provider latency (s),5.4
+"capacity estimate (one key, 20 req/min)","concurrency ceiling (2 x 60 / latency, req/min)",22.3
+"capacity estimate (one key, 20 req/min)",binding limit (req/min),20.0 (quota)
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / 120 s: quota-bound (observed / cold),70 / 23
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / 120 s: at observed latency (observed / cold),70 / 23
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / min: quota-bound (observed / cold),35 / 11
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / min: at observed latency (observed / cold),35 / 11
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / 30 s: quota-bound (observed / cold),17 / 6
+"capacity estimate (one key, 20 req/min)",active learners @ 1 turn / 30 s: at observed latency (observed / cold),17 / 6
