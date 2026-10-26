@@ -26,7 +26,7 @@ from typing import Any, Mapping
 import time
 
 from config import ModelClass, Settings
-from gatekeeper.errors import LLMError, ModelSaturated
+from gatekeeper.errors import LLMError, ModelSaturated, TransientError
 from metrics import CallRecord, MetricsSink
 from router.breaker import HALF_OPEN, CircuitBreaker
 
@@ -87,18 +87,19 @@ def escalated(context: Mapping[str, Any]) -> bool:
 class Router:
     def __init__(self, sink: MetricsSink, quota_low_threshold: int, routes: Mapping[str, Route] = ROUTES,
                  breaker_threshold: int = 3, breaker_window_s: float = 60.0, breaker_cooldown_s: float = 30.0,
-                 clock=time.monotonic):
+                 clock=time.monotonic, breaker_timeout_threshold: int = 1):
         self.sink, self.quota_low_threshold, self.routes = sink, quota_low_threshold, routes
         # one breaker per class that some task can fall back FROM (today: mid-size)
         self.breakers: dict[ModelClass, CircuitBreaker] = {
             cls: CircuitBreaker(breaker_threshold, breaker_window_s, breaker_cooldown_s, clock,
-                                on_change=lambda old, new, why, cls=cls: self._breaker_changed(cls, old, new, why))
+                                on_change=lambda old, new, why, cls=cls: self._breaker_changed(cls, old, new, why),
+                                timeout_threshold=breaker_timeout_threshold)
             for cls in {r.default for r in routes.values() if r.fallback is not None}}
 
     @classmethod
     def from_settings(cls, sink: MetricsSink, s: Settings, clock=time.monotonic) -> "Router":
         return cls(sink, s.quota_low_threshold, ROUTES, s.breaker_threshold, s.breaker_window_s,
-                   s.breaker_cooldown_s, clock)
+                   s.breaker_cooldown_s, clock, s.breaker_timeout_threshold)
 
     def route_for(self, task: str) -> Route:
         if task not in self.routes:
@@ -120,15 +121,13 @@ class Router:
                                               f" -> {r.fallback.value}")
         br = self.breakers.get(d.model_class)
         if br is not None and r.fallback is not None:
-            if not br.allow():      # escalation cannot help a class that is down
+            if not br.closed:       # escalation cannot help a class that is down; a learner is never the probe
                 wait = br.retry_in()
                 d = replace(d, model_class=r.fallback, degraded=True, degrade_reason="breaker_open",
-                            reason=d.reason + f"; {d.model_class.value} breaker open (half-open in {wait:.0f}s)"
+                            reason=d.reason + f"; {d.model_class.value} breaker {br.state} (probe in {wait:.0f}s)"
                                               f" -> {r.fallback.value}")
                 if ctx is not None:
                     ctx.emit("breaker_open", model_class=d.preferred.value, retry_in_s=round(wait, 1))
-            elif br.state == HALF_OPEN:
-                d = replace(d, probe=True, reason=d.reason + f"; {d.model_class.value} breaker half-open: probe")
         self._log(d, ctx)
         return d
 
@@ -154,9 +153,21 @@ class Router:
             return
         if err is None:
             br.record_success()
-        elif isinstance(err, ModelSaturated):
-            br.record_failure()
+        elif isinstance(err, TransientError) and err.timeout:
+            br.record_failure("timeout")        # one is enough: it cost a whole timeout period
+        elif isinstance(err, (ModelSaturated, TransientError)):
+            br.record_failure("saturation")     # saturation, 5xx, network: BREAKER_THRESHOLD within the window
 
+    def probe_due(self, can_probe=lambda cls: True) -> list[ModelClass]:
+        """Classes whose breaker is not closed and grants a probe now (open past its cooldown, or half-open with
+        no probe out). The engine sends one tiny BACKGROUND request per class; the breaker closes or re-opens
+        on its outcome. can_probe(cls) is checked first so a refused probe does not use up the grant."""
+        return [cls for cls, br in self.breakers.items() if not br.closed and can_probe(cls) and br.allow()]
+
+    def retry_in(self, cls: ModelClass) -> float:
+        """Seconds until the class is probed again (0 if its breaker is closed or already half-open)."""
+        br = self.breakers.get(cls)
+        return br.retry_in() if br is not None else 0.0
     def release_probe(self, d: Decision) -> None:
         if d.probe and (br := self.breakers.get(d.preferred)):
             br.release_probe()

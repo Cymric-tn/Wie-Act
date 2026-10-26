@@ -100,6 +100,8 @@ class Settings:
     breaker_threshold: int = 3                # saturations within the window that open the breaker
     breaker_window_s: float = 60.0
     breaker_cooldown_s: float = 30.0          # open this long, then half-open (one probe)
+    breaker_timeout_threshold: int = 1        # timeouts that open the breaker (one costs a whole timeout period)
+    breaker_probe_timeout_s: float = 15.0     # the half-open probe is a tiny BACKGROUND request with this timeout
     simulate: bool = False
     sim: SimSettings = field(default_factory=SimSettings)
     metrics_path: str = "metrics/calls.jsonl"
@@ -237,6 +239,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         breaker_threshold=get("BREAKER_THRESHOLD", int, defaults.breaker_threshold),
         breaker_window_s=get("BREAKER_WINDOW_S", float, defaults.breaker_window_s),
         breaker_cooldown_s=get("BREAKER_COOLDOWN_S", float, defaults.breaker_cooldown_s),
+        breaker_timeout_threshold=get("BREAKER_TIMEOUT_THRESHOLD", int, defaults.breaker_timeout_threshold),
+        breaker_probe_timeout_s=get("BREAKER_PROBE_TIMEOUT_S", float, defaults.breaker_probe_timeout_s),
         simulate=get("SIMULATE_CONSTRAINTS", _bool, False),
         sim=sim,
         metrics_path=e.get("METRICS_PATH") or defaults.metrics_path,

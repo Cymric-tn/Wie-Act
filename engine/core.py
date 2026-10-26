@@ -151,6 +151,7 @@ class Engine:
         self._indexed = retriever is not None and bool(getattr(retriever, "chunks", None))
         self._index_lock = asyncio.Lock()
         self._inflight: dict[str, asyncio.Event] = {}     # cache key -> done, for identical concurrent requests
+        self._probes: set[asyncio.Task] = set()           # half-open breaker probes in flight
         self.prompts: dict[str, PromptTemplate] = {
             s.name: load_prompt(settings.prompts_dir, s.prompt) for s in self.registry}   # fail fast
 
@@ -168,6 +169,8 @@ class Engine:
         return cls(settings, caller, cache, sink, registry, clock, retriever)
 
     async def aclose(self) -> None:
+        for t in list(self._probes):
+            t.cancel()
         await self.caller.queue.aclose()
         await self.caller.client.aclose()
         self.cache.close()
@@ -197,11 +200,31 @@ class Engine:
             tctx = spec.prepare(inputs, tctx)
         run = _Run(self._clock, on_event)
         ctx = CallContext(task=task, priority=prio.value, on_event=run.emit, turn_id=tctx.extra.get("turn_id"))
+        self._maybe_probe()
         try:
             return await self._execute(spec, inputs, tctx, prio, run, ctx)
         finally:
             if run.decision is not None:     # a half-open probe that never reached mid-size frees its slot
                 self.router.release_probe(run.decision)
+
+    # ================================================================== breaker probe
+    def _maybe_probe(self) -> None:
+        """A class whose breaker is open past its cooldown gets one probe: a tiny BACKGROUND request with a short
+        timeout and no retries, never a learner's request. Traffic triggers it (no timer): an idle engine
+        spends nothing. The breaker closes if it answers and re-opens (cooldown restarts) if it does not."""
+        for cls in self.router.probe_due(self.caller.limiter.class_free):
+            t = asyncio.get_running_loop().create_task(self._probe(cls))
+            self._probes.add(t)
+            t.add_done_callback(self._probes.discard)
+
+    async def _probe(self, cls: ModelClass) -> None:
+        ctx = CallContext(task="probe", priority=Priority.BACKGROUND.value, purpose="probe", saturation_retries=0)
+        req = ChatRequest(cls, ({"role": "user", "content": "Reply with the single word: ok"},), max_tokens=8,
+                          temperature=0.0)
+        try:
+            await self.caller.chat(req, ctx)       # the breaker learns the outcome through caller.observer
+        except LLMError as e:
+            log.warning("probe of %s failed: %s", cls.value, e.kind)
 
     async def _execute(self, spec: TaskSpec, inputs: dict, tctx: TaskContext, prio: Priority, run: "_Run",
                        ctx: CallContext) -> Result:

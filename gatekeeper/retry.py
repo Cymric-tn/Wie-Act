@@ -248,6 +248,7 @@ class RetryingCaller:
                    fix_request: FixFn | None):
         state["saturation_budget"] = ctx.saturation_retries
         state["priority"] = ctx.priority
+        state["purpose"] = ctx.purpose
         p = self.policy
         extra_wait = total_wait_ms = 0.0
         for attempt in range(1, p.hard_cap + 1):
@@ -292,6 +293,8 @@ class RetryingCaller:
     def _decide(self, kind, err: LLMError, attempt: int, state: dict, fix_request) -> tuple[str, float]:
         p = self.policy
         last = attempt >= p.max_attempts
+        if state.get("purpose") == "probe":
+            return "raise", 0.0                    # a breaker probe is one request: its failure IS the answer
         if isinstance(err, QuotaExhausted):
             delay = err.retry_after_s if err.retry_after_s is not None else p.backoff(attempt, self._rng)
             self.limiter.block(kind, delay)        # in every case nothing is sent before the delay expires

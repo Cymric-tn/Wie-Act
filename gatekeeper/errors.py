@@ -63,6 +63,7 @@ class CeilingExceeded(LLMError):
 @dataclass(eq=False)
 class TransientError(LLMError):
     kind: str = "transient"
+    timeout: bool = False             # the request got no answer within the client timeout (a hung model)
 
 
 @dataclass(eq=False)
@@ -207,7 +208,7 @@ def classify_response(resp: httpx.Response) -> LLMError | None:
 
 def classify_exception(exc: BaseException) -> LLMError:
     if isinstance(exc, httpx.TimeoutException):
-        return TransientError(message=f"timeout: {type(exc).__name__}")
+        return TransientError(message=f"timeout: {type(exc).__name__}", timeout=True)
     if isinstance(exc, httpx.TransportError):
         return TransientError(message=f"network: {type(exc).__name__}")
     return FatalError(message=f"{type(exc).__name__}: {exc}")
