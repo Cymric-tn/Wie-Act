@@ -44,7 +44,7 @@ NEGATIVE = {"ungrounded_formula", "wrong_math", "explain_guard:loop_truncated", 
 TEMPLATE_ONLY_LANGUAGES = {"DARIJA", "ARABIZI"}     # one-liners in these come from fixed Tunisian templates
 from gatekeeper.cache import ExactCache, cache_key
 from gatekeeper.client import ChatRequest, EmbedRequest, LLMClient, create_client
-from gatekeeper.errors import (DEFAULT_RETRY_AFTER_S, CeilingExceeded, ConcurrencyLimited, FatalError, LLMError,
+from gatekeeper.errors import (DEFAULT_RETRY_AFTER_S, CeilingExceeded, ClassUnavailable, ConcurrencyLimited, FatalError, LLMError,
                                ModelSaturated, QuotaExhausted, TransientError)
 from gatekeeper.limiter import Limiter
 from gatekeeper.queue import Priority, PriorityQueue
@@ -64,6 +64,7 @@ _UNAVAILABLE: list[tuple[type[LLMError], str, bool]] = [
     (ConcurrencyLimited, "service_busy", True),
     (QuotaExhausted, "quota_exhausted", True),
     (TransientError, "service_unavailable", True),
+    (ClassUnavailable, "service_unavailable", True),
     (CeilingExceeded, "request_too_large", False),
     (FatalError, "provider_error", False),
 ]
@@ -133,6 +134,7 @@ class Engine:
         self.registry = registry or default_registry()
         self.router = Router.from_settings(sink, settings, clock)
         caller.observer = self.router.observe
+        caller.availability = self.router.unavailable_for
         self._clock = clock
         # prompt assembly must also leave room for the longest answer inside the context window
         window_room = int(settings.context_window * settings.context_fill) - max(settings.task_max_tokens.values())
@@ -601,10 +603,13 @@ class Engine:
                 raise _FastMode(fb) from None
             run.model_class = fb.model_class.value
             chat = await self._chat(spec, fb.model_class, messages, ctx)
-        except TransientError as e:
-            if not e.timeout or d.fallback is None or d.model_class is d.fallback:
+        except (TransientError, ClassUnavailable, ConcurrencyLimited) as e:
+            down = (isinstance(e, ClassUnavailable) or (isinstance(e, TransientError) and e.timeout)
+                    or (isinstance(e, ConcurrencyLimited) and e.after_timeout))
+            if not down or d.fallback is None or d.model_class is d.fallback:
                 raise
-            # the class hung: no retry was spent (retry.py), the breaker is told; answer from the fallback now
+            # the class hung (no retry was spent: retry.py), went down while we waited, or the server still counts
+            # our timed-out request: the breaker is told where it matters; answer from the fallback now
             fb = self.router.on_unavailable(d, ctx)
             eta = self.router.retry_in(d.model_class) or self.settings.breaker_cooldown_s
             run.degrade(fb.degrade_reason)

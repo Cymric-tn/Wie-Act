@@ -51,6 +51,14 @@ class ModelSaturated(LLMError):
 @dataclass(eq=False)
 class ConcurrencyLimited(LLMError):
     kind: str = "concurrency_limited"
+    after_timeout: bool = False       # refused while a timed-out request of the class is still counted: fall back
+
+
+@dataclass(eq=False)
+class ClassUnavailable(LLMError):
+    """Raised locally, nothing was sent: the model class's breaker opened while the request waited its turn.
+    retry_after_s = seconds until the class is probed again."""
+    kind: str = "class_unavailable"
 
 
 @dataclass(eq=False)
