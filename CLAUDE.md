@@ -1,17 +1,18 @@
 # CLAUDE.md — EdNova LLM Engine
 
-## Current status (2026-10-24, engine v1 FROZEN)
+## Current status (2026-10-26, engine v1.1 on branch `engine-v1.1`, not merged; v1 frozen 2026-10-24)
 
 > Resume point for new sessions. Update this at the end of every round; evidence lives in `DECISIONS.md` ("Engine v1 summary").
 
-1. **Frozen.** Build steps 1–9 are done and the engine is frozen after the "last engine round": no engine changes without an explicit go-ahead. Next work belongs to the feature layer, which calls `engine.run`. Integration + technical guide: `docs/engine_guide/ednova_engine_guide.pdf` (LaTeX source alongside; `pdflatex` twice).
+0. **v1.1 (2026-10-26, from the FelCloud probes; evidence in `DECISIONS.md` "Engine v1.1"):** sliding-window rate limiter (20 sends in any 60 s, own window for embeddings, phantom entries from the quota header), quota 429 delay = `retry-after` header only (BACKGROUND waits up to 65 s, INTERACTIVE up to 30 s, else degraded `quota_exhausted` with eta), concurrency 429 waits 2 s, output cap sent as `options.num_predict` + `max_tokens` (`OUTPUT_CAP_MODE`) with per-task caps and sentence-trim on cut output, estimator 2.3 chars/token, `CONTEXT_WINDOW` 4096 (prompt + cap <= 85%), `INPUT_TOKEN_BUDGET` 2800, silent input-truncation detector (degraded `input_truncated`, not cached). Both 429 shapes are CONFIRMED and have real fixtures. Review before merging into `main`.
+1. **v1 frozen:** Build steps 1–9 are done and the engine is frozen after the "last engine round": no engine changes without an explicit go-ahead. Next work belongs to the feature layer, which calls `engine.run`. Integration + technical guide: `docs/engine_guide/ednova_engine_guide.pdf` (LaTeX source alongside; `pdflatex` twice).
 2. **Built:** config + env profiles, gatekeeper (client, limiter, retry, errors, priority queue, exact SQLite cache + coalescing + **negative cache**), simulator + profiles, router + mid-size breaker, `engine.run` with events, BM25 RAG + glossary, tasks classify/hint/explain/compress/grade/quiz, deterministic scaffolding (templates, bank exercises, sympy grading, formula correctness check, loop salvage, fast mode).
 3. **Tests:** `pytest -q` → 351 passed; `-m integration` → 5 passed (Ollama). Git repo initialised 2026-10-25 (branch `main`, one initial commit, no remote yet). Real keys live only in git-ignored `.env.real`; `recon_log.jsonl` (real platform data) is also unpublished, and `tests/test_errors.py` skips its replay when absent.
 4. **Classify (llama3.2:3b, v4):** intent 87%, language 93%, manual set 4/4. **Retrieval:** hit@1 13/15, hit@3 14/15, off-topic 4/4, cross-language 6/8.
 5. **Explain eval (91 answers):** 10 with new examples, wrong_math 1, ungrounded_formula 2; loop rate 2/50 (4%), salvage 1/2.
 6. **Load v1 (`reports/load-engine-v1.md`, normal/saturated/quota_low/capacity):** 0 exceptions; compact 90/100/86/75%; cache 44/28/40/61%; quota refusals 7/7 waited the stated delay; 2.00 requests per cold turn; locally the binding limit is concurrency (~10.4 req/min).
 7. **Negative cache:** an explain answer that failed a check (ungrounded/wrong_math/loop_truncated/degenerate) marks its key for `NEGATIVE_CACHE_TTL_S` (600 s); a repeat gets fast mode with 0 requests. The t011/t016 repeat is fixed in a replay test. The live rerun showed 0 repeats but didn't recreate the case (`reports/load-capacity-negcache.md`).
-8. **Open, platform:** the quota-exhausted shape is still an ASSUMPTION; FelCloud has no embedding model, so there is no semantic cache; latency and capacity need a FelCloud-slot rerun (local mid-size is 8B on CPU).
+8. **Open, platform:** the quota-exhausted shape is CONFIRMED (v1.1); FelCloud has no embedding model, so there is no semantic cache; latency and capacity need a FelCloud-slot rerun (local mid-size is 8B on CPU).
 9. **Open, quality:** Darija generation is weak (the answer body is in French); azi-1 is still labeled DIAGNOSTIC (the router override handles it); quotient and x(x+1) retrieval misses; the saturated-profile priority inversion is unexplained.
 10. **Pending review:** drafts `derivee-definition.en.md` and `limite.fr.md` (`limite` needs bank exercises first); the exercise bank is French-only. Legacy root `cache.sqlite` and `metrics*.jsonl` moved to `_legacy/`; the research PDF moved to `docs/research/`.
 
@@ -81,11 +82,9 @@ Implement against this contract; it is stable for the whole challenge.
 | Request beyond a ceiling (max tokens, etc.) | 400, message names the ceiling | fix the request (trim context / max_tokens), retry once |
 | Normal | 200 + quota headers | read remaining quota, pace accordingly |
 
-- Limits: 20 req/min sustained (token bucket with burst reserve, continuous refill), max 2 concurrent.
+- Limits: 20 req/min (v1.1: sliding window, at most 20 sends in any rolling 60 s; FelCloud keeps the key closed for the full 60 s after the 21st), max 2 concurrent.
 - Embeddings have a **separate** quota from generation.
-- Exact status code and header names for quota-exhausted are NOT yet confirmed. Isolate
-  parsing in one function (`gatekeeper/errors.py`) so it is a one-line fix later. Mark
-  assumptions with `# ASSUMPTION(felcloud):`.
+- Quota-exhausted and concurrency refusals are CONFIRMED (2026-10-26): both 429 with `retry-after: 60`, told apart by the `rate_limit_type` header (`requests` / `max_parallel_requests`). Parsing stays in one function (`gatekeeper/errors.py`). Mark assumptions with `# ASSUMPTION(felcloud):`, observed facts with `# CONFIRMED(felcloud):`.
 - Judges track: calls per model, compact/mid split, input/output tokens, repeated
   identical requests (cache indicator), quota refusals and how they were handled.
 
@@ -100,7 +99,7 @@ router/           compact vs mid-size decision, escalation, fallback policy
 gatekeeper/
    cache.py       exact hash cache + semantic cache
    queue.py       priority queue: INTERACTIVE before BACKGROUND
-   limiter.py     token bucket (rate) + asyncio.Semaphore (concurrency) — two separate mechanisms
+   limiter.py     sliding window (rate) + asyncio.Semaphore (concurrency) — two separate mechanisms
    retry.py       stated-delay retry, backoff+jitter only when no delay given
    errors.py      maps provider responses to typed errors
    client.py      thin OpenAI-compatible async client (httpx or openai SDK)
@@ -172,7 +171,7 @@ provider supports it, keep prompts short, give one example.
 
 Wraps the client when `SIMULATE_CONSTRAINTS=true`. Configurable via env:
 - extra latency per class (compact ~2–6 s, mid-size ~8–30 s)
-- token bucket quota → quota-exhausted error with a delay
+- token bucket quota (the provider's own; the engine's limiter is a sliding window) → quota-exhausted error with a delay
 - random 503 + Retry-After on mid-size (e.g. 15%)
 - 400 when `max_tokens` or prompt length exceeds a configured ceiling
 - quota headers on success
