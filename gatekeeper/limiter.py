@@ -271,6 +271,10 @@ class Limiter:
     def block(self, kind: Kind, seconds: float) -> None:
         self.buckets[kind].block_for(seconds)
 
+    def class_free(self, cls) -> bool:
+        """May one more request of this model class run now? (always, until per-class slot caps exist)"""
+        return True
+
     def wait_time(self, kind: Kind = "chat") -> float:
         """Seconds until the rate window admits one more request (0 = now); includes a stated quota delay."""
         return self.buckets[kind].wait_time()
