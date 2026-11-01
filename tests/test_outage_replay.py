@@ -29,7 +29,6 @@ async def scenario(loop, **env):
         return tl, eng, sim, provider, sink
 
 
-@pytest.mark.xfail(strict=True, reason="engine v1.1: a hung mid-size model holds slots 4 x 85 s and never trips the breaker")
 def test_replay_of_the_midsize_outage():
     tl, eng, *_ = run_virtual(scenario)
     print("\n" + tl.table())
