@@ -616,6 +616,33 @@ class Engine:
         self.cache.put(key, cache_task, {"text": line, "model": chat.model})
         return line
 
+    # ================================================================== ingestion
+    async def ingest_file(self, file: str, course_id: str, unit_id: str = "", owner: str = "",
+                          visibility: str = "public", source: str = "professor", *, class_id: str = "",
+                          ocr: bool = True, add: bool = False, **kw):
+        """rag.ingest.ingest + OCR of the scanned pages: each is read by the `ocr_transcribe` task at BACKGROUND, one at
+        a time, at most INGEST_MAX_OCR_PAGES per file. The result is an IngestResult (see rag/ingest.py); add=True also
+        puts its chunks in the live index (add_material). Each OCR run carries course_id and class_id, and the
+        learner_id of a learner's own upload, never a room."""
+        from rag import ingest as I
+        ids = {"course_id": course_id, **({"class_id": class_id} if class_id else {}),
+               **({"learner_id": owner} if source == "learner" and owner else {})}
+
+        async def read(page: int, png: bytes) -> I.OcrPage:
+            r = await self.run("ocr_transcribe", {"image": png}, {"language": kw.get("language"), **ids},
+                               Priority.BACKGROUND)
+            if r.degraded and r.degrade_reason != "low_confidence":
+                return I.OcrPage(ok=False, reason=r.degrade_reason)
+            return I.OcrPage((r.data or {}).get("text", ""), True, r.degrade_reason == "low_confidence")
+
+        res = await I.ingest_with_ocr(file, course_id, unit_id, owner, visibility, source, class_id=class_id,
+                                      ocr=read if ocr else None, max_ocr_pages=self.settings.ingest_max_ocr_pages,
+                                      course=self.courses.get(course_id), glossary=self.glossary,
+                                      max_tokens=self.settings.chunk_max_tokens, **kw)
+        if add and res.chunks:
+            await self.add_material(res.chunks)
+        return res
+
     # ================================================================== prep pages
     async def generate_page(self, plan, focus_point: Mapping[str, Any], context: Mapping[str, Any] | None = None,
                             on_event: EventCallback | None = None) -> dict:
