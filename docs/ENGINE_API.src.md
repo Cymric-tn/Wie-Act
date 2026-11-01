@@ -6,17 +6,19 @@ example below is a file in `docs/examples/`; those marked **real** are what `Eng
 provider (guards, cache, queue, exercise bank and degrade logic are the real code, only the model's words are canned),
 those marked **canned** come from `FakeEngine` (see "Building a UI without any LLM").
 
-Status of each task in the engine today is in the table below; the contract is the same either way and `FakeEngine`
-implements all of it.
+Every task below is implemented in the real engine (`Engine.run`) and in `FakeEngine`; the examples marked **canned** are
+the few outcomes that cannot be produced offline (for instance the 25 s deadline needs 25 real seconds, and a reading of a
+photo that needs the real model).
 
-| Task | Class | Status |
+| Task | Class | Cost |
 |---|---|---|
-| `classify`, `hint`, `explain`, `quiz`, `grade`, `compress` | compact / mid-size | implemented since v1 |
-| `ocr_transcribe` | vision | v1.3 (phase 3) |
-| `check_claim` | compact, rules first | v1.3 (phase 3) |
-| `check_answer` | rules first, compact only for a guiding question | v1.3 (phase 3) |
-| `prep_plan` | no model | v1.3 (phase 3) |
-| `generate_page` (helper, not a task) | mid-size via `explain` | v1.3 (phase 3) |
+| `classify`, `hint`, `explain`, `quiz`, `grade`, `compress` | compact / mid-size | since v1 |
+| `ocr_transcribe` | vision | v1.3 |
+| `check_claim` | rules, then compact | v1.3 |
+| `check_answer` | rules, then compact only for a guiding question | v1.3 |
+| `prep_plan` | no model | v1.3 |
+| `generate_page` (a helper, not a task) | mid-size via `explain` | v1.3 |
+| `add_material`, `remove_material`, `ingest_file` | none (OCR of scans: vision) | v1.3, section 4 |
 
 ## 1. The call
 
@@ -44,17 +46,17 @@ result = await engine.run(task, inputs, context, priority, on_event=None)
 | `model_class_used` | `compact`, `midsize`, `vision`, or `null` when rules answered |
 | `model` | provider model name or `null` |
 | `from_cache` | served from the exact cache (0 provider requests) |
-| `degraded`, `degrade_reason` | see section 5. `degrade_reason` is the main reason; `notes.degrade_reasons` lists all |
+| `degraded`, `degrade_reason` | see section 6. `degrade_reason` is the main reason; `notes.degrade_reasons` lists all |
 | `eta_seconds` | when trying again makes sense (`quota_exhausted`, `room_busy`, `service_busy`, `midsize_unavailable`) |
 | `mode` | `fast_extractive` (course sentences verbatim, no generated explanation), `bank` (exercise bank), `rules` |
 | `followup_available` | a full answer can be asked again later (fast mode) |
 | `safe_default`, `repaired` | JSON could not be obtained, `data` is the safe default / needed one repair call |
-| `events` | the progress events (section 6), each `{name, t_ms, data}` |
+| `events` | the progress events (section 7), each `{name, t_ms, data}` |
 | `latency_ms`, `tokens_in`, `tokens_out` | cost of this run (0 tokens on a cache hit) |
 | `route_reason`, `notes` | why this class; task-specific details (sources, guards, ...) |
 
 A UI needs only three branches: `degraded` false (show it), `degraded` true with `text`/`data` (show it with the
-reason's wording, section 5), `degraded` true with an `eta_seconds` and nothing to show (show a wait and retry).
+reason's wording, section 6), `degraded` true with an `eta_seconds` and nothing to show (show a wait and retry).
 
 ## 2. Identity, fairness, reserve
 
@@ -264,7 +266,7 @@ Is this statement true according to the course? For "check my notes" and whitebo
      connectives (`donc`, `so`, `نعلم`) may surround the formulas: a claim with any other word
      (`(x²)' = 2x et la dérivée d'une constante est 1`) is not settled by sympy and goes on, with the verified part
      marked as verified for the model. `checked_by: sympy`, 0 requests, event `answered_by_rules`.
-  2. **The course.** Retrieval with the coverage gate (visibility rules of section 2). Nothing relevant:
+  2. **The course.** Retrieval with the coverage gate (visibility rules of section 4). Nothing relevant:
      `NOT_IN_COURSE`, `checked_by: rules`, 0 requests, event `no_relevant_context`.
   3. **One compact JSON call** with the claim and the best chunk; the model may answer any of the four verdicts. The
      correction is cut to 25 words; a correction containing a formula sympy refutes is dropped (`notes.correction_dropped`).
@@ -402,7 +404,31 @@ page, 0.2 for `low_mastery`, else 0.5).
 
 {{example generate_page.ok}}
 
-## 4. Cache administration
+## 4. Course material (professor and learner uploads)
+
+```python
+res = await engine.ingest_file("polycopie.pdf", course_id="analyse", unit_id="derivees", owner="prof-7",
+                               visibility="class", source="professor", class_id="C1", add=True)
+await engine.add_material(chunks)                       # put prepared chunks in the live index
+await engine.remove_material(source="polycopie.pdf", course_id="analyse", owner="prof-7")   # or chunk ids
+```
+
+* `visibility`: `public` (everyone in the course), `class` (that `class_id` only), `private` (the owner only, the
+  `learner_id`). `source`: `professor` (its chunks are boosted in retrieval, `SOURCE_BOOST_PROFESSOR`), `learner` or
+  `course`. A viewer without a `learner_id` or `class_id` never sees private or class material. Retrieval filters by the
+  `course_id`, `class_id` and `learner_id` of the `context` of the asking `run`.
+* `ingest_file` reads a PDF (PyMuPDF), a DOCX or a Markdown file, splits it by headings into chunks of about
+  `CHUNK_MAX_TOKENS`, and tags each chunk with a concept and a **confidence** (a low one is for a professor to confirm:
+  `res.low_confidence`). Pages with no extractable text are `needs_ocr`; with `ocr=True` (default) up to 20 per file are
+  read through `ocr_transcribe` at BACKGROUND, one at a time, and the rest stays in `res.needs_ocr` and `res.ocr["pending"]`
+  (call again later: transcriptions are cached by image, so only the unread pages cost). A page read with visible problems
+  keeps its text but its chunks have confidence under 0.5. No model is used otherwise.
+* `res.chunks`, `res.warnings`, `res.pages`, `res.needs_ocr`, `res.ocr` (`transcribed`, `failed`, `pending`,
+  `low_confidence`, `flagged`, `cap`). `add=True` also puts the chunks in the live index; either way chunks added through the
+  engine are saved per course (`RAG_COURSE_INDEX_DIR`) and survive a restart. Chunk ids are
+  `<source>/<owner>/<file>#<heading>`: ingesting the same file again replaces its chunks.
+
+## 5. Cache administration
 
 `engine.cache.invalidate(request_id)` removes the cache entries behind that request's answer, whether the request
 generated the entry or was served it, and returns how many entries it removed (0: unknown id, expired, or nothing was
@@ -410,7 +436,7 @@ cached because the answer was degraded). A request id names one generation of an
 regenerated, older ids no longer reach it. Use it when a professor rejects a flagged answer; the next ask
 regenerates.
 
-## 5. Degrade reasons
+## 6. Degrade reasons
 
 `degraded=true` always comes with a reason. What each means and what a UI should do:
 
@@ -432,7 +458,7 @@ regenerates.
 | `low_confidence` | `ocr_transcribe`: text returned but with visible reading problems | show it with `confidence_note`, ask the learner to check |
 | `invalid_image` | `ocr_transcribe`: the image could not be read | ask for another photo |
 
-## 6. Events
+## 7. Events
 
 Each `Event` is `{name, t_ms, data}`; `t_ms` is since `run` started. Names and when they occur:
 
@@ -465,7 +491,7 @@ Each `Event` is `{name, t_ms, data}`; `t_ms` is since `run` started. Names and w
 
 New event names may be added; ignore names you do not know.
 
-## 7. Building a UI without any LLM
+## 8. Building a UI without any LLM
 
 ```python
 from engine.fake import FakeEngine
@@ -481,7 +507,7 @@ state for one call; `FakeEngine.OUTCOMES` lists them per task (`quota_exhausted`
 for every task). `room_busy` is real: a second concurrent run with the same `room_id` is refused. `fake.cache.invalidate`
 and `fake.generate_page` exist.
 
-## 8. Platform limits that shape behaviour
+## 9. Platform limits that shape behaviour
 
 20 requests per minute and 2 in flight for the whole team key (not per learner); embeddings are a separate quota, and
 FelCloud has no embedding model, so retrieval is lexical. Expect 2-5 s for compact tasks and 8-15 s for mid-size;
