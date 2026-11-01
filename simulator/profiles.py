@@ -12,9 +12,12 @@ PROFILES: dict[str, dict] = {
     "quota_low": {"saturation_prob": 0.15, "compact_saturation_prob": 0.0, "midsize_slots": 1,
                   "rate_per_min": 10.0, "burst": 4},
     "capacity": {"saturation_prob": 0.15, "compact_saturation_prob": 0.0, "midsize_slots": 1},
+    # the 26 Oct outage: mid-size accepts requests and never answers (the client times out), compact is normal
+    "midsize_down": {"saturation_prob": 0.0, "compact_saturation_prob": 0.0, "midsize_slots": 0,
+                     "hang_midsize": True},
 }
-LOAD_TEST_PROFILES = ("normal", "saturated", "quota_low", "capacity")
-CHAT_PROFILES = ("normal", "calm", "saturated", "quota_low", "off")
+LOAD_TEST_PROFILES = ("normal", "saturated", "quota_low", "capacity", "midsize_down")
+CHAT_PROFILES = ("normal", "calm", "saturated", "quota_low", "midsize_down", "off")
 
 
 def env_overrides(name: str) -> dict[str, str]:

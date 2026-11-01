@@ -40,6 +40,9 @@ class SimSettings:
     transient_error_prob: float = 0.0         # random 500
     max_tokens_ceiling: int = 2048
     prompt_tokens_ceiling: int = 2048
+    hang_midsize: bool = False               # mid-size requests never answer (or after hang_s), like the 26 Oct outage
+    hang_compact: bool = False
+    hang_s: float | None = None               # None = never; N = the answer arrives after N seconds
     seed: int | None = None
 
 
@@ -66,6 +69,12 @@ class Settings:
     context_fill: float = 0.85                # estimated prompt + output cap must fit context_window * context_fill
     truncation_chars_per_token: float = 5.0   # prompt_tokens < prompt chars / this = the provider cut the input; 0 = off
     request_timeout_s: float = 85.0
+    server_timeout_s: float = 90.0            # FelCloud's proxy cuts a request at 90 s and still counts it for a while
+    timeout_midsize_interactive_s: float = 40.0   # explain p95 is about 23 s, the 350-token cap about 30 s
+    timeout_midsize_background_s: float = 85.0
+    timeout_compact_s: float = 30.0
+    midsize_max_slots: int = 1                # mid-size may hold at most this many concurrency slots (ghosts included); 0 = no cap
+    interactive_deadline_s: float = 25.0      # an INTERACTIVE explain without a body by then is answered in fast mode
     max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
     max_retry_wait_s_background: float = 65.0  # BACKGROUND: the observed quota delay is 60 s
     concurrency_retry_wait_s: float = 2.0     # a concurrency 429 states 60 s, but the slot frees at once
@@ -96,6 +105,8 @@ class Settings:
     breaker_threshold: int = 3                # saturations within the window that open the breaker
     breaker_window_s: float = 60.0
     breaker_cooldown_s: float = 30.0          # open this long, then half-open (one probe)
+    breaker_timeout_threshold: int = 1        # timeouts that open the breaker (one costs a whole timeout period)
+    breaker_probe_timeout_s: float = 15.0     # the half-open probe is a tiny BACKGROUND request with this timeout
     simulate: bool = False
     sim: SimSettings = field(default_factory=SimSettings)
     metrics_path: str = "metrics/calls.jsonl"
@@ -162,6 +173,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         transient_error_prob=get("SIM_TRANSIENT_ERROR_PROB", float, d.transient_error_prob),
         max_tokens_ceiling=get("SIM_MAX_TOKENS_CEILING", int, d.max_tokens_ceiling),
         prompt_tokens_ceiling=get("SIM_PROMPT_TOKENS_CEILING", int, d.prompt_tokens_ceiling),
+        hang_midsize=get("SIM_HANG_MIDSIZE", _bool, d.hang_midsize),
+        hang_compact=get("SIM_HANG_COMPACT", _bool, d.hang_compact),
+        hang_s=get("SIM_HANG_S", float, d.hang_s),
         seed=get("SIM_SEED", int, None),
     )
     if e.get("RETRIEVER") and e["RETRIEVER"].strip().lower() not in ("bm25", "embedding"):
@@ -173,6 +187,14 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         raise ConfigError("OUTPUT_CAP_MODE must be 'options', 'max_tokens' or 'both'")
 
     defaults = Settings(base_url="", api_key="", models={}, embed_model="")
+    server_s = get("SERVER_TIMEOUT_S", float, defaults.server_timeout_s)
+    for var, dflt in (("TIMEOUT_MIDSIZE_INTERACTIVE_S", defaults.timeout_midsize_interactive_s),
+                      ("TIMEOUT_MIDSIZE_BACKGROUND_S", defaults.timeout_midsize_background_s),
+                      ("TIMEOUT_COMPACT_S", defaults.timeout_compact_s), ("REQUEST_TIMEOUT_S", defaults.request_timeout_s),
+                      ("BREAKER_PROBE_TIMEOUT_S", defaults.breaker_probe_timeout_s)):
+        if get(var, float, dflt) >= server_s:
+            raise ConfigError(f"{var} must stay under SERVER_TIMEOUT_S ({server_s:g} s): a client that waits as long "
+                              f"as the proxy never sees its error")
     task_caps = {name: get(var, int, defaults.task_max_tokens[name]) for name, var in (
         ("classify", "CLASSIFY_MAX_TOKENS"), ("hint", "HINT_MAX_TOKENS"), ("grade", "GRADE_MAX_TOKENS"),
         ("compress", "COMPRESS_MAX_TOKENS"), ("explain", "EXPLAIN_MAX_TOKENS"),
@@ -200,6 +222,12 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         context_fill=get("CONTEXT_FILL", float, defaults.context_fill),
         truncation_chars_per_token=get("INPUT_TRUNCATION_CHARS_PER_TOKEN", float, defaults.truncation_chars_per_token),
         request_timeout_s=get("REQUEST_TIMEOUT_S", float, defaults.request_timeout_s),
+        server_timeout_s=get("SERVER_TIMEOUT_S", float, defaults.server_timeout_s),
+        timeout_midsize_interactive_s=get("TIMEOUT_MIDSIZE_INTERACTIVE_S", float, defaults.timeout_midsize_interactive_s),
+        timeout_midsize_background_s=get("TIMEOUT_MIDSIZE_BACKGROUND_S", float, defaults.timeout_midsize_background_s),
+        timeout_compact_s=get("TIMEOUT_COMPACT_S", float, defaults.timeout_compact_s),
+        midsize_max_slots=get("MIDSIZE_MAX_SLOTS", int, defaults.midsize_max_slots),
+        interactive_deadline_s=get("INTERACTIVE_DEADLINE_S", float, defaults.interactive_deadline_s),
         max_retry_wait_s=get("MAX_RETRY_WAIT_S", float, defaults.max_retry_wait_s),
         max_retry_wait_s_background=get("MAX_RETRY_WAIT_S_BACKGROUND", float, defaults.max_retry_wait_s_background),
         concurrency_retry_wait_s=get("CONCURRENCY_RETRY_WAIT_S", float, defaults.concurrency_retry_wait_s),
@@ -229,6 +257,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         breaker_threshold=get("BREAKER_THRESHOLD", int, defaults.breaker_threshold),
         breaker_window_s=get("BREAKER_WINDOW_S", float, defaults.breaker_window_s),
         breaker_cooldown_s=get("BREAKER_COOLDOWN_S", float, defaults.breaker_cooldown_s),
+        breaker_timeout_threshold=get("BREAKER_TIMEOUT_THRESHOLD", int, defaults.breaker_timeout_threshold),
+        breaker_probe_timeout_s=get("BREAKER_PROBE_TIMEOUT_S", float, defaults.breaker_probe_timeout_s),
         simulate=get("SIMULATE_CONSTRAINTS", _bool, False),
         sim=sim,
         metrics_path=e.get("METRICS_PATH") or defaults.metrics_path,

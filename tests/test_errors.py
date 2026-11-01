@@ -204,3 +204,13 @@ def test_limit_type_header_alone_tells_concurrency_from_quota():
         bare = httpx.Response(429, headers={"retry-after": "60", "rate_limit_type": r["headers"]["rate_limit_type"]},
                               json={"error": {"message": "Rate limit exceeded", "type": "throttling_error"}})
         assert isinstance(classify_response(bare), cls)
+
+
+def test_key_hash_is_scrubbed_from_error_messages():
+    from gatekeeper.errors import FatalError, scrub
+    raw = "Rate limit exceeded for api_key: 3f9a1c0be47d55aa90d1c2e3f4a5b6c7. Limit type: requests."
+    assert "3f9a1c0be47d" not in scrub(raw)
+    assert "api_key: <key-hash>" in scrub(raw)
+    assert "<key-hash>" in str(FatalError(status=401, message=raw))
+    assert "sk-abcdef123456" not in FatalError(message="bad key sk-abcdef123456xyz").message
+    assert scrub("Limit type: requests. Current limit: 20") == "Limit type: requests. Current limit: 20"

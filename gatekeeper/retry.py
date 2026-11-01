@@ -17,6 +17,8 @@ Retry policy — what to do with each typed error from errors.py (the platform c
   |                   | states 60 s but the slot frees as soon as a request ends).          |
   | CeilingExceeded   | fix the request once (trim max_tokens / context), retry once.       |
   | TransientError    | exponential backoff + full jitter (only when no delay is stated).   |
+  |  (mid-size timeout)| no retry: a hung model does not answer a second try; raise at once  |
+  |                   | so the engine falls back (compact keeps the retries above).         |
   | FatalError        | raise immediately.                                                  |
 
 Before the first attempt the estimated input is checked against INPUT_TOKEN_BUDGET and against the
@@ -41,7 +43,8 @@ import httpx
 from config import ModelClass, Settings
 from gatekeeper.client import (ChatRequest, EmbedRequest, LLMClient, chars_per_token, estimate_tokens,
                                parse_chat, parse_embed, request_hash, set_chars_per_token)
-from gatekeeper.errors import (CeilingExceeded, ConcurrencyLimited, FatalError, LLMError, ModelSaturated,
+from gatekeeper.errors import (CeilingExceeded, ClassUnavailable, ConcurrencyLimited, FatalError, LLMError,
+                               ModelSaturated,
                                QuotaExhausted, QuotaInfo, TransientError, classify_exception,
                                classify_response, parse_quota)
 from gatekeeper.limiter import Clock, Limiter, Sleep
@@ -58,6 +61,11 @@ class RetryPolicy:
     max_wait_s: float = 30.0              # INTERACTIVE: longest stated delay it will wait for
     max_wait_background_s: float = 65.0   # BACKGROUND: the observed quota delay is 60 s
     concurrency_wait_s: float = 2.0       # cap on a concurrency 429's stated delay
+    timeout_midsize_interactive_s: float = 40.0
+    timeout_midsize_background_s: float = 85.0
+    timeout_compact_s: float = 30.0
+    probe_timeout_s: float = 15.0         # the breaker's half-open probe
+    server_timeout_s: float = 90.0        # the proxy still counts an abandoned request until then (ghost slot)
     saturation_retries: int = 1           # mid-size
     compact_saturation_retries: int = 3
     backoff_base_s: float = 0.5
@@ -67,7 +75,22 @@ class RetryPolicy:
     def from_settings(cls, s: Settings) -> "RetryPolicy":
         return cls(max_attempts=s.max_attempts, max_wait_s=s.max_retry_wait_s,
                    max_wait_background_s=s.max_retry_wait_s_background, concurrency_wait_s=s.concurrency_retry_wait_s,
-                   saturation_retries=s.saturation_retries, compact_saturation_retries=s.compact_max_retries)
+                   saturation_retries=s.saturation_retries, compact_saturation_retries=s.compact_max_retries,
+                   timeout_midsize_interactive_s=s.timeout_midsize_interactive_s,
+                   timeout_midsize_background_s=s.timeout_midsize_background_s,
+                   timeout_compact_s=s.timeout_compact_s, probe_timeout_s=s.breaker_probe_timeout_s,
+                   server_timeout_s=s.server_timeout_s)
+
+    def timeout_for(self, model_class: ModelClass, priority: str | None, purpose: str | None = None) -> float:
+        """Seconds a chat request may go without an answer: per class and priority, all under the server's 90 s.
+        A learner waiting (INTERACTIVE) is given less than background work; the breaker probe the least."""
+        if model_class is ModelClass.COMPACT:
+            base = self.timeout_compact_s
+        elif priority == "BACKGROUND":
+            base = self.timeout_midsize_background_s
+        else:
+            base = self.timeout_midsize_interactive_s
+        return min(base, self.probe_timeout_s) if purpose == "probe" else base
 
     @property
     def hard_cap(self) -> int:
@@ -170,6 +193,9 @@ class RetryingCaller:
         self.queue = queue or PriorityQueue(limiter, clock)
         # (model_class, error or None) after every chat attempt: feeds the router's circuit breakers
         self.observer: Callable[[ModelClass, LLMError | None], None] | None = None
+        # model class -> seconds until it is probed again, or None while it is usable (the router's breaker):
+        # a request waiting for a slot of a class that goes down is failed with ClassUnavailable, nothing sent
+        self.availability: Callable[[ModelClass], float | None] | None = None
         self.input_token_budget = input_token_budget
         cfg = getattr(client, "settings", None)
         if cfg is not None:
@@ -203,7 +229,7 @@ class RetryingCaller:
         state = {"fixed": False, "saturated": 0, "req": req}
 
         async def send(r: ChatRequest) -> httpx.Response:
-            return await self.client.chat(r)
+            return await self.client.chat(r, timeout=self.policy.timeout_for(r.model_class, ctx.priority, ctx.purpose))
 
         resp, attempt, latency_ms, wait_ms, total_wait_ms, quota = await self._run(
             "chat", ctx, state, send, fix_request)
@@ -248,20 +274,35 @@ class RetryingCaller:
                    fix_request: FixFn | None):
         state["saturation_budget"] = ctx.saturation_retries
         state["priority"] = ctx.priority
+        state["purpose"] = ctx.purpose
         p = self.policy
         extra_wait = total_wait_ms = 0.0
         for attempt in range(1, p.hard_cap + 1):
             req = state["req"]
-            async with self.queue.slot(kind, ctx.priority, ctx) as slot:
-                ctx.emit("generating" if kind == "chat" else "embedding", attempt=attempt,
-                         model_class=getattr(getattr(req, "model_class", None), "value", None))
-                t0 = self._clock()
-                try:
-                    resp: httpx.Response | None = await send(req)
-                    err = classify_response(resp)
-                except httpx.HTTPError as exc:
-                    resp, err = None, classify_exception(exc)
-                latency_ms = (self._clock() - t0) * 1000
+            cls = req.model_class if kind == "chat" else None
+            gate = None
+            if cls is not None and self.availability is not None and ctx.purpose != "probe":
+                gate = lambda c=cls: self.availability(c)           # a probe is how a down class is tested
+            try:
+                async with self.queue.slot(kind, ctx.priority, ctx, model_class=cls, unavailable=gate) as slot:
+                    ctx.emit("generating" if kind == "chat" else "embedding", attempt=attempt,
+                             model_class=getattr(getattr(req, "model_class", None), "value", None))
+                    t0 = self._clock()
+                    try:
+                        resp: httpx.Response | None = await send(req)
+                        err = classify_response(resp)
+                    except httpx.HTTPError as exc:
+                        resp, err = None, classify_exception(exc)
+                        if getattr(err, "timeout", False):          # the server still counts it: a ghost slot
+                            slot.ghost_for_s = max(0.0, p.server_timeout_s - (self._clock() - t0))
+                    except asyncio.CancelledError:                   # abandoned mid-flight: same, the server went on
+                        slot.ghost_for_s = max(0.0, p.server_timeout_s - (self._clock() - t0))
+                        raise
+                    latency_ms = (self._clock() - t0) * 1000
+            except ClassUnavailable as cu:                           # the breaker opened while we waited: nothing sent
+                ctx.emit("gave_up", error=cu.kind, retry_after_s=cu.retry_after_s)
+                cu.attempts = attempt - 1
+                raise
             wait_ms = (slot.wait_s + extra_wait) * 1000
             extra_wait = 0.0
             total_wait_ms += wait_ms
@@ -271,6 +312,8 @@ class RetryingCaller:
             if kind == "chat" and self.observer is not None:
                 self.observer(req.model_class, err)
             if err is None:
+                if cls is not None:
+                    self.limiter.clear_ghosts(cls)      # the class answers again: its old counts are gone
                 return resp, attempt, latency_ms, wait_ms, total_wait_ms, quota
 
             action, delay = self._decide(kind, err, attempt, state, fix_request)
@@ -292,6 +335,8 @@ class RetryingCaller:
     def _decide(self, kind, err: LLMError, attempt: int, state: dict, fix_request) -> tuple[str, float]:
         p = self.policy
         last = attempt >= p.max_attempts
+        if state.get("purpose") == "probe":
+            return "raise", 0.0                    # a breaker probe is one request: its failure IS the answer
         if isinstance(err, QuotaExhausted):
             delay = err.retry_after_s if err.retry_after_s is not None else p.backoff(attempt, self._rng)
             self.limiter.block(kind, delay)        # in every case nothing is sent before the delay expires
@@ -315,6 +360,10 @@ class RetryingCaller:
                 return "raise", 0.0
             return "retry_after_interval", delay
         if isinstance(err, ConcurrencyLimited):
+            cls = state["req"].model_class if kind == "chat" else None
+            if cls is ModelClass.MIDSIZE and self.limiter.ghost_count(cls):
+                err.after_timeout = True           # the server still counts our timed-out request: not a retry
+                return "raise", 0.0                # case, not a breaker case; the engine falls back
             wait = min(err.retry_after_s or 1.0, p.concurrency_wait_s)
             return ("raise", 0.0) if last else ("wait_slot", wait)
         if isinstance(err, CeilingExceeded):
@@ -326,6 +375,8 @@ class RetryingCaller:
             state["req"], state["fixed"] = fixed, True
             return "fix_request", 0.0
         if isinstance(err, TransientError):
+            if err.timeout and kind == "chat" and state["req"].model_class is ModelClass.MIDSIZE:
+                return "raise", 0.0                # a hung mid-size model will not answer a retry: fall back now
             if last:
                 return "raise", 0.0
             delay = err.retry_after_s if err.retry_after_s is not None else p.backoff(attempt, self._rng)
