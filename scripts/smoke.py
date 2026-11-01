@@ -64,23 +64,39 @@ async def main() -> None:
     ap.add_argument("--task", action="append", help="only these tasks (repeatable)")
     ap.add_argument("--no-cache", action="store_true", help="fresh in-memory cache (e.g. to show a fallback)")
     ap.add_argument("--image", help="a photo of work to transcribe with ocr_transcribe (data URL or base64; default: drawn)")
+    ap.add_argument("--guard-out", help="write {chat_requests, non_200, server_429, exceptions} here; an exception is counted, not raised")
     a = ap.parse_args()
     s = load_settings()
     models = {c.value: n for c, n in s.models.items()}
     print(f"provider={s.base_url} simulate={s.simulate} saturation_prob={s.sim.saturation_prob} models={models}"
           f" cache={':memory:' if a.no_cache else s.cache_path}")
     cache = ExactCache(":memory:", s.cache_ttl_s) if a.no_cache else None
-    async with Engine.create(s, cache=cache) as engine:
+    guard = None
+    if a.guard_out:
+        from scripts.slot_guard import Guard
+        guard = Guard("smoke")
+    async with Engine.create(s, cache=cache, transport=guard.transport if guard else None) as engine:
         for task, inputs, context in CALLS:
             if not a.task or task in a.task:
                 if inputs.get("image") == "@sample":
                     inputs = {**inputs, "image": a.image or sample_image()}
-                show(await engine.run(task, inputs, context, Priority.INTERACTIVE))
+                try:
+                    show(await engine.run(task, inputs, context, Priority.INTERACTIVE))
+                except Exception as e:
+                    if guard is None:
+                        raise
+                    guard.exception(task, e)
+                    print(f"\n[{task}] EXCEPTION {type(e).__name__}")
         if not a.task or "generate_page" in a.task:     # a helper, not a task: one prep page (explain at BACKGROUND)
             page = await engine.generate_page({}, {"concept_id": "puissance", "page_kind": "learn", "mastery": 0.2},
                                               {"language": "FRENCH", "course_id": "analyse"})
             print(f"\n[generate_page] concept={page['concept_id']} degraded={page['degraded']} from_cache={page['from_cache']} "
                   f"quiz={len(page['quiz'])} worked_example={bool(page['worked_example'])}")
+    if guard:
+        rep_ = guard.write(a.guard_out)
+        print(f"\nguard: {rep_['chat_requests']} chat requests, server 429s {rep_['server_429']}, exceptions {len(rep_['exceptions'])}")
+        if rep_["exceptions"]:
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":
