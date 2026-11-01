@@ -22,6 +22,10 @@ Ingestion: a file (PDF, DOCX, Markdown/text) -> chunks ready for Engine.add_mate
     replaces its chunks, and one learner's `notes.pdf` never collides with another's.
   * Scanned pages: a PDF page with fewer than MIN_PAGE_CHARS characters of text is listed in `needs_ocr`
     (`render_page(n)` gives a PNG); its text is simply absent from `chunks` until it has been transcribed.
+    ingest_with_ocr() transcribes them through a callback (the engine passes ocr_transcribe at BACKGROUND): at most
+    MAX_OCR_PAGES per file (20), one at a time, stopping after two failures in a row; what was not read stays in
+    `needs_ocr` (a second call reads only that: transcriptions are cached by image). A page the reader flagged as
+    unreliable keeps its text but its chunks get confidence < 0.5, so a professor is asked to confirm them.
 """
 from __future__ import annotations
 
@@ -29,7 +33,7 @@ import os
 import re
 import zipfile
 from dataclasses import dataclass, field, replace
-from typing import Callable
+from typing import Awaitable, Callable
 from xml.etree import ElementTree as ET
 
 from engine import language as L
@@ -44,6 +48,9 @@ MIN_PAGE_CHARS = 20
 MIN_TAG_COVERAGE = 0.3
 LOW_CONFIDENCE = 0.5
 SUPPORTED = (".pdf", ".docx", ".md", ".markdown", ".txt")
+MAX_OCR_PAGES = 20
+OCR_STOP_AFTER_FAILURES = 2
+OCR_LOW_CONFIDENCE = 0.49
 
 
 class IngestError(ValueError):
@@ -64,6 +71,7 @@ class IngestResult:
     pages: int = 0
     warnings: list[str] = field(default_factory=list)
     min_confidence: float = LOW_CONFIDENCE
+    ocr: dict = field(default_factory=dict)       # after ingest_with_ocr: transcribed / low_confidence / failed / pending
     _render: Callable[[int], bytes] | None = None
 
     @property
@@ -298,3 +306,96 @@ def _unique(chunks: list[Chunk]) -> list[Chunk]:
         seen[c.chunk_id] = n + 1
         out.append(c if n == 0 else replace(c, chunk_id=f"{c.chunk_id}~{n + 1}"))
     return out
+
+
+# ------------------------------------------------------------------ scanned pages
+@dataclass
+class OcrPage:
+    """What an OCR callback returns for one page."""
+    text: str = ""
+    ok: bool = True                  # False: the page could not be read now (refused, busy): it stays pending
+    low_confidence: bool = False     # read, but with visible problems
+    reason: str | None = None
+
+
+OcrFn = Callable[[int, bytes], Awaitable[OcrPage]]
+
+
+async def ingest_with_ocr(file: str, course_id: str, unit_id: str = "", owner: str = "", visibility: str = "public",
+                          source: str = "professor", *, ocr: OcrFn | None = None, max_ocr_pages: int = MAX_OCR_PAGES,
+                          **kw) -> IngestResult:
+    """ingest(), then the scanned pages through `ocr(page_number, png_bytes)`, in page order, at most max_ocr_pages."""
+    res = ingest(file, course_id, unit_id, owner, visibility, source, **kw)
+    if not res.needs_ocr or ocr is None:
+        return res
+    flagged = list(res.needs_ocr)
+    todo, skipped = flagged[:max(0, max_ocr_pages)], flagged[max(0, max_ocr_pages):]
+    done: dict[int, OcrPage] = {}
+    failed: dict[int, str] = {}
+    pending: list[int] = list(skipped)
+    streak = 0
+    for i, n in enumerate(todo):
+        try:
+            got = await ocr(n, res.render_page(n))
+        except Exception as e:               # a page that cannot even be rendered is not worth stopping the file for
+            got = OcrPage(ok=False, reason=type(e).__name__)
+        if not got.ok:
+            failed[n] = got.reason or "failed"
+            streak += 1
+            if streak >= OCR_STOP_AFTER_FAILURES:
+                pending = list(todo[i + 1:]) + pending      # the refusal will repeat: stop, keep the rest for later
+                break
+            continue
+        streak = 0
+        done[n] = got
+    stem = os.path.splitext(os.path.basename(file))[0]
+    prefix = f"{source}/{slug(owner) or 'anon'}/{slug(stem) or 'file'}"
+    scope = dict(course_id=course_id, unit_id=unit_id, visibility=visibility, owner=owner, class_id=kw.get("class_id", ""),
+                 origin=source)
+    title = kw.get("title") or stem
+    new: list[Chunk] = []
+    low_pages = []
+    for n in sorted(done):
+        page = done[n]
+        text = page.text.strip()
+        if not text:
+            failed[n] = "no text read"
+            continue
+        sections = [replace(sec, page=n) for sec in _page_sections(text, n)]
+        part = _sections_to_chunks(sections, prefix, os.path.basename(file), title, kw.get("language"),
+                                   kw.get("max_tokens", 300), scope)
+        part = _tag(_unique(part), kw.get("course"), unit_id, kw.get("glossary"))
+        if page.low_confidence:
+            low_pages.append(n)
+            part = [replace(c, confidence=min(c.confidence, OCR_LOW_CONFIDENCE)) for c in part]
+        new += part
+    merged = sorted([*res.chunks, *new], key=lambda c: c.page)        # stable: text pages keep their order
+    res.chunks = _unique(merged)
+    res.needs_ocr = sorted(set(failed) | set(pending))
+    res.ocr = {"flagged": flagged, "transcribed": sorted(n for n in done if n not in failed), "low_confidence": low_pages,
+               "failed": failed, "pending": sorted(pending), "cap": max_ocr_pages}
+    if skipped:
+        res.warnings.append(f"{len(skipped)} scanned page(s) over the cap of {max_ocr_pages} were not read: "
+                            f"{skipped[:10]}{'...' if len(skipped) > 10 else ''}")
+    if failed:
+        res.warnings.append(f"{len(failed)} page(s) could not be read now: {sorted(failed)[:10]}")
+    res.warnings = [w for w in res.warnings if "no text could be extracted" not in w or not res.chunks]
+    return res
+
+
+def _page_sections(text: str, page: int) -> list[Section]:
+    """One transcribed page -> sections (headings by the PDF heuristic); a page without one is "Page n"."""
+    sections, heading, body = [], "", []
+
+    def flush() -> None:
+        if body:
+            sections.append(Section(heading or f"Page {page}", "\n".join(body).strip(), page))
+        body.clear()
+    for line in text.splitlines():
+        if _is_heading(line):
+            flush()
+            heading = line.strip()
+        else:
+            body.append(line)
+    flush()
+    return [s for s in sections if s.body.strip()]
