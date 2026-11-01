@@ -141,9 +141,12 @@ def _is_heading(line: str) -> bool:
 
 def _read_pdf(path: str) -> tuple[list[Section], list[int], int, Callable[[int], bytes]]:
     try:
-        import fitz                                       # PyMuPDF
+        import fitz                                       # PyMuPDF (the name it had before 1.24; still shipped)
     except ImportError:
-        raise IngestError("PDF ingestion needs PyMuPDF: pip install pymupdf") from None
+        try:
+            import pymupdf as fitz
+        except ImportError:
+            raise IngestError("PDF ingestion needs PyMuPDF: pip install pymupdf") from None
     try:
         doc = fitz.open(path)
     except Exception as e:                                # corrupt / encrypted: the caller gets one clear error
