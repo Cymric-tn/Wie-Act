@@ -624,8 +624,17 @@ Stored hint, level 2 (0 requests):
 A grounded explanation of a course concept. Mid-size model, retrieval over the course (BM25 + glossary, no model).
 
 * inputs: `question` (required); `history` (list of `{role, content}`); `exclude_exercises` (ids not to propose again);
-  `passage` (phase 3: text the learner selected on a prep page); `board_text` (phase 3: text from the whiteboard).
-  `passage` and `board_text` are part of the cache key (by hash); the other ids are not.
+  `passage` and `board_text` (below).
+  * `passage`: the text a learner selected on a prep page ("this confuses me"). It is put in the prompt and **retrieval
+    runs on it first** (it is the topic), then on the question; `notes.retrieval_on` says which found the course text.
+    The question may be as vague as "explain this".
+  * `board_text`: the whiteboard text for "Ask AI". It is put in the prompt as the learner's own notes (it may contain
+    mistakes). Retrieval runs on the question; if that names no topic, on the whiteboard text; the coverage gate still
+    applies, so an off-course board gets "not in the course".
+  * Both are **trimmed to a share of the prompt budget** (`PASSAGE_BUDGET_SHARE`, `BOARD_BUDGET_SHARE`, 25% each; the head
+    is kept, cut on a sentence or line, marked `[…]`; event `trimming_input` with `input`, `from_chars`, `to_chars`) so
+    the request always fits. Each is part of the **cache key by a hash of the full original text**, so two passages that
+    differ only in the trimmed part are still two entries, and the same passage asked by two learners is one.
 * `text`: `[opener] + body + "À toi : <exercise>"`. `data`: `{body, opener, exercise}` so a UI can lay them out.
   `notes.sources`: chunk ids the answer is grounded in. The body's formulas are checked (sympy) against the course.
 * cost: 1 mid-size (~9.5 s on FelCloud) on a miss; 0 on a hit. Fast mode adds at most 1 compact line.
@@ -2703,7 +2712,8 @@ Each `Event` is `{name, t_ms, data}`; `t_ms` is since `run` started. Names and w
 | `fast_extractive` | `reason` | fast mode is being built |
 | `deadline` | `deadline_s`, `generation_continues` | explain passed 25 s |
 | `repairing_json`, `using_safe_default` | `error` | JSON task problems |
-| `guarded`, `output_trimmed`, `output_truncated`, `input_truncated`, `trimming_input` | | a guard acted on the text/prompt |
+| `guarded`, `output_trimmed`, `output_truncated`, `input_truncated` | | a guard acted on the text/prompt |
+| `trimming_input` | `input`, `from_chars`, `to_chars` (explain) or `estimated_tokens`, `budget` (retry layer) | an input was cut to fit the budget |
 | `answered_by_rules` | | no model needed |
 | `picking_exercise` | | quiz |
 | `no_relevant_context` | | the course does not cover it |
