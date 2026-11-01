@@ -1,80 +1,86 @@
 {
  "mode": "virtual (simulated FelCloud)",
- "duration_s": 256.74523566551306,
+ "duration_s": 273.7661046144581,
  "seed": 1,
  "saturation_prob": 0.05,
  "cache": "off",
  "note": "Simulated: the real engine through the constraint simulator (compact 2-5 s, mid-size 8-15 s, vision 10-18 s, 20 / min, 2 in flight, one mid-size slot, random mid-size saturation) with canned model replies and a virtual clock. It checks the engine's scheduling, not the models, and not FelCloud.",
  "interactive": {
-  "n": 73,
+  "n": 75,
   "p50_s": 4.16,
-  "p95_s": 17.09,
-  "max_s": 25.04,
-  "degraded": 3,
+  "p95_s": 14.65,
+  "max_s": 24.6,
+  "degraded": 7,
   "degrade_reasons": {
    "superseded": 2,
-   "deadline": 1
+   "quota_low": 5
   },
   "by_task": {
    "check_answer": {
     "n": 5,
-    "p50_s": 5.13,
-    "p95_s": 7.96
+    "p50_s": 3.87,
+    "p95_s": 7.35,
+    "max_s": 7.35
    },
    "check_claim": {
     "n": 5,
-    "p50_s": 0.0,
-    "p95_s": 5.23
+    "p50_s": 4.35,
+    "p95_s": 7.89,
+    "max_s": 7.89
    },
    "classify": {
-    "n": 29,
-    "p50_s": 3.97,
-    "p95_s": 7.29
+    "n": 30,
+    "p50_s": 3.61,
+    "p95_s": 7.23,
+    "max_s": 7.29
    },
    "explain": {
-    "n": 15,
-    "p50_s": 0.0,
-    "p95_s": 19.61
+    "n": 14,
+    "p50_s": 9.3,
+    "p95_s": 16.54,
+    "max_s": 18.75
    },
    "hint": {
-    "n": 14,
-    "p50_s": 3.73,
-    "p95_s": 6.24
+    "n": 16,
+    "p50_s": 4.13,
+    "p95_s": 6.15,
+    "max_s": 6.24
    },
    "ocr_transcribe": {
     "n": 5,
-    "p50_s": 16.79,
-    "p95_s": 25.04
+    "p50_s": 13.08,
+    "p95_s": 24.6,
+    "max_s": 24.6
    }
   }
  },
  "background": {
-  "n": 7,
-  "pages": 6,
+  "n": 4,
+  "pages": 3,
   "pages_degraded": 0,
-  "waited_for_reserve": 2
+  "waited_for_reserve": 1
  },
  "provider": {
-  "chat_requests": 63,
+  "chat_requests": 74,
   "by_model": {
-   "compact-a": 47,
+   "compact-a": 59,
    "mid-a": 12,
-   "deepseek-ocr": 4
+   "deepseek-ocr": 3
   },
   "non_200": {},
   "server_429": 0,
-  "densest_60s_window": 18
+  "densest_60s_window": 20
  },
  "exceptions": [],
  "records": {
   "runs": 83,
   "by_outcome": {
-   "ok": 80,
-   "degraded": 3
+   "ok": 76,
+   "degraded": 7
   }
  },
  "verdict": {
-  "interactive_p95_under_25s": true,
+  "interactive_p95_within_25s": true,
   "zero_server_429": true,
   "zero_exceptions": true,
   "window_at_most_20": true

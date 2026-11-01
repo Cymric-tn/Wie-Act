@@ -158,7 +158,7 @@ Tasks & classify · hint · explain (RAG) · grade · quiz · compress (+ your o
 Model classes & \textit{compact} (default for everything) and \textit{mid-size} (explain only)\\
 Guarantee & never raises a provider error: every failure comes back as a degraded \texttt{Result} with a reason\\
 Platform & any OpenAI-compatible API (FelCloud, Ollama); switching = editing \texttt{.env}\\
-Tests & 765 unit + 5 integration (the integration tests were not run for v1.2 and v1.3: Ollama stays off)\\
+Tests & 768 unit + 5 integration (the integration tests were not run for v1.2 and v1.3: Ollama stays off)\\
 Measured & 0 exceptions in 4 load profiles · 75–100\,\% of calls on compact · 28–61\,\% cache hits\\
 \end{tabularx}
 \end{tcolorbox}
@@ -250,7 +250,7 @@ Requirements: Python 3.10+ (the code avoids 3.11-only features), and the package
 pip install -r requirements.txt
 cp .env.example .env            # then fill LLM_BASE_URL, LLM_API_KEY, MODEL_* (see section 13)
 python -m scripts.index_docs    # chunk data/docs/*.md into data/index/chunks.json (no LLM call)
-pytest -q                       # 765 unit tests, no LLM needed
+pytest -q                       # 768 unit tests, no LLM needed
 python -m scripts.smoke         # one real call per task
 python -m scripts.chat          # interactive console: one line = one learner turn
 \end{lstlisting}
@@ -1013,7 +1013,7 @@ A prep plan or an ingest can therefore never use the window a learner is about t
 counts its estimated tokens in the input budget (a request that cannot fit is refused locally, nothing sent). Vision has its own
 timeout (\texttt{TIMEOUT\_VISION\_S}, 40 s) and, like mid-size, is never retried after a hang. It shares the chat rate window and the
 two concurrency slots with the other classes until the organizers say otherwise; mid-size and vision together may hold at most
-\texttt{MAX\_CONCURRENT}$-1$ slots, so compact work always has one. Whether a vision request really counts in the 20-per-minute
+\texttt{MAX\_CONCURRENT}$-1$ slots, so compact work always has one (an interactive photo can therefore wait behind a mid-size generation that is still running into the cache; its \texttt{queued} event carries an ETA). A learner's explain is bounded by the 25 s deadline in every path, also while it waits for an identical request that another learner or a prep page is generating. Whether a vision request really counts in the 20-per-minute
 window is measured by \texttt{scripts/load\_mixed --real --probe-vision} (not yet run: no slot).
 
 \subsection{New tasks}
@@ -1440,7 +1440,7 @@ simulator/ & constraint transport, profiles\\
 prompts/ & classify, hint, explain, grade, compress, quiz, ocr\_transcribe, check\_claim, check\_answer (versioned)\\
 data/ & docs, index, glossary, exercises, templates, Arabic terms\\
 scripts/ & smoke, chat, load\_test, metrics\_report, eval\_*, index\_docs, recon\\
-tests/ & 765 unit tests + 5 integration tests (\texttt{-m integration})\\
+tests/ & 768 unit tests + 5 integration tests (\texttt{-m integration})\\
 DECISIONS.md & every non-obvious design choice, with evidence\\
 \bottomrule
 \end{tabularx}

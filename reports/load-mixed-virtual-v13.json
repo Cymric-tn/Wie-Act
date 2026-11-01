@@ -1,50 +1,56 @@
 {
  "mode": "virtual (simulated FelCloud)",
- "duration_s": 264.1276143879254,
+ "duration_s": 254.47682103904617,
  "seed": 1,
  "saturation_prob": 0.05,
  "cache": "on",
  "note": "Simulated: the real engine through the constraint simulator (compact 2-5 s, mid-size 8-15 s, vision 10-18 s, 20 / min, 2 in flight, one mid-size slot, random mid-size saturation) with canned model replies and a virtual clock. It checks the engine's scheduling, not the models, and not FelCloud.",
  "interactive": {
-  "n": 100,
+  "n": 96,
   "p50_s": 0.0,
-  "p95_s": 14.92,
-  "max_s": 27.03,
-  "degraded": 2,
+  "p95_s": 17.75,
+  "max_s": 25.0,
+  "degraded": 3,
   "degrade_reasons": {
-   "superseded": 1,
+   "superseded": 2,
    "deadline": 1
   },
   "by_task": {
    "check_answer": {
     "n": 6,
     "p50_s": 0.0,
-    "p95_s": 3.27
+    "p95_s": 2.66,
+    "max_s": 2.66
    },
    "check_claim": {
     "n": 6,
     "p50_s": 0.0,
-    "p95_s": 4.33
+    "p95_s": 3.65,
+    "max_s": 3.65
    },
    "classify": {
-    "n": 41,
+    "n": 39,
     "p50_s": 0.0,
-    "p95_s": 4.54
+    "p95_s": 4.98,
+    "max_s": 7.29
    },
    "explain": {
-    "n": 28,
+    "n": 22,
     "p50_s": 0.0,
-    "p95_s": 18.63
+    "p95_s": 20.22,
+    "max_s": 25.0
    },
    "hint": {
-    "n": 13,
+    "n": 17,
     "p50_s": 0.0,
-    "p95_s": 4.52
+    "p95_s": 4.82,
+    "max_s": 6.24
    },
    "ocr_transcribe": {
     "n": 6,
-    "p50_s": 10.86,
-    "p95_s": 27.03
+    "p50_s": 13.92,
+    "p95_s": 19.92,
+    "max_s": 19.92
    }
   }
  },
@@ -52,14 +58,14 @@
   "n": 7,
   "pages": 6,
   "pages_degraded": 0,
-  "waited_for_reserve": 1
+  "waited_for_reserve": 0
  },
  "provider": {
   "chat_requests": 32,
   "by_model": {
-   "compact-a": 18,
-   "mid-a": 9,
-   "deepseek-ocr": 5
+   "compact-a": 17,
+   "mid-a": 11,
+   "deepseek-ocr": 4
   },
   "non_200": {},
   "server_429": 0,
@@ -67,15 +73,15 @@
  },
  "exceptions": [],
  "records": {
-  "runs": 111,
+  "runs": 107,
   "by_outcome": {
-   "ok": 53,
-   "degraded": 2,
-   "cache_hit": 56
+   "ok": 45,
+   "degraded": 3,
+   "cache_hit": 59
   }
  },
  "verdict": {
-  "interactive_p95_under_25s": true,
+  "interactive_p95_within_25s": true,
   "zero_server_429": true,
   "zero_exceptions": true,
   "window_at_most_20": true
