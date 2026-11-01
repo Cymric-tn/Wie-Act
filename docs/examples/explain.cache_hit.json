@@ -1,0 +1,66 @@
+{
+  "_source": "real",
+  "task": "explain",
+  "request_id": "a1b2c3d4e5f6",
+  "text": "Voici l'essentiel du cours sur ce point.\n\nLe taux d'accroissement mesure la pente de la sécante entre deux points ; quand h tend vers 0, il tend vers le nombre dérivé, c'est-à-dire la pente de la tangente.\n\nÀ toi : Soit f(x) = x². Calculer f'(3).",
+  "data": {
+    "body": "Le taux d'accroissement mesure la pente de la sécante entre deux points ; quand h tend vers 0, il tend vers le nombre dérivé, c'est-à-dire la pente de la tangente.",
+    "opener": "Voici l'essentiel du cours sur ce point.",
+    "exercise": {
+      "id": "d10",
+      "concept": "nombre dérivé",
+      "level": 1,
+      "statement": "Soit f(x) = x². Calculer f'(3).",
+      "expression": "x²"
+    }
+  },
+  "model_class_used": "midsize",
+  "model": "mid-a",
+  "from_cache": true,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "retrieving",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "checking_cache",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "cache_hit",
+      "t_ms": 0.0,
+      "data": {}
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": "table: explain -> midsize",
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "retrieved": [
+      {
+        "id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+        "score": 11.666,
+        "coverage": 1.0
+      }
+    ],
+    "sources": [
+      "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
+    ],
+    "budget": {
+      "tokens": 598,
+      "limit": 2520
+    },
+    "dropped": [],
+    "formulas_verified": 0
+  }
+}

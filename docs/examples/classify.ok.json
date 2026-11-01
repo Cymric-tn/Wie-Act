@@ -1,0 +1,54 @@
+{
+  "_source": "real",
+  "task": "classify",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": {
+    "intent": "EXPLAIN",
+    "language": "FRENCH",
+    "confusion": "MEDIUM",
+    "complexity": 2,
+    "confidence": 0.9
+  },
+  "model_class_used": "compact",
+  "model": "compact-a",
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "checking_cache",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "queued",
+      "t_ms": 0.0,
+      "data": {
+        "position": 0,
+        "eta_s": 2.0
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 0.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "compact"
+      }
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 310,
+  "tokens_out": 40,
+  "route_reason": "table: classify -> compact",
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "model_language": "FRENCH",
+    "language_source": "model"
+  }
+}

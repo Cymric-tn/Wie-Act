@@ -1,0 +1,55 @@
+{
+  "_source": "canned",
+  "task": "check_claim",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": {
+    "verdict": "PARTLY",
+    "correction": "C'est vrai pour les puissances entières ; la règle change pour la composée.",
+    "source_chunk_id": "derivee-formules.fr#puissance",
+    "checked_by": "llm"
+  },
+  "model_class_used": "compact",
+  "model": "compact-a",
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "retrieving",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "checking_cache",
+      "t_ms": 50.0,
+      "data": {}
+    },
+    {
+      "name": "queued",
+      "t_ms": 60.0,
+      "data": {
+        "position": 0,
+        "eta_s": 2.0
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 70.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "compact"
+      }
+    }
+  ],
+  "latency_ms": 3100.0,
+  "tokens_in": 420,
+  "tokens_out": 52,
+  "route_reason": null,
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {}
+}

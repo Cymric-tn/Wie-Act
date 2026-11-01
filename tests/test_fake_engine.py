@@ -100,3 +100,16 @@ async def test_cache_invalidate_and_generate_page_exist():
     assert fake.cache.invalidate("abc") == 1 and fake.cache.invalidated == ["abc"]
     page = await fake.generate_page({}, {"concept_id": "puissance", "page_kind": "learn"})
     assert page["concept_id"] == "puissance" and len(page["quiz"]) == 3 and page["worked_example"]
+
+
+@pytest.mark.parametrize("outcome", ["quota_exhausted", "superseded", "room_busy"])
+async def test_generic_outcomes_match_the_real_engine_examples(outcome):
+    """docs/examples/classify.<outcome>.json was produced by the real Engine (scripts/gen_api_examples)."""
+    import json
+    real = json.load(open(f"docs/examples/classify.{outcome}.json", encoding="utf-8"))
+    assert real["_source"] == "real"
+    fake = await FakeEngine(speed=0).run("classify", INPUTS["classify"], {"fake_outcome": outcome})
+    assert [e.name for e in fake.events] == [e["name"] for e in real["events"]]
+    assert (fake.degraded, fake.degrade_reason) == (real["degraded"], real["degrade_reason"])
+    assert (fake.eta_seconds is None) == (real["eta_seconds"] is None)
+    assert set(fake.data or {}) == set(real["data"] or {})

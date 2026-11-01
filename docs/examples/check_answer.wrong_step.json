@@ -1,0 +1,55 @@
+{
+  "_source": "canned",
+  "task": "check_answer",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": {
+    "steps": [
+      {
+        "index": 0,
+        "verdict": "OK",
+        "note": ""
+      },
+      {
+        "index": 1,
+        "verdict": "WRONG",
+        "note": "Cette ligne n'est pas la dérivée de la précédente."
+      }
+    ],
+    "first_wrong": 1,
+    "final_verdict": "INCORRECT",
+    "feedback": "Tu as baissé l'exposant mais oublié de multiplier par l'exposant.",
+    "graded_by": "rules"
+  },
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "parsing_steps",
+      "t_ms": 0.0,
+      "data": {
+        "steps": 2
+      }
+    },
+    {
+      "name": "checking_steps",
+      "t_ms": 30.0,
+      "data": {}
+    }
+  ],
+  "latency_ms": 60.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": null,
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "source": "rules"
+  }
+}

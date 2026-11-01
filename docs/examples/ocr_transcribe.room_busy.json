@@ -1,0 +1,34 @@
+{
+  "_source": "canned",
+  "task": "ocr_transcribe",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": null,
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": true,
+  "degrade_reason": "room_busy",
+  "eta_seconds": 8.0,
+  "events": [
+    {
+      "name": "room_busy",
+      "t_ms": 0.0,
+      "data": {
+        "room_id": "room-1",
+        "eta_s": 8.0
+      }
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": "room_busy",
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "room_id": "room-1"
+  }
+}
