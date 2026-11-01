@@ -435,6 +435,7 @@ class Engine:
         if not run.degraded and status != "safe_default":
             self.cache.put(key, task, {"text": body, "data": raw_data, "model_class": run.model_class,
                                        "model": run.model, "notes": notes})
+            self.cache.link(ctx.request_id, key)
         elif spec.grounded and NEGATIVE & set(run.reasons):
             self.cache.mark_negative(key, task, run.reasons, self.settings.negative_cache_ttl_s)
         return self._finish(run, ctx, text=text, data=data, route_reason=decision.reason, status=status,
@@ -751,6 +752,7 @@ class Engine:
     def _cache_hit(self, run: _Run, ctx: CallContext, key: str, hit: dict, d: Decision, spec: TaskSpec,
                    inputs: Mapping, tctx: TaskContext, hits: list | None = None) -> Result:
         run.emit("cache_hit")
+        self.cache.link(ctx.request_id, key)
         self.sink.write(CallRecord(request_id=ctx.request_id, turn_id=ctx.turn_id, kind="chat", task=ctx.task,
                                        priority=ctx.priority,
                                    model_class=hit.get("model_class"), model=hit.get("model"),

@@ -7,6 +7,10 @@ Negative markers (table `negative`): an explain answer that failed a determinist
 ungrounded formula, truncated loop) is not cached, but its key is marked for a short TTL so a repeat is
 served in fast mode instead of sending the identical request again.
 
+Request ids (table `origin`): every answer the engine hands out is linked to the cache key it came from, whether it
+generated the entry or was served it, so a professor who rejects a flagged answer can call
+cache.invalidate(request_id) and it is never served again.
+
 Normalization collapses whitespace and applies Unicode NFC. It does NOT lowercase: in math and
 code, X and x are different questions (the legacy gateway cache lowercased; dropped on purpose).
 
@@ -52,6 +56,8 @@ class ExactCache:
         self.db.execute("CREATE TABLE IF NOT EXISTS exact (k TEXT PRIMARY KEY, task TEXT, v TEXT, ts REAL)")
         self.db.execute("CREATE TABLE IF NOT EXISTS negative (k TEXT PRIMARY KEY, task TEXT, reasons TEXT, "
                         "expires REAL)")
+        self.db.execute("CREATE TABLE IF NOT EXISTS origin (request_id TEXT, k TEXT, ts REAL, "
+                        "PRIMARY KEY (request_id, k))")
         self.db.commit()
         self.hits = self.misses = self.negative_hits = 0
 
@@ -69,9 +75,29 @@ class ExactCache:
     def put(self, key: str, task: str, value: Mapping[str, Any]) -> None:
         if value.get("degraded") or value.get("fallback") or value.get("safe_default"):
             raise NotCacheable("degraded / fallback / default results are never cached")
+        self.db.execute("DELETE FROM origin WHERE k=?", (key,))      # earlier request ids saw an older generation
         self.db.execute("INSERT OR REPLACE INTO exact VALUES (?,?,?,?)",
                         (key, task, json.dumps(value, ensure_ascii=False), self._clock()))
         self.db.commit()
+
+    def link(self, request_id: str | None, key: str) -> None:
+        """Remember that the answer of this request came from this cache entry (written or served)."""
+        if request_id:
+            self.db.execute("INSERT OR REPLACE INTO origin VALUES (?,?,?)", (request_id, key, self._clock()))
+            self.db.commit()
+
+    def invalidate(self, request_id: str) -> int:
+        """Remove every cache entry behind this request's answer (and its negative markers). Returns how many
+        entries were removed; 0 = unknown request id, expired, or nothing was cached (e.g. a degraded answer)."""
+        keys = [r[0] for r in self.db.execute("SELECT k FROM origin WHERE request_id=?", (request_id,))]
+        removed = 0
+        for k in keys:
+            removed += self.db.execute("DELETE FROM exact WHERE k=?", (k,)).rowcount
+            self.db.execute("DELETE FROM negative WHERE k=?", (k,))
+        for k in keys:                                  # other requests served from it saw the same entry
+            self.db.execute("DELETE FROM origin WHERE k=?", (k,))
+        self.db.commit()
+        return removed
 
     def delete(self, key: str) -> None:
         self.db.execute("DELETE FROM exact WHERE k=?", (key,))
@@ -99,6 +125,7 @@ class ExactCache:
     def purge_expired(self) -> int:
         self.db.execute("DELETE FROM negative WHERE expires <= ?", (self._clock(),))
         n = self.db.execute("DELETE FROM exact WHERE ts < ?", (self._clock() - self.ttl_s,)).rowcount
+        self.db.execute("DELETE FROM origin WHERE ts < ?", (self._clock() - self.ttl_s,))
         self.db.commit()
         return n
 
