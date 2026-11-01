@@ -178,6 +178,18 @@ class BM25Retriever:
         hits = [h for h in hits if h.score > 0 and h.coverage >= self.min_coverage]
         return sorted(hits, key=lambda h: (-h.score, h.chunk.origin != "professor", h.chunk.chunk_id))[:k]
 
+    async def nearest(self, query: str, filters: Filters = None, expansion: Expansion | None = None) -> Hit | None:
+        """The best chunk for the query with the relevance gate off: what a question the course cannot answer is
+        closest to (the content-gap report). Same visibility and filters as search; None = nothing shares a term."""
+        q = self.weights(query, expansion)
+        if not q:
+            return None
+        units = self.units(query, expansion)
+        hits = [Hit(c, round(self.score(q, i) * self._boost[i], 3), round(self.coverage(units, i, bool(expansion)), 3))
+                for i, c in enumerate(self.chunks) if _match(c, filters)]
+        hits = [h for h in hits if h.score > 0]
+        return min(hits, key=lambda h: (-h.score, h.chunk.origin != "professor", h.chunk.chunk_id), default=None)
+
 
 def _script(token: str) -> str:
     return "arabic" if _AR.search(token) else "latin"

@@ -8,6 +8,8 @@ HTTP + WebSocket front for the engine, for the app side (Node). One process per 
   POST   /materials         multipart: file + course_id ... -> ingest_file(add=True)
   DELETE /materials/{id}    the id the upload returned
   POST   /cache/invalidate  {request_id} -> {removed}
+  GET    /review/flagged, POST /review/flagged/{request_id}, GET /review/content-gaps, GET /metrics/summary
+                            the professor dashboard's data (filtered by class_id / course_id / since)
   GET    /health            engine version, breaker, window capacity, queue depth
 
 Every route needs the header X-Engine-Token (constant-time compare with ENGINE_SERVICE_TOKEN). The service never logs
@@ -37,6 +39,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from engine.result import Event, Result
 from gatekeeper.queue import Priority
+from metrics.review import ACTIONS, parse_since
+from metrics.summary import summarize
 from rag.ingest import IngestError
 
 log = logging.getLogger("engine_service")
@@ -60,6 +64,20 @@ class RunBody(BaseModel):
     @classmethod
     def _case(cls, v):
         return v.upper() if isinstance(v, str) else v
+
+
+class DecisionBody(BaseModel):
+    action: str
+
+    @field_validator("action")
+    @classmethod
+    def _action(cls, v):
+        if v not in ACTIONS:
+            raise ValueError(f"action must be one of {list(ACTIONS)}")
+        return v
+
+
+MAX_PAGE = 200
 
 
 class InvalidateBody(BaseModel):
@@ -281,6 +299,46 @@ def create_app(engine=None, *, token: str, engine_factory=None, fake: bool = Fal
         except (ValidationError, ValueError, TypeError) as e:
             return _error(422, "invalid_request", _why(e))
         return {"request_id": body.request_id, "removed": box["engine"].cache.invalidate(body.request_id)}
+
+    # ---------------------------------------------------------------- professor dashboard (data only)
+    def _since(value: str | None) -> float | None:
+        try:
+            return parse_since(value)
+        except ValueError as e:
+            raise HTTPException(422, detail=str(e)) from None
+
+    @app.get("/review/flagged", dependencies=[Depends(require_token)])
+    async def review_flagged(class_id: str | None = None, course_id: str | None = None, since: str | None = None,
+                             limit: int = 50, offset: int = 0):
+        if not 1 <= limit <= MAX_PAGE or offset < 0:
+            return _error(422, "invalid_request", f"limit must be 1..{MAX_PAGE} and offset >= 0")
+        return box["engine"].review.flagged(class_id, course_id, _since(since), limit, offset)
+
+    @app.post("/review/flagged/{request_id}", dependencies=[Depends(require_token)])
+    async def review_decide(request_id: str, request: Request):
+        try:
+            body = DecisionBody(**json.loads(await request.body() or b"{}"))
+        except (ValidationError, ValueError, TypeError) as e:
+            return _error(422, "invalid_request", _why(e))
+        engine_ = box["engine"]
+        try:
+            decision = engine_.review.decide(request_id, body.action)
+        except KeyError:
+            return _error(404, "unknown_item", "no flagged item with this request_id")
+        except ValueError as e:
+            return _error(409, "already_decided", str(e))
+        removed = 0
+        if body.action == "reject" and not decision["already"]:
+            removed = engine_.cache.invalidate(request_id)       # the answer must not be served again
+        return {**decision, "removed": removed}
+
+    @app.get("/review/content-gaps", dependencies=[Depends(require_token)])
+    async def review_gaps(class_id: str | None = None, course_id: str | None = None, since: str | None = None):
+        return box["engine"].review.gaps(class_id, course_id, _since(since))
+
+    @app.get("/metrics/summary", dependencies=[Depends(require_token)])
+    async def metrics_summary(since: str | None = None, class_id: str | None = None, course_id: str | None = None):
+        return summarize(box["engine"].metrics_records(), _since(since), class_id, course_id)
 
     @app.get("/health", dependencies=[Depends(require_token)])
     async def health():
