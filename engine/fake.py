@@ -107,6 +107,7 @@ class FakeEngine:
         self._rooms: set[str] = set()
         self.calls: list[tuple[str, str]] = []              # (task, outcome) of every call, for UI tests
         self.cache = _FakeCache()
+        self.materials: list = []                           # chunks added through add_material / ingest_file(add=True)
 
     # ---------------------------------------------------------------- lifecycle (same as Engine)
     async def aclose(self) -> None:
@@ -117,6 +118,44 @@ class FakeEngine:
 
     async def __aexit__(self, *exc):
         return None
+
+    def status(self) -> dict:
+        """Same shape as Engine.status(); the mode picks how loaded the pretend platform looks."""
+        busy = {"normal": (20, 0, 0), "slow": (14, 1, 2), "degraded": (0, 2, 5)}[self.mode]
+        return {
+            "breaker": {"midsize": ({"state": "open", "retry_in_s": 24.0, "trips": 1} if self.mode == "degraded"
+                                    else {"state": "closed", "retry_in_s": 0.0, "trips": 0})},
+            "window": {"limit": 20, "window_s": 60.0, "remaining": busy[0], "in_flight": busy[1], "max_concurrent": 2},
+            "queue": {"depth": busy[2]},
+        }
+
+    # ---------------------------------------------------------------- course material (real parsing, no model)
+    async def ingest_file(self, file: str, course_id: str, unit_id: str = "", owner: str = "",
+                          visibility: str = "public", source: str = "professor", *, class_id: str = "",
+                          ocr: bool = True, add: bool = False, **kw):
+        """The real reader (rag.ingest.ingest) without the OCR of scanned pages: pages that need it stay in
+        `needs_ocr`. add=True keeps the chunks in memory, as Engine.ingest_file puts them in the index."""
+        from rag import ingest as I
+        res = I.ingest(file, course_id, unit_id, owner, visibility, source, class_id=class_id,
+                       language=kw.get("language"))
+        if add and res.chunks:
+            await self.add_material(res.chunks)
+        return res
+
+    async def add_material(self, chunks: list) -> int:
+        ids = {c.chunk_id for c in chunks}
+        self.materials = [c for c in self.materials if c.chunk_id not in ids] + list(chunks)
+        return len(chunks)
+
+    async def remove_material(self, chunk_ids=(), *, source: str | None = None, course_id: str | None = None,
+                              owner: str | None = None) -> int:
+        def gone(c) -> bool:
+            return c.chunk_id in set(chunk_ids) or (source is not None and c.source == source
+                                                    and (course_id is None or c.course_id == course_id)
+                                                    and (owner is None or c.owner == owner))
+        keep = [c for c in self.materials if not gone(c)]
+        n, self.materials = len(self.materials) - len(keep), keep
+        return n
 
     # ---------------------------------------------------------------- public
     async def run(self, task: str, inputs: Mapping[str, Any] | None = None, context: Mapping[str, Any] | None = None,
