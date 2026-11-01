@@ -49,7 +49,7 @@ from gatekeeper.errors import (DEFAULT_RETRY_AFTER_S, CeilingExceeded, ClassUnav
 from gatekeeper.limiter import Limiter
 from gatekeeper.queue import Priority, PriorityQueue
 from gatekeeper.retry import CallContext, ChatResult, RetryingCaller, RetryPolicy
-from metrics import CallRecord, JsonlSink, MetricsSink
+from metrics import IDENTITY_KEYS, CallRecord, JsonlSink, MetricsSink, identity
 from rag.budget import BudgetError, assemble, limit_for
 from rag.glossary import Glossary
 from rag.retriever import Hit, Retriever, language_plan, make_retriever
@@ -199,6 +199,16 @@ class Engine:
         if missing:
             raise ValueError(f"task {task!r} needs inputs {missing}")
         prio = Priority(priority)
+        ids = {k: str(context[k]) for k in IDENTITY_KEYS if context and context.get(k) is not None}
+        token = identity.set(ids)
+        try:
+            return await self._run(spec, inputs, context, prio, on_event)
+        finally:
+            identity.reset(token)
+
+    async def _run(self, spec: TaskSpec, inputs: dict, context: Mapping[str, Any] | None, prio: Priority,
+                   on_event: EventCallback | None) -> Result:
+        task = spec.name
         tctx = TaskContext.from_mapping(context or {})
         tctx = replace(tctx, extra={**tctx.extra, "terms_ar": self.terms_ar, "course_words": self.course_words,
                                     "exercise_bank": self.exercises, "templates": self.templates})
@@ -224,6 +234,7 @@ class Engine:
             t.add_done_callback(self._probes.discard)
 
     async def _probe(self, cls: ModelClass) -> None:
+        identity.set({})                           # the task copied the triggering learner's ids: a probe has none
         ctx = CallContext(task="probe", priority=Priority.BACKGROUND.value, purpose="probe", saturation_retries=0)
         req = ChatRequest(cls, ({"role": "user", "content": "Reply with the single word: ok"},), max_tokens=8,
                           temperature=0.0)
