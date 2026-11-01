@@ -40,8 +40,8 @@ from typing import Any, Awaitable, Callable
 
 import httpx
 
-from config import ModelClass, Settings
-from gatekeeper.client import (ChatRequest, EmbedRequest, LLMClient, chars_per_token, estimate_tokens,
+from config import HEAVY_CLASSES, ModelClass, Settings
+from gatekeeper.client import (ChatRequest, EmbedRequest, LLMClient, chars_per_token, content_text, estimate_tokens,
                                parse_chat, parse_embed, request_hash, set_chars_per_token)
 from gatekeeper.errors import (CeilingExceeded, ClassUnavailable, Superseded, ConcurrencyLimited, FatalError, LLMError,
                                ModelSaturated,
@@ -64,6 +64,7 @@ class RetryPolicy:
     timeout_midsize_interactive_s: float = 40.0
     timeout_midsize_background_s: float = 85.0
     timeout_compact_s: float = 30.0
+    timeout_vision_s: float = 40.0
     probe_timeout_s: float = 15.0         # the breaker's half-open probe
     server_timeout_s: float = 90.0        # the proxy still counts an abandoned request until then (ghost slot)
     saturation_retries: int = 1           # mid-size
@@ -78,7 +79,8 @@ class RetryPolicy:
                    saturation_retries=s.saturation_retries, compact_saturation_retries=s.compact_max_retries,
                    timeout_midsize_interactive_s=s.timeout_midsize_interactive_s,
                    timeout_midsize_background_s=s.timeout_midsize_background_s,
-                   timeout_compact_s=s.timeout_compact_s, probe_timeout_s=s.breaker_probe_timeout_s,
+                   timeout_compact_s=s.timeout_compact_s, timeout_vision_s=s.timeout_vision_s,
+                   probe_timeout_s=s.breaker_probe_timeout_s,
                    server_timeout_s=s.server_timeout_s)
 
     def timeout_for(self, model_class: ModelClass, priority: str | None, purpose: str | None = None) -> float:
@@ -86,6 +88,8 @@ class RetryPolicy:
         A learner waiting (INTERACTIVE) is given less than background work; the breaker probe the least."""
         if model_class is ModelClass.COMPACT:
             base = self.timeout_compact_s
+        elif model_class is ModelClass.VISION:
+            base = self.timeout_vision_s
         elif priority == "BACKGROUND":
             base = self.timeout_midsize_background_s
         else:
@@ -156,7 +160,7 @@ def _trim_messages(req: ChatRequest, target_tokens: int) -> ChatRequest | None:
     excess_chars = math.ceil((estimate_tokens(msgs) - target_tokens) * chars_per_token())
     if excess_chars <= 0:
         return req
-    idx = [i for i, m in enumerate(msgs) if m.get("role") != "system"]
+    idx = [i for i, m in enumerate(msgs) if m.get("role") != "system" and isinstance(m.get("content"), str)]
     if not idx:
         return None
     i = max(idx, key=lambda j: len(msgs[j].get("content") or ""))
@@ -240,7 +244,7 @@ class RetryingCaller:
             raise TransientError(status=resp.status_code, message=f"malformed response: {e}",
                                  attempts=attempt) from e
         req = state["req"]
-        chars = sum(len(m.get("content") or "") for m in req.messages)
+        chars = sum(len(content_text(m.get("content"))) for m in req.messages)
         truncated = tout is not None and req.max_tokens is not None and tout >= req.max_tokens
         input_cut = bool(self.truncation_cpt) and tin is not None and tin < chars / self.truncation_cpt
         detail = f"input_truncated: prompt_tokens={tin} for {chars} chars" if input_cut else None
@@ -362,7 +366,7 @@ class RetryingCaller:
             return "retry_after_interval", delay
         if isinstance(err, ConcurrencyLimited):
             cls = state["req"].model_class if kind == "chat" else None
-            if cls is ModelClass.MIDSIZE and self.limiter.ghost_count(cls):
+            if cls in HEAVY_CLASSES and self.limiter.ghost_count(cls):
                 err.after_timeout = True           # the server still counts our timed-out request: not a retry
                 return "raise", 0.0                # case, not a breaker case; the engine falls back
             wait = min(err.retry_after_s or 1.0, p.concurrency_wait_s)
@@ -376,8 +380,8 @@ class RetryingCaller:
             state["req"], state["fixed"] = fixed, True
             return "fix_request", 0.0
         if isinstance(err, TransientError):
-            if err.timeout and kind == "chat" and state["req"].model_class is ModelClass.MIDSIZE:
-                return "raise", 0.0                # a hung mid-size model will not answer a retry: fall back now
+            if err.timeout and kind == "chat" and state["req"].model_class in HEAVY_CLASSES:
+                return "raise", 0.0                # a hung mid-size / vision model will not answer a retry
             if last:
                 return "raise", 0.0
             delay = err.retry_after_s if err.retry_after_s is not None else p.backoff(attempt, self._rng)

@@ -140,7 +140,9 @@ class Engine:
         caller.availability = self.router.unavailable_for
         self._clock = clock
         # prompt assembly must also leave room for the longest answer inside the context window
-        window_room = int(settings.context_window * settings.context_fill) - max(settings.task_max_tokens.values())
+        # (the OCR cap is not an answer the text prompts have to leave room for: its prompt is an image, sized separately)
+        window_room = int(settings.context_window * settings.context_fill) - max(
+            v for k, v in settings.task_max_tokens.items() if k != "ocr_transcribe")
         self.limit = min(limit_for(settings.input_token_budget, settings.budget_safety_margin), window_room)
         self.retriever = retriever or make_retriever(settings.retriever, settings.rag_min_coverage, self._embed,
                                                      settings.glossary_weight, settings.source_boost_professor)
