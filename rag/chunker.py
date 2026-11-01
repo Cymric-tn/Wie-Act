@@ -55,6 +55,7 @@ class Chunk:
     class_id: str = ""           # visibility "class": the class whose material this is
     origin: str = "course"       # course (official docs) | professor | learner: professor material is boosted
     confidence: float = 1.0      # ingest: how sure the concept tag is (low = a professor should confirm it)
+    page: int = 0                # ingest: first page of the section in the source file (0 = unknown / not paged)
 
     @property
     def tokens(self) -> int:
