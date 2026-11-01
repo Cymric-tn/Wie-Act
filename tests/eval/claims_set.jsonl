@@ -1,0 +1,30 @@
+{"id": "fr-01", "language": "FRENCH", "claim": "La dérivée d'une constante est 0.", "expected": "SUPPORTED", "route": "llm"}
+{"id": "fr-02", "language": "FRENCH", "claim": "(x²)' = x", "expected": "CONTRADICTED", "route": "sympy"}
+{"id": "fr-03", "language": "FRENCH", "claim": "(x³)' = 3x²", "expected": "SUPPORTED", "route": "sympy"}
+{"id": "fr-04", "language": "FRENCH", "claim": "La dérivée d'un produit est le produit des dérivées.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "fr-05", "language": "FRENCH", "claim": "Si f'(a) = 0, alors f a forcément un extremum en a.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "fr-06", "language": "FRENCH", "claim": "La dérivée d'une somme est la somme des dérivées, et celle d'un produit est le produit des dérivées.", "expected": "PARTLY", "route": "llm"}
+{"id": "fr-07", "language": "FRENCH", "claim": "Une intégrale sert à calculer l'aire sous une courbe.", "expected": "NOT_IN_COURSE", "route": "rules|llm"}
+{"id": "fr-08", "language": "FRENCH", "claim": "La photosynthèse transforme la lumière en énergie chimique.", "expected": "NOT_IN_COURSE", "route": "rules"}
+{"id": "fr-09", "language": "FRENCH", "claim": "La tangente au point d'abscisse a a pour équation y = f'(a)(x − a) + f(a).", "expected": "SUPPORTED", "route": "llm"}
+{"id": "fr-10", "language": "FRENCH", "claim": "Pour f(x) = x² + 7, on a f'(x) = 2x + 7.", "expected": "CONTRADICTED", "route": "sympy"}
+{"id": "en-01", "language": "ENGLISH", "claim": "Where the derivative is positive on an interval, the function is increasing there.", "expected": "SUPPORTED", "route": "llm"}
+{"id": "en-02", "language": "ENGLISH", "claim": "(x³)' = x²", "expected": "CONTRADICTED", "route": "sympy"}
+{"id": "en-03", "language": "ENGLISH", "claim": "(x²)' = 2x and (x³)' = 2x²", "expected": "PARTLY", "route": "sympy"}
+{"id": "en-04", "language": "ENGLISH", "claim": "A local maximum happens where the derivative changes from positive to negative.", "expected": "SUPPORTED", "route": "llm"}
+{"id": "en-05", "language": "ENGLISH", "claim": "If f'(0) = 0 then f must have an extremum at 0.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "en-06", "language": "ENGLISH", "claim": "The derivative of a sum is the sum of the derivatives, and the derivative of a product is the product of the derivatives.", "expected": "PARTLY", "route": "llm"}
+{"id": "en-07", "language": "ENGLISH", "claim": "A matrix is invertible when its determinant is not zero.", "expected": "NOT_IN_COURSE", "route": "rules"}
+{"id": "en-08", "language": "ENGLISH", "claim": "Python lists are mutable.", "expected": "NOT_IN_COURSE", "route": "rules"}
+{"id": "en-09", "language": "ENGLISH", "claim": "The slope of the tangent at x = a is the derivative f'(a).", "expected": "SUPPORTED", "route": "llm"}
+{"id": "en-10", "language": "ENGLISH", "claim": "The derivative of a constant is 1.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "ar-01", "language": "ARABIC", "claim": "مشتقة الدالة الثابتة تساوي صفراً.", "expected": "SUPPORTED", "route": "llm"}
+{"id": "ar-02", "language": "ARABIC", "claim": "مشتقة الدالة x² هي x.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "ar-03", "language": "ARABIC", "claim": "إذا كانت المشتقة موجبة على مجال فإن الدالة تزايدية على هذا المجال.", "expected": "SUPPORTED", "route": "llm"}
+{"id": "ar-04", "language": "ARABIC", "claim": "إذا كانت المشتقة سالبة على مجال فإن الدالة تزايدية على هذا المجال.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "ar-05", "language": "ARABIC", "claim": "مشتقة x هي 1 ومشتقة x² هي x.", "expected": "PARTLY", "route": "llm"}
+{"id": "ar-06", "language": "ARABIC", "claim": "عاصمة تونس هي مدينة تونس.", "expected": "NOT_IN_COURSE", "route": "rules"}
+{"id": "ar-07", "language": "ARABIC", "claim": "العدد المشتق هو ميل المماس لمنحنى الدالة.", "expected": "SUPPORTED", "route": "llm"}
+{"id": "ar-08", "language": "ARABIC", "claim": "مشتقة المجموع هي جداء المشتقات.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "ar-09", "language": "ARABIC", "claim": "الخلية هي الوحدة الأساسية للكائنات الحية.", "expected": "NOT_IN_COURSE", "route": "rules"}
+{"id": "ar-10", "language": "ARABIC", "claim": "نعلم أن (x²)' = 2x", "expected": "SUPPORTED", "route": "sympy"}

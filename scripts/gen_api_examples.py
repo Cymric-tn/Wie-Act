@@ -108,6 +108,21 @@ async def real_examples(index: str) -> dict[str, tuple[str, Result]]:
              {"language": "FRENCH"})
     await go("ocr_transcribe.invalid_image", bad, "ocr_transcribe", {"image": "data:image/png;base64,AAAA"})
 
+    claim = Rig(lambda b: chat_ok(json.dumps({"verdict": "CONTRADICTED", "correction":
+                "La dérivée d'un produit est (u·v)' = u'·v + u·v', pas u'·v'."}), 640, 40), index)
+    ctx = {"language": "FRENCH", "learner_id": "L1", "course_id": "analyse"}
+    await go("check_claim.CONTRADICTED", claim, "check_claim", {"claim": "(x³)' = x²"}, ctx)
+    await go("check_claim.SUPPORTED", claim, "check_claim", {"claim": "(x³)' = 3x²"}, ctx)
+    await go("check_claim.PARTLY", claim, "check_claim", {"claim": "(x²)' = 2x and (x³)' = 2x²"},
+             {**ctx, "language": "ENGLISH"})
+    await go("check_claim.CONTRADICTED_llm", claim, "check_claim",
+             {"claim": "La dérivée d'un produit est le produit des dérivées."}, ctx)
+    await go("check_claim.NOT_IN_COURSE", claim, "check_claim",
+             {"claim": "La photosynthèse transforme la lumière en énergie chimique."}, ctx)
+    junkclaim = Rig(lambda b: chat_ok("aucune idée", 640, 5), index)
+    await go("check_claim.llm_failed", junkclaim, "check_claim",
+             {"claim": "La dérivée d'un produit est le produit des dérivées."}, ctx)
+
     junk = Rig(lambda b: chat_ok("je ne sais pas, désolé", 300, 12), index)
     await go("classify.safe_default", junk, "classify", {"message": "explique-moi les limites"})
 
