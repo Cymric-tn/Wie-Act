@@ -115,8 +115,10 @@ class LLMClient:
     def embed_body(self, req: EmbedRequest) -> dict[str, Any]:
         return {"model": req.model or self.settings.embed_model, "input": list(req.texts)}
 
-    async def chat(self, req: ChatRequest) -> httpx.Response:
-        return await self._http.post("/chat/completions", json=self.chat_body(req))
+    async def chat(self, req: ChatRequest, timeout: float | None = None) -> httpx.Response:
+        """timeout: seconds without an answer before httpx.ReadTimeout (None = the client default)."""
+        kw = {} if timeout is None else {"timeout": timeout}
+        return await self._http.post("/chat/completions", json=self.chat_body(req), **kw)
 
     async def embed(self, req: EmbedRequest) -> httpx.Response:
         return await self._http.post("/embeddings", json=self.embed_body(req))

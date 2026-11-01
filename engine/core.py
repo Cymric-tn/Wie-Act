@@ -44,7 +44,7 @@ NEGATIVE = {"ungrounded_formula", "wrong_math", "explain_guard:loop_truncated", 
 TEMPLATE_ONLY_LANGUAGES = {"DARIJA", "ARABIZI"}     # one-liners in these come from fixed Tunisian templates
 from gatekeeper.cache import ExactCache, cache_key
 from gatekeeper.client import ChatRequest, EmbedRequest, LLMClient, create_client
-from gatekeeper.errors import (DEFAULT_RETRY_AFTER_S, CeilingExceeded, ConcurrencyLimited, FatalError, LLMError,
+from gatekeeper.errors import (DEFAULT_RETRY_AFTER_S, CeilingExceeded, ClassUnavailable, ConcurrencyLimited, FatalError, LLMError,
                                ModelSaturated, QuotaExhausted, TransientError)
 from gatekeeper.limiter import Limiter
 from gatekeeper.queue import Priority, PriorityQueue
@@ -64,6 +64,7 @@ _UNAVAILABLE: list[tuple[type[LLMError], str, bool]] = [
     (ConcurrencyLimited, "service_busy", True),
     (QuotaExhausted, "quota_exhausted", True),
     (TransientError, "service_unavailable", True),
+    (ClassUnavailable, "service_unavailable", True),
     (CeilingExceeded, "request_too_large", False),
     (FatalError, "provider_error", False),
 ]
@@ -82,6 +83,8 @@ class _Run:
         self.decision: Decision | None = None
         self.glossary: list[str] = []
         self.negative_hit = False
+        self.silent = False                      # a run that finishes after its caller left: no "run" metrics record
+        self.started = asyncio.get_running_loop().time()    # the deadline is measured on the event loop's clock
 
     def emit(self, name: str, data: Mapping[str, Any] | None = None) -> None:
         ev = Event(name=name, t_ms=round((self.clock() - self.t0) * 1000, 1), data=dict(data or {}))
@@ -113,8 +116,9 @@ class _Run:
 class _FastMode(Exception):
     """Internal: a grounded task lost mid-size at runtime; serve it extractively instead."""
 
-    def __init__(self, decision: Decision):
+    def __init__(self, decision: Decision, eta: float | None = None):
         self.decision = decision
+        self.eta = eta                       # when the unavailable class is probed again
 
 
 def _extract_json(text: str) -> str:
@@ -132,6 +136,7 @@ class Engine:
         self.registry = registry or default_registry()
         self.router = Router.from_settings(sink, settings, clock)
         caller.observer = self.router.observe
+        caller.availability = self.router.unavailable_for
         self._clock = clock
         # prompt assembly must also leave room for the longest answer inside the context window
         window_room = int(settings.context_window * settings.context_fill) - max(settings.task_max_tokens.values())
@@ -151,6 +156,8 @@ class Engine:
         self._indexed = retriever is not None and bool(getattr(retriever, "chunks", None))
         self._index_lock = asyncio.Lock()
         self._inflight: dict[str, asyncio.Event] = {}     # cache key -> done, for identical concurrent requests
+        self._probes: set[asyncio.Task] = set()           # half-open breaker probes in flight
+        self._background: set[asyncio.Task] = set()       # generations that outlived the interactive deadline
         self.prompts: dict[str, PromptTemplate] = {
             s.name: load_prompt(settings.prompts_dir, s.prompt) for s in self.registry}   # fail fast
 
@@ -168,6 +175,8 @@ class Engine:
         return cls(settings, caller, cache, sink, registry, clock, retriever)
 
     async def aclose(self) -> None:
+        for t in list(self._probes) + list(self._background):
+            t.cancel()
         await self.caller.queue.aclose()
         await self.caller.client.aclose()
         self.cache.close()
@@ -197,11 +206,31 @@ class Engine:
             tctx = spec.prepare(inputs, tctx)
         run = _Run(self._clock, on_event)
         ctx = CallContext(task=task, priority=prio.value, on_event=run.emit, turn_id=tctx.extra.get("turn_id"))
+        self._maybe_probe()
         try:
             return await self._execute(spec, inputs, tctx, prio, run, ctx)
         finally:
             if run.decision is not None:     # a half-open probe that never reached mid-size frees its slot
                 self.router.release_probe(run.decision)
+
+    # ================================================================== breaker probe
+    def _maybe_probe(self) -> None:
+        """A class whose breaker is open past its cooldown gets one probe: a tiny BACKGROUND request with a short
+        timeout and no retries, never a learner's request. Traffic triggers it (no timer): an idle engine
+        spends nothing. The breaker closes if it answers and re-opens (cooldown restarts) if it does not."""
+        for cls in self.router.probe_due(self.caller.limiter.class_free):
+            t = asyncio.get_running_loop().create_task(self._probe(cls))
+            self._probes.add(t)
+            t.add_done_callback(self._probes.discard)
+
+    async def _probe(self, cls: ModelClass) -> None:
+        ctx = CallContext(task="probe", priority=Priority.BACKGROUND.value, purpose="probe", saturation_retries=0)
+        req = ChatRequest(cls, ({"role": "user", "content": "Reply with the single word: ok"},), max_tokens=8,
+                          temperature=0.0)
+        try:
+            await self.caller.chat(req, ctx)       # the breaker learns the outcome through caller.observer
+        except LLMError as e:
+            log.warning("probe of %s failed: %s", cls.value, e.kind)
 
     async def _execute(self, spec: TaskSpec, inputs: dict, tctx: TaskContext, prio: Priority, run: "_Run",
                        ctx: CallContext) -> Result:
@@ -249,11 +278,63 @@ class Engine:
             run.emit("partial_result", {"excerpts": fast_excerpts(str(inputs["question"]),
                                                                   [h.chunk for h in hits], PARTIAL_SENTENCES)})
         done = self._inflight[key] = asyncio.Event()
+        if self._has_deadline(spec, prio, decision):
+            return await self._produce_by_deadline(spec, prompt, inputs, tctx, prio, run, ctx, decision, hits, key,
+                                                   messages, done)
         try:
             return await self._produce(spec, prompt, inputs, tctx, prio, run, ctx, decision, hits, key, messages)
         finally:
             done.set()
             del self._inflight[key]
+
+    def _has_deadline(self, spec: TaskSpec, prio: Priority, d: Decision) -> bool:
+        """Only a learner waiting for a full explanation from mid-size has a deadline (INTERACTIVE_DEADLINE_S)."""
+        return (prio is Priority.INTERACTIVE and spec.grounded and d.model_class is d.preferred
+                and d.fallback is not None and self.settings.interactive_deadline_s > 0)
+
+    async def _produce_by_deadline(self, spec, prompt, inputs, tctx, prio, run: "_Run", ctx, decision, hits, key,
+                                   messages, done: asyncio.Event) -> Result:
+        """The generation runs as a task of its own. If it has not produced a body by INTERACTIVE_DEADLINE_S, the
+        learner gets fast mode now (degrade_reason "deadline", followup_available) and the task goes on: when
+        mid-size answers, the full explanation lands in the cache and the learner's next ask is a cache hit."""
+        loop = asyncio.get_running_loop()
+        attached = [True]
+
+        def forward(ev: Event) -> None:           # until the learner is answered, its events show the generation
+            if attached[0]:
+                run.emit(ev.name, ev.data)
+        bg = _Run(self._clock, forward)
+        bg.t0, bg.started = run.t0, run.started
+        bg.glossary = list(run.glossary)         # state the retrieval already put on the learner's run
+        bg_ctx = CallContext(request_id=ctx.request_id, task=ctx.task, priority=ctx.priority, purpose=ctx.purpose,
+                             on_event=bg.emit, queue_seq=ctx.queue_seq, turn_id=ctx.turn_id)
+        d = replace(decision, reason=decision.reason + "; completes after the learner's deadline")
+        bg.decision = d
+        task = loop.create_task(self._produce(spec, prompt, inputs, tctx, prio, bg, bg_ctx, d, hits, key, messages))
+        self._background.add(task)
+
+        def finished(t: asyncio.Task) -> None:
+            self._background.discard(t)
+            done.set()
+            self._inflight.pop(key, None)
+            if not t.cancelled() and t.exception() is not None:
+                log.error("%s %s: generation failed after the deadline: %r", ctx.request_id, ctx.task, t.exception())
+        task.add_done_callback(finished)
+        remaining = max(0.0, self.settings.interactive_deadline_s - (loop.time() - run.started))
+        await asyncio.wait({task}, timeout=remaining)
+        attached[0] = False
+        if task.done():
+            res = task.result()             # its run record (same request) was written by the generation itself
+            res.events = run.events         # the learner's timeline: retrieval + everything forwarded from the task
+            return res
+        bg.silent = True                    # the learner is answered below: the late finish writes no second record
+        run.degrade("deadline")
+        run.emit("deadline", {"deadline_s": self.settings.interactive_deadline_s, "generation_continues": True})
+        log.warning("%s %s: no body after %.0f s, serving extracts; the generation continues into the cache",
+                    ctx.request_id, ctx.task, self.settings.interactive_deadline_s)
+        return await self._fast_extractive(prompt, inputs, tctx, [h.chunk for h in hits], {}, ctx, run,
+                                           replace(decision, reason=decision.reason + "; interactive deadline"),
+                                           llm_framing=False)
 
     async def _produce(self, spec: TaskSpec, prompt: PromptTemplate, inputs: dict, tctx: TaskContext,
                        prio: Priority, run: "_Run", ctx: CallContext, decision: Decision, hits: list[Hit],
@@ -267,8 +348,9 @@ class Engine:
         pieces: list = []
         if spec.grounded:
             if decision.model_class is not decision.preferred:     # quota_low / breaker_open: no mid-size
+                # a class known to be down gets no nicety calls either: the framing line is cached or a template
                 return await self._fast_extractive(prompt, inputs, tctx, [h.chunk for h in hits], {}, ctx, run,
-                                                   decision)
+                                                   decision, llm_framing=decision.degrade_reason != "breaker_open")
             try:
                 messages, ground_notes, pieces = await self._ground(spec, prompt, inputs, tctx, hits, prio, run)
                 tctx = replace(tctx, extra={**tctx.extra, "material": "\n".join(c.text for c in pieces)})
@@ -279,7 +361,8 @@ class Engine:
         try:
             chat = await self._generate(spec, decision, messages, ctx, run)
         except _FastMode as fm:
-            return await self._fast_extractive(prompt, inputs, tctx, pieces, ground_notes, ctx, run, fm.decision)
+            return await self._fast_extractive(prompt, inputs, tctx, pieces, ground_notes, ctx, run, fm.decision,
+                                               llm_framing=fm.eta is None, eta=fm.eta)
         except LLMError as e:
             return self._unavailable(spec, prompt, inputs, tctx, run, ctx, decision, e)
 
@@ -366,7 +449,7 @@ class Engine:
 
     async def _fast_extractive(self, prompt: PromptTemplate, inputs, tctx: TaskContext, chunks: list,
                                notes: dict, ctx: CallContext, run: "_Run", d: Decision,
-                               llm_framing: bool = True) -> Result:
+                               llm_framing: bool = True, eta: float | None = None) -> Result:
         """Mid-size unavailable: compact does NOT write the explanation. The learner gets the most relevant
         course sentences verbatim (formulas intact), introduced by one line. Never cached.
         llm_framing=False: the framing line comes from the cache or the template, never from a request."""
@@ -382,7 +465,8 @@ class Engine:
         order = [c.chunk_id for c in chunks]
         notes = {**notes, "sources": sorted({e["chunk_id"] for e in excerpts}, key=order.index)}
         return self._finish(run, ctx, text=text, data={"framing": framing, "excerpts": excerpts, **extra},
-                            route_reason=d.reason, notes=notes, mode="fast_extractive", followup_available=True)
+                            route_reason=d.reason, notes=notes, mode="fast_extractive", followup_available=True,
+                            eta=eta)
 
     async def _fast_framing(self, prompt: PromptTemplate, question: str, tctx: TaskContext, ctx: CallContext,
                             run: "_Run", allow_call: bool = True) -> str:
@@ -574,6 +658,23 @@ class Engine:
                 raise _FastMode(fb) from None
             run.model_class = fb.model_class.value
             chat = await self._chat(spec, fb.model_class, messages, ctx)
+        except (TransientError, ClassUnavailable, ConcurrencyLimited) as e:
+            down = (isinstance(e, ClassUnavailable) or (isinstance(e, TransientError) and e.timeout)
+                    or (isinstance(e, ConcurrencyLimited) and e.after_timeout))
+            if not down or d.fallback is None or d.model_class is d.fallback:
+                raise
+            # the class hung (no retry was spent: retry.py), went down while we waited, or the server still counts
+            # our timed-out request: the breaker is told where it matters; answer from the fallback now
+            fb = self.router.on_unavailable(d, ctx)
+            eta = self.router.retry_in(d.model_class) or self.settings.breaker_cooldown_s
+            run.degrade(fb.degrade_reason)
+            run.emit("falling_back_to_compact", {"reason": fb.degrade_reason})
+            if not self.router.breakers[d.model_class].closed:
+                run.emit("breaker_open", {"model_class": d.model_class.value, "retry_in_s": round(eta, 1)})
+            if spec.grounded:
+                raise _FastMode(fb, round(eta, 1)) from None
+            run.model_class = fb.model_class.value
+            chat = await self._chat(spec, fb.model_class, messages, ctx)
         run.took(chat)
         self._input_cut(run, ctx, chat)
         return chat
@@ -675,6 +776,8 @@ class Engine:
                      safe_default=status == "safe_default", notes=notes, mode=mode,
                      followup_available=followup_available)
         outcome = "degraded" if res.degraded else "cache_hit" if from_cache else status
+        if run.silent:
+            return res
         self.sink.write(CallRecord(
             request_id=ctx.request_id, turn_id=ctx.turn_id, kind="run", task=ctx.task, priority=ctx.priority,
             model_class=res.model_class_used, model=res.model, outcome=outcome, from_cache=from_cache,

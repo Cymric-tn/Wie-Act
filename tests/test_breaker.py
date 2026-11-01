@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 import pytest
@@ -6,7 +7,7 @@ from config import ModelClass
 from engine import Engine
 from gatekeeper.cache import ExactCache
 from gatekeeper.client import LLMClient
-from gatekeeper.errors import ModelSaturated, QuotaExhausted
+from gatekeeper.errors import ConcurrencyLimited, ModelSaturated, QuotaExhausted, TransientError
 from metrics import MemorySink
 from rag.chunker import chunk_dir
 from rag.store import save_chunks
@@ -89,6 +90,34 @@ def test_late_results_while_open_are_ignored(vt):
     assert b.state == OPEN and changes == [(CLOSED, OPEN)]
 
 
+# ------------------------------------------------------------------ timeouts
+def test_one_timeout_opens_the_breaker_but_saturations_need_the_threshold(vt):
+    b, changes = breaker(vt, threshold=3)
+    b.record_failure("saturation"); b.record_failure("saturation")
+    assert b.state == CLOSED
+    b.record_failure("timeout")                        # BREAKER_TIMEOUT_THRESHOLD defaults to 1
+    assert b.state == OPEN and changes == [(CLOSED, OPEN)]
+
+
+def test_timeout_threshold_is_configurable_and_windowed(vt):
+    b = CircuitBreaker(3, 60, 30, vt.clock, timeout_threshold=2)
+    b.record_failure("timeout"); vt.t += 61; b.record_failure("timeout")
+    assert b.state == CLOSED                           # the first one left the window
+    b.record_failure("timeout")
+    assert b.state == OPEN
+    with pytest.raises(ValueError):
+        CircuitBreaker(3, 60, 30, timeout_threshold=0)
+
+
+def test_a_failed_probe_of_either_kind_reopens(vt):
+    for kind in ("timeout", "saturation"):
+        b, _ = breaker(vt, threshold=1)
+        b.record_failure(); vt.t += 30
+        assert b.allow() and b.state == HALF_OPEN
+        b.record_failure(kind)
+        assert b.state == OPEN and b.retry_in() == pytest.approx(30)
+
+
 # ------------------------------------------------------------------ router: routing + metrics
 def test_router_routes_to_fallback_while_open_and_records_state_changes(vt):
     sink = MemorySink()
@@ -99,14 +128,29 @@ def test_router_routes_to_fallback_while_open_and_records_state_changes(vt):
     r.observe(ModelClass.MIDSIZE, QuotaExhausted(status=429))      # quota is not saturation: ignored
     d = r.decide("explain", {"escalate": True}, quota_tokens=20)
     assert (d.model_class, d.degrade_reason) == (ModelClass.COMPACT, "breaker_open")
+    assert r.probe_due() == []                                     # cooldown not over
     vt.t += 30
-    probe = r.decide("explain", {}, 20)
-    assert probe.model_class is ModelClass.MIDSIZE and probe.probe
-    assert r.decide("explain", {}, 20).degrade_reason == "breaker_open"   # only one probe
-    r.observe(ModelClass.MIDSIZE, None)
+    assert r.probe_due() == [ModelClass.MIDSIZE]                   # the engine sends ONE probe ...
+    assert r.probe_due() == []
+    assert r.decide("explain", {}, 20).degrade_reason == "breaker_open"   # ... a learner is never the probe
+    r.observe(ModelClass.MIDSIZE, None)                            # the probe answered
     assert r.decide("explain", {}, 20).model_class is ModelClass.MIDSIZE
     states = [x.outcome for x in sink.records if x.kind == "breaker"]
     assert states == [OPEN, HALF_OPEN, CLOSED]
+
+
+def test_router_counts_timeouts_and_5xx_like_the_spec(vt):
+    r = Router(MemorySink(), 2, breaker_threshold=3, clock=vt.clock)
+    r.observe(ModelClass.MIDSIZE, TransientError(status=502, message="bad gateway"))
+    r.observe(ModelClass.MIDSIZE, TransientError(message="network: ConnectError"))
+    assert r.breakers[ModelClass.MIDSIZE].closed                   # 5xx / network: BREAKER_THRESHOLD of them
+    r.observe(ModelClass.MIDSIZE, TransientError(message="timeout: ReadTimeout", timeout=True))
+    assert not r.breakers[ModelClass.MIDSIZE].closed               # a timeout: one is enough
+    assert r.retry_in(ModelClass.MIDSIZE) == pytest.approx(30)
+    r2 = Router(MemorySink(), 2, breaker_threshold=3, clock=vt.clock)
+    r2.observe(ModelClass.MIDSIZE, ConcurrencyLimited(status=429))
+    r2.observe(ModelClass.COMPACT, TransientError(message="timeout", timeout=True))   # compact has no breaker
+    assert r2.breakers[ModelClass.MIDSIZE].closed
 
 
 # ------------------------------------------------------------------ engine: full cycle
@@ -133,9 +177,12 @@ async def test_engine_breaker_cycle_trip_bypass_probe_close(vt, tmp_path):
     assert fake.models().count("mid-a") == 2 and r2.mode == "fast_extractive"
     vt.t += 30
     healthy["mid"] = True
-    r3 = await eng.run("explain", q(3))                                   # half-open probe succeeds
-    assert (r3.model_class_used, r3.degraded, r3.data["body"]) == ("midsize", False, "Explication complète.")
-    assert "probe" in r3.route_reason
+    r3 = await eng.run("explain", q(3))        # cooldown over: this run triggers the probe but is NOT the probe
+    assert r3.degrade_reason == "breaker_open" and r3.mode == "fast_extractive"
+    await asyncio.gather(*eng._probes)                                    # the probe: tiny, BACKGROUND, answered
+    assert fake.models().count("mid-a") == 3
+    probe = [x for x in sink.records if x.kind == "chat" and x.purpose == "probe"]
+    assert len(probe) == 1 and probe[0].priority == "BACKGROUND" and probe[0].outcome == "ok"
     r4 = await eng.run("explain", q(4))
-    assert r4.model_class_used == "midsize"
+    assert (r4.model_class_used, r4.degraded, r4.data["body"]) == ("midsize", False, "Explication complète.")
     assert [x.outcome for x in sink.records if x.kind == "breaker"] == [OPEN, HALF_OPEN, CLOSED]

@@ -23,7 +23,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Literal
 
-from config import Settings
+from config import ModelClass, Settings
 from gatekeeper.errors import QuotaInfo
 
 Clock = Callable[[], float]
@@ -206,15 +206,30 @@ class SlidingWindow(_Gate):
 class SlotInfo:
     rate_wait_s: float = 0.0
     concurrency_wait_s: float = 0.0
+    ghost_for_s: float = 0.0     # set by the caller before releasing: the request is gone but the server still counts it
 
     @property
     def wait_s(self) -> float:
         return self.rate_wait_s + self.concurrency_wait_s
 
 
+@dataclass
+class Ghost:
+    """A request the client gave up on (timeout, cancel) that the server still counts as in flight. It keeps one
+    local concurrency slot (and one slot of its model class) until `until`, so the next request is not sent
+    into a certain 429."""
+    cls: object
+    until: float
+
+
 class Limiter:
     def __init__(self, settings: Settings, clock: Clock = time.monotonic, sleep: Sleep = asyncio.sleep):
         self._clock, self._sleep = clock, sleep
+        # at most this many concurrency slots per model class, ghosts included (so the other class always has one)
+        self.class_caps: dict = {ModelClass.MIDSIZE: settings.midsize_max_slots} if settings.midsize_max_slots > 0 else {}
+        self.class_in_use: dict = {}
+        self.ghosts: list[Ghost] = []
+        self.on_change: Callable[[], None] | None = None     # the queue's dispatcher listens
         self.buckets: dict[str, SlidingWindow] = {      # name kept from the token-bucket days
             "chat": SlidingWindow(int(settings.rate_per_min), settings.rate_window_s, clock, settings.rate_window_slack_s),
             "embed": SlidingWindow(int(settings.embed_rate_per_min), settings.embed_rate_window_s, clock,
@@ -250,12 +265,64 @@ class Limiter:
         self.in_flight += 1
         return info
 
-    def release(self, refund: Kind | None = None) -> None:
-        """Free the concurrency slot; refund=kind gives the rate token back (request never sent)."""
+    def release(self, refund: Kind | None = None, cls=None, ghost_for_s: float = 0.0) -> None:
+        """Free the concurrency slot; refund=kind gives the rate token back (request never sent).
+        ghost_for_s > 0: the request is gone but the server still counts it, so the slot (and the class slot)
+        stay taken for that long."""
         self.in_flight -= 1
+        if ghost_for_s > 0:
+            self.ghosts.append(Ghost(cls, self._clock() + ghost_for_s))
+            self._changed()
+            return
         self.concurrency.release()
+        if cls is not None:
+            self.class_in_use[cls] = max(0, self.class_in_use.get(cls, 0) - 1)
         if refund:
             self.buckets[refund].refund()
+        self._changed()
+
+    # ------------------------------------------------------------ per-class slots and ghosts
+    def claim(self, cls) -> None:
+        """The dispatcher granted a slot to a request of this class."""
+        if cls is not None:
+            self.class_in_use[cls] = self.class_in_use.get(cls, 0) + 1
+
+    def reap(self) -> None:
+        """Drop the ghosts whose server-side time is over (checked lazily: no timer task, virtual-clock friendly)."""
+        now = self._clock()
+        gone = [g for g in self.ghosts if g.until <= now]
+        for g in gone:
+            self._drop(g)
+
+    def _drop(self, g: Ghost) -> None:
+        if g in self.ghosts:
+            self.ghosts.remove(g)
+            self.concurrency.release()
+            self.class_in_use[g.cls] = max(0, self.class_in_use.get(g.cls, 0) - 1)
+            self._changed()
+
+    def clear_ghosts(self, cls) -> None:
+        """A later request to the class succeeded: the server is answering again, its old counts are gone."""
+        for g in [g for g in self.ghosts if g.cls == cls]:
+            self._drop(g)
+
+    def ghost_count(self, cls) -> int:
+        self.reap()
+        return sum(1 for g in self.ghosts if g.cls == cls)
+
+    def next_ghost_expiry(self) -> float | None:
+        """Seconds until the earliest ghost expires (None = no ghost)."""
+        return max(0.0, min(g.until for g in self.ghosts) - self._clock()) if self.ghosts else None
+
+    def class_free(self, cls) -> bool:
+        """May one more request of this model class take a slot now? (its cap, ghosts included)"""
+        self.reap()
+        cap = self.class_caps.get(cls)
+        return cap is None or self.class_in_use.get(cls, 0) < cap
+
+    def _changed(self) -> None:
+        if self.on_change:
+            self.on_change()
 
     @asynccontextmanager
     async def slot(self, kind: Kind = "chat", on_wait: Callable[[str, float], None] | None = None):
