@@ -62,6 +62,8 @@ class TaskSpec:
     decorate: Callable[[str, Mapping, TaskContext, bool], tuple[str, dict]] | None = None
     # every equation in the model's text must come from the retrieved chunks / appended exercise / question
     check_grounding: bool = False
+    # the task reads an image: engine.run prepares inputs["image"] (resize, hash) into ctx.extra["image"]
+    vision: bool = False
     # re-apply finalize_data on cache hits, so rule changes (caps, floors, language checks) reach old entries;
     # only for idempotent rules
     rules_on_hit: bool = False
@@ -634,5 +636,104 @@ GRADE = TaskSpec(
     finalize_data=_grade_finalize, safe_default=_grade_default)
 
 
+# ====================================================================== ocr_transcribe (vision)
+_FENCE = re.compile(r"^```[a-z]*\s*|\s*```$", re.I)
+_DET_TAGS = re.compile(r"<\|[^|>]*\|>|\[\[\s*\d+(?:\s*,\s*\d+){3}\s*\]\]")      # grounding tags some OCR models emit
+_LABEL_OCR = re.compile(r"^\s*(transcription|texte|text|ocr)\s*:\s*", re.I)
+_LATEX_MARK = re.compile(r"\\(?:frac|sqrt|int|sum|lim|cdot|times|leq|geq|neq|infty|left|right)\b|\^\{|_\{|\$|\\\(")
+_MATH_LINE = re.compile(r"[=+<>≤≥≠±√∑∫^]|[²³⁴⁵⁶⁷⁸⁹⁰]|\\(?:frac|sqrt)|\bf\s*['′]?\s*\(|\blim\b|\d\s*[-−*/×·]\s*\w")
+_SUPER = str.maketrans({"²": "^{2}", "³": "^{3}", "⁴": "^{4}", "⁵": "^{5}", "⁶": "^{6}", "⁷": "^{7}", "⁸": "^{8}",
+                        "⁹": "^{9}", "⁰": "^{0}", "¹": "^{1}"})
+_SYMBOLS = (("≤", r"\leq "), ("≥", r"\geq "), ("≠", r"\neq "), ("±", r"\pm "), ("×", r"\times "), ("·", r"\cdot "),
+            ("−", "-"), ("∞", r"\infty "), ("π", r"\pi "), ("÷", r"\div "), ("→", r"\to "))
+
+
+def to_latex(line: str) -> str:
+    """Plain (unicode) maths -> LaTeX for the simple cases the OCR model leaves as text. Lines that already are
+    LaTeX are returned without their $ delimiters."""
+    s = line.strip()
+    if _LATEX_MARK.search(s):
+        return re.sub(r"\\\(|\\\)|\$", "", s).strip()
+    s = s.translate(_SUPER)
+    for a, b in _SYMBOLS:
+        s = s.replace(a, b)
+    s = re.sub(r"√\s*\(([^()]+)\)", r"\\sqrt{\1}", s)
+    s = re.sub(r"√\s*([A-Za-z0-9]+)", r"\\sqrt{\1}", s)
+    s = re.sub(r"\^(\d+)", r"^{\1}", s)
+    s = re.sub(r"(?<![\w}])(\w+)\s*/\s*(\w+)(?![\w(])", r"\\frac{\1}{\2}", s)
+    return s
+
+
+def _balanced(line: str) -> bool:
+    depth = 0
+    for c in line:
+        depth += (c in "([{") - (c in ")]}")
+        if depth < 0:
+            return False
+    return depth == 0
+
+
+_OCR_NOTES = {
+    "FRENCH": {"empty": "Aucun texte lu : refais la photo (plus de lumière, page à plat, texte bien cadré).",
+               "unreadable": "Ligne {n} : un symbole n'a pas pu être lu ; vérifie-la.",
+               "brackets": "Ligne {n} : parenthèses non fermées ; vérifie-la.", "short": "Très peu de texte lu : vérifie la photo."},
+    "ENGLISH": {"empty": "No text was read: retake the photo (more light, page flat, text in frame).",
+                "unreadable": "Line {n}: a symbol could not be read; please check it.",
+                "brackets": "Line {n}: unclosed brackets; please check it.", "short": "Very little text was read: check the photo."},
+    "ARABIC": {"empty": "لم يُقرأ أي نص: أعد التقاط الصورة (إضاءة أفضل، ورقة مسطحة).",
+               "unreadable": "السطر {n}: تعذّرت قراءة رمز، تحقّق منه.",
+               "brackets": "السطر {n}: أقواس غير مغلقة، تحقّق منه.", "short": "نص قليل جداً: تحقّق من الصورة."},
+}
+
+
+def analyze_ocr(raw: str, language: str | None = None) -> dict:
+    """Deterministic clean-up of the model's transcription -> {text, latex, confidence_note, issues}.
+    The model gives no confidence, so the note only reports what can be SEEN: a [?] / replacement character, a line
+    whose brackets do not close, no text at all, or almost none. It never grades or corrects."""
+    text = _DET_TAGS.sub("", raw or "")
+    text = _FENCE.sub("", text.strip())
+    text = _LABEL_OCR.sub("", text)
+    text = "\n".join(line.rstrip() for line in text.strip().splitlines() if line.strip())
+    msgs = _OCR_NOTES.get(language or "FRENCH", _OCR_NOTES["FRENCH"])
+    issues: list[tuple[str, int]] = []
+    lines = text.splitlines()
+    if not text:
+        issues.append(("empty", 0))
+    elif len(text) < 3:
+        issues.append(("short", 0))
+    for i, line in enumerate(lines, 1):
+        if "[?]" in line or "�" in line or "□" in line or "???" in line:
+            issues.append(("unreadable", i))
+        elif _MATH_LINE.search(line) and not _balanced(line):
+            issues.append(("brackets", i))
+    math = [to_latex(x) for x in lines if _MATH_LINE.search(x) or _LATEX_MARK.search(x)]
+    return {"text": text, "latex": " \\\\ ".join(math) if math else None,
+            "confidence_note": " ".join(msgs[k].format(n=n) for k, n in issues[:3]),
+            "issues": [{"kind": k, "line": n} for k, n in issues]}
+
+
+def _ocr_build(p: PromptTemplate, inputs: Mapping, ctx: TaskContext, limit: int = 0) -> Messages:
+    from gatekeeper.client import image_part
+    img = ctx.extra["image"]            # engine.run prepared it (resize, hash, token estimate)
+    return [{"role": "user", "content": [image_part(img.data_url, img.est_tokens, img.sha),
+                                         {"type": "text", "text": p.render("system") + "\n\n" + p.render("user")}]}]
+
+
+def _ocr_finalize(text: str, p: PromptTemplate, inputs: Mapping, ctx: TaskContext):
+    a = analyze_ocr(text, ctx.language)
+    # the cache keeps the cleaned transcription; a reading with visible problems is returned but never cached
+    return a["text"], ("low_confidence" if a["issues"] else None), {"issues": a["issues"]}
+
+
+def _ocr_decorate(body: str, inputs: Mapping, ctx: TaskContext, opener: bool = True) -> tuple[str, dict]:
+    a = analyze_ocr(body, ctx.language)
+    return a["text"], {"text": a["text"], "latex": a["latex"], "confidence_note": a["confidence_note"]}
+
+
+OCR_TRANSCRIBE = TaskSpec(
+    name="ocr_transcribe", prompt="ocr_transcribe", max_tokens=700, temperature=0.0, required_inputs=("image",),
+    build=_ocr_build, finalize_text=_ocr_finalize, decorate=_ocr_decorate, vision=True)
+
+
 def default_registry() -> Registry:
-    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE])
+    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE, OCR_TRANSCRIBE])

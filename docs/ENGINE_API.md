@@ -1443,16 +1443,22 @@ Transcribes a photo of handwritten or printed work. **It never grades**: feed th
 
 * inputs: `image` (required): a `data:image/...;base64,...` URL or a base64 string; JPEG/PNG. Resized to at most 1
   megapixel before sending (event `resizing_image`). No URL fetching.
-* `data`: `{text, latex, confidence_note}`. `latex` is set when math was detected, else `null`. `confidence_note` is
-  empty or one sentence saying what to double-check. `text` is also in `Result.text`.
+* `data`: `{text, latex, confidence_note}`. `latex` is set when math was detected (the maths lines as one LaTeX string,
+  lines joined by `\\`), else `null`. `confidence_note` is empty or says what to double-check, in the learner's
+  language: the model gives no confidence, so the note reports only what can be seen (a symbol it could not read, brackets
+  that do not close, no text, almost no text). `text` is also in `Result.text`. `notes.image` has the hash, the size sent
+  and `resized`. The text is transcribed, never corrected: a wrong line stays wrong.
 * priority: INTERACTIVE by default. Cache key = hash of the (resized) image.
 * cost: 1 vision request (~14 s). It shares the chat window and the 2 slots with everything else until the organizers
   say otherwise.
-* degrade: `low_confidence` (text still returned, ask the learner to check it), `quota_exhausted`, `service_busy`,
-  `superseded`, `room_busy`, `request_too_large` (image too big after resizing).
-* events: `checking_cache`, `resizing_image`, `queued`, `generating` (`model_class: vision`).
+* degrade: `low_confidence` (text still returned and shown with the note; not cached, so a retry reads again),
+  `invalid_image` (not a readable image, a URL, too big a file: `data` and `text` null, nothing sent),
+  `quota_exhausted`, `service_busy`, `superseded`, `room_busy`, `request_too_large` (the image alone exceeds the input
+  budget).
+* events: [`resizing_image`: only when the image was larger than 1 MP; it comes first because the cache key needs the
+  prepared image], `checking_cache`, [`cache_hit`] or [`queued`, `generating` (`model_class: vision`)].
 
-*ocr_transcribe.ok: canned (FakeEngine)*
+*ocr_transcribe.ok: real engine output*
 
 ```json
 {
@@ -1461,7 +1467,7 @@ Transcribes a photo of handwritten or printed work. **It never grades**: feed th
   "text": "Dériver f(x) = 3x² + 5x\nf'(x) = 6x + 5",
   "data": {
     "text": "Dériver f(x) = 3x² + 5x\nf'(x) = 6x + 5",
-    "latex": "f(x) = 3x^{2} + 5x \\quad f'(x) = 6x + 5",
+    "latex": "Dériver f(x) = 3x^{2} + 5x \\\\ f'(x) = 6x + 5",
     "confidence_note": ""
   },
   "model_class_used": "vision",
@@ -1472,61 +1478,65 @@ Transcribes a photo of handwritten or printed work. **It never grades**: feed th
   "eta_seconds": null,
   "events": [
     {
-      "name": "checking_cache",
-      "t_ms": 0.0,
-      "data": {}
-    },
-    {
       "name": "resizing_image",
-      "t_ms": 150.0,
+      "t_ms": 0.0,
       "data": {
         "from": "2048x1536",
         "to": "1154x866"
       }
     },
     {
+      "name": "checking_cache",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
       "name": "queued",
-      "t_ms": 200.0,
+      "t_ms": 0.0,
       "data": {
         "position": 0,
-        "eta_s": 4.0
+        "eta_s": 2.0
       }
     },
     {
       "name": "generating",
-      "t_ms": 210.0,
+      "t_ms": 0.0,
       "data": {
         "attempt": 1,
         "model_class": "vision"
       }
     }
   ],
-  "latency_ms": 14000.0,
+  "latency_ms": 0.0,
   "tokens_in": 820,
-  "tokens_out": 64,
-  "route_reason": "vision by table",
+  "tokens_out": 40,
+  "route_reason": "table: ocr_transcribe -> vision",
   "repaired": false,
   "safe_default": false,
   "mode": null,
   "followup_available": false,
   "notes": {
-    "image_sha": "c0ffee12",
-    "resized": true
+    "image": {
+      "sha": "c316e3c47db2",
+      "size": "1154x866",
+      "resized": true,
+      "est_tokens": 1000
+    }
   }
 }
 ```
 
-*ocr_transcribe.low_confidence: canned (FakeEngine)*
+*ocr_transcribe.low_confidence: real engine output*
 
 ```json
 {
   "task": "ocr_transcribe",
   "request_id": "a1b2c3d4e5f6",
-  "text": "Dériver f(x) = 3x² + 5x\nf'(x) = 6x ? 5",
+  "text": "f(x) = (3x + [?]\nf'(x) = 6x + 5",
   "data": {
-    "text": "Dériver f(x) = 3x² + 5x\nf'(x) = 6x ? 5",
-    "latex": null,
-    "confidence_note": "Écriture peu lisible à partir de la 2e ligne : à vérifier par l'élève."
+    "text": "f(x) = (3x + [?]\nf'(x) = 6x + 5",
+    "latex": "f(x) = (3x + [?] \\\\ f'(x) = 6x + 5",
+    "confidence_note": "Ligne 1 : un symbole n'a pas pu être lu ; vérifie-la."
   },
   "model_class_used": "vision",
   "model": "deepseek-ocr",
@@ -1536,46 +1546,108 @@ Transcribes a photo of handwritten or printed work. **It never grades**: feed th
   "eta_seconds": null,
   "events": [
     {
+      "name": "resizing_image",
+      "t_ms": 0.0,
+      "data": {
+        "from": "1200x900",
+        "to": "1154x866"
+      }
+    },
+    {
       "name": "checking_cache",
       "t_ms": 0.0,
       "data": {}
     },
     {
-      "name": "resizing_image",
-      "t_ms": 150.0,
-      "data": {
-        "from": "2048x1536",
-        "to": "1154x866"
-      }
-    },
-    {
       "name": "queued",
-      "t_ms": 200.0,
+      "t_ms": 0.0,
       "data": {
         "position": 0,
-        "eta_s": 4.0
+        "eta_s": 2.0
       }
     },
     {
       "name": "generating",
-      "t_ms": 210.0,
+      "t_ms": 0.0,
       "data": {
         "attempt": 1,
         "model_class": "vision"
       }
+    },
+    {
+      "name": "guarded",
+      "t_ms": 0.0,
+      "data": {
+        "reason": "low_confidence",
+        "issues": [
+          {
+            "kind": "unreadable",
+            "line": 1
+          }
+        ]
+      }
     }
   ],
-  "latency_ms": 14000.0,
+  "latency_ms": 0.0,
   "tokens_in": 820,
-  "tokens_out": 64,
-  "route_reason": "vision by table",
+  "tokens_out": 40,
+  "route_reason": "table: ocr_transcribe -> vision",
   "repaired": false,
   "safe_default": false,
   "mode": null,
   "followup_available": false,
   "notes": {
-    "image_sha": "c0ffee12",
-    "resized": true
+    "issues": [
+      {
+        "kind": "unreadable",
+        "line": 1
+      }
+    ],
+    "image": {
+      "sha": "09f7dee26e51",
+      "size": "1154x866",
+      "resized": true,
+      "est_tokens": 1000
+    }
+  }
+}
+```
+
+*ocr_transcribe.invalid_image: real engine output*
+
+```json
+{
+  "task": "ocr_transcribe",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": null,
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": true,
+  "degrade_reason": "invalid_image",
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "unavailable",
+      "t_ms": 0.0,
+      "data": {
+        "reason": "invalid_image",
+        "eta_s": null,
+        "error": "image"
+      }
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": "invalid image",
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "error": "not a readable image (UnidentifiedImageError)"
   }
 }
 ```
@@ -2181,7 +2253,8 @@ regenerates.
 | `ungrounded_formula` / `wrong_math` | a formula in the answer is not in the course / is wrong | course extracts are served instead |
 | `explain_guard:*`, `hint_guard:*` | answer failed a text guard (degenerate, loop, language drift, answer leak, too long) | safe fallback text is in the result |
 | `json_invalid` | `check_claim` only: no valid JSON after the repair call (`safe_default=true`, verdict `PARTLY`) | treat the verdict as unknown. (`classify` and `grade` set `safe_default=true` without degrading.) |
-| `low_confidence` | `ocr_transcribe`: text returned but unreliable | ask the learner to check it |
+| `low_confidence` | `ocr_transcribe`: text returned but with visible reading problems | show it with `confidence_note`, ask the learner to check |
+| `invalid_image` | `ocr_transcribe`: the image could not be read | ask for another photo |
 
 ## 6. Events
 

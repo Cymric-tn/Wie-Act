@@ -32,10 +32,18 @@ def normalize(text: str) -> str:
     return " ".join(unicodedata.normalize("NFC", text).split())
 
 
+def _flat(content: Any) -> str:
+    """A message content as text for the key: parts are joined; an image counts by its sha, not by its bytes."""
+    if isinstance(content, list):
+        return "\n".join(str(p.get("text") or "") if p.get("type") == "text" else f"[image:{p.get('x_sha') or ''}]"
+                         for p in content if isinstance(p, dict))
+    return content or ""
+
+
 def cache_key(task: str, model_class: str, messages: Iterable[Mapping[str, str]], language: str | None,
               level: str | None, style: str | None, prompt_version: str = "", extra: Iterable[str] = ()) -> str:
     """extra: further identity, e.g. the ids of the retrieved chunks for grounded tasks."""
-    prompt = [[m.get("role", ""), normalize(m.get("content") or "")] for m in messages]
+    prompt = [[m.get("role", ""), normalize(_flat(m.get("content")))] for m in messages]
     raw = json.dumps({"task": task, "v": prompt_version, "class": model_class, "prompt": prompt,
                       "language": (language or "").upper(), "level": (level or "").lower(),
                       "style": (style or "").lower(), "extra": list(extra)},

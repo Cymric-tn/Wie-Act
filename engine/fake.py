@@ -61,7 +61,7 @@ EXPLAIN_BODY = ("Le nombre dérivé mesure la pente de la courbe en un point. On
 OPENER = "Bonne question, on la prend étape par étape."
 FRAMING = "Je n'ai pas pu rédiger l'explication complète à l'instant ; voici ce que dit le cours :"
 OCR_TEXT = "Dériver f(x) = 3x² + 5x\nf'(x) = 6x + 5"
-OCR_LATEX = "f(x) = 3x^{2} + 5x \\quad f'(x) = 6x + 5"
+OCR_LATEX = "Dériver f(x) = 3x^{2} + 5x \\\\ f'(x) = 6x + 5"
 CONCEPTS = ["limite", "taux-accroissement", "nombre-derive", "tangente", "puissance", "polynome", "constante",
             "somme", "produit", "quotient", "composee"]
 
@@ -93,7 +93,8 @@ class FakeEngine:
         "quiz": ("ok", "diagnostic"),
         "grade": ("correct", "incorrect", "quota_exhausted"),
         "compress": ("ok",),
-        "ocr_transcribe": ("ok", "math", "low_confidence", "quota_exhausted", "superseded", "room_busy"),
+        "ocr_transcribe": ("ok", "math", "low_confidence", "invalid_image", "quota_exhausted", "superseded",
+                           "room_busy"),
         "check_claim": ("SUPPORTED", "CONTRADICTED", "PARTLY", "NOT_IN_COURSE", "SUPPORTED_llm", "llm_failed",
                         "quota_exhausted", "superseded", "room_busy"),
         "check_answer": ("ok", "wrong_step", "unchecked", "llm_feedback", "quota_exhausted", "room_busy"),
@@ -359,18 +360,22 @@ def _compress(outcome, inputs, lang, k, ctx) -> _Plan:
 
 
 def _ocr(outcome, inputs, lang, k, ctx) -> _Plan:
+    if outcome == "invalid_image":
+        return _Plan(_ev((0.0, "unavailable", {"reason": "invalid_image", "eta_s": None, "error": "image"})), 0.0,
+                     {"degraded": True, "degrade_reason": "invalid_image", "route_reason": "invalid image",
+                      "notes": {"error": "not a readable image (UnidentifiedImageError)"}})
     math = outcome in ("ok", "math")
     data = {"text": OCR_TEXT, "latex": OCR_LATEX if math else None,
             "confidence_note": "" if math else "Écriture peu lisible à partir de la 2e ligne : à vérifier par l'élève."}
     if not math:
         data["text"] = "Dériver f(x) = 3x² + 5x\nf'(x) = 6x ? 5"
-    return _Plan(_ev((0.0, "checking_cache", None), (0.15, "resizing_image", {"from": "2048x1536", "to": "1154x866"}),
+    return _Plan(_ev((0.0, "resizing_image", {"from": "2048x1536", "to": "1154x866"}), (0.15, "checking_cache", None),
                      (0.2, "queued", {"position": 0, "eta_s": 4.0}),
                      (0.21, "generating", {"attempt": 1, "model_class": "vision"})), 14.0 * k,
                  {"text": data["text"], "data": data, "model_class_used": "vision", "model": "deepseek-ocr",
                   "tokens_in": 820, "tokens_out": 64, "route_reason": "vision by table",
                   "degraded": outcome == "low_confidence", "degrade_reason": "low_confidence" if outcome == "low_confidence" else None,
-                  "notes": {"image_sha": "c0ffee12", "resized": True}})
+                  "notes": {"image": {"sha": "c0ffee123456", "size": "1154x866", "resized": True, "est_tokens": 1000}}})
 
 
 def _claim(outcome, inputs, lang, k, ctx) -> _Plan:

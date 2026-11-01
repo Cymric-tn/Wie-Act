@@ -5,7 +5,7 @@
   "text": "Dériver f(x) = 3x² + 5x\nf'(x) = 6x + 5",
   "data": {
     "text": "Dériver f(x) = 3x² + 5x\nf'(x) = 6x + 5",
-    "latex": "f(x) = 3x^{2} + 5x \\quad f'(x) = 6x + 5",
+    "latex": "Dériver f(x) = 3x^{2} + 5x \\\\ f'(x) = 6x + 5",
     "confidence_note": ""
   },
   "model_class_used": "vision",
@@ -16,17 +16,17 @@
   "eta_seconds": null,
   "events": [
     {
-      "name": "checking_cache",
-      "t_ms": 0.0,
-      "data": {}
-    },
-    {
       "name": "resizing_image",
-      "t_ms": 150.0,
+      "t_ms": 0.0,
       "data": {
         "from": "2048x1536",
         "to": "1154x866"
       }
+    },
+    {
+      "name": "checking_cache",
+      "t_ms": 150.0,
+      "data": {}
     },
     {
       "name": "queued",
@@ -54,7 +54,11 @@
   "mode": null,
   "followup_available": false,
   "notes": {
-    "image_sha": "c0ffee12",
-    "resized": true
+    "image": {
+      "sha": "c0ffee123456",
+      "size": "1154x866",
+      "resized": true,
+      "est_tokens": 1000
+    }
   }
 }

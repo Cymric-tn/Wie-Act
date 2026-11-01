@@ -99,6 +99,15 @@ async def real_examples(index: str) -> dict[str, tuple[str, Result]]:
                                        "solution": "Une constante ne varie pas : sa pente est 0.",
                                        "attempt": "parce que ça ne bouge pas"})
 
+    from tests.test_ocr_task import LINES, data_url, photo
+    ocr = Rig(lambda b: chat_ok("\n".join(LINES), 820, 40), index)
+    await go("ocr_transcribe.ok", ocr, "ocr_transcribe", {"image": data_url(photo(2048, 1536))},
+             {"learner_id": "L1", "language": "FRENCH"})
+    bad = Rig(lambda b: chat_ok("f(x) = (3x + [?]\nf'(x) = 6x + 5", 820, 40), index)
+    await go("ocr_transcribe.low_confidence", bad, "ocr_transcribe", {"image": data_url(photo(1200, 900))},
+             {"language": "FRENCH"})
+    await go("ocr_transcribe.invalid_image", bad, "ocr_transcribe", {"image": "data:image/png;base64,AAAA"})
+
     junk = Rig(lambda b: chat_ok("je ne sais pas, désolé", 300, 12), index)
     await go("classify.safe_default", junk, "classify", {"message": "explique-moi les limites"})
 
