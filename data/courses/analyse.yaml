@@ -1,0 +1,64 @@
+# Course graph. course -> units (order, requires) -> concepts (requires, related), titles in fr / en / ar.
+# Concept ids are the ids of the exercise bank (data/exercises/*.yaml) and of the `<!-- concept: id -->` tags of
+# data/docs, so one id names the same thing in the graph, the course text and the bank. tests/test_course_graph.py
+# checks that, and that `requires` has no cycle (concepts nor units).
+# status: draft = planned: its course text is a draft awaiting review and/or the bank has no exercise for it yet.
+# A draft concept may be missing from docs/bank; prep plans skip it (but keep it as an ordering constraint).
+version: 1
+course: analyse
+titles: {fr: "Analyse : dérivation", en: "Calculus: differentiation", ar: "التحليل: الاشتقاق"}
+units:
+  - id: derivees
+    order: 1
+    requires: []
+    titles: {fr: "La dérivation", en: "Differentiation", ar: "الاشتقاق"}
+    concepts:
+      - id: limite
+        status: draft
+        requires: []
+        related: [nombre dérivé]
+        titles: {fr: "Limite", en: "Limit", ar: "النهاية"}
+      - id: nombre dérivé
+        requires: [limite]
+        related: [tangente]
+        titles: {fr: "Nombre dérivé", en: "Derivative at a point", ar: "العدد المشتق"}
+      - id: tangente
+        requires: [nombre dérivé]
+        related: [variations]
+        titles: {fr: "Tangente", en: "Tangent line", ar: "المماس"}
+      - id: constante
+        requires: [nombre dérivé]
+        related: [polynôme]
+        titles: {fr: "Dérivée d'une constante", en: "Derivative of a constant", ar: "مشتقة دالة ثابتة"}
+      - id: puissance
+        requires: [nombre dérivé]
+        related: [polynôme, inverse, racine carrée]
+        titles: {fr: "Dérivée d'une puissance", en: "Derivative of a power", ar: "مشتقة الدالة قوة"}
+      - id: polynôme
+        requires: [puissance, constante]
+        related: [produit]
+        titles: {fr: "Dérivée d'un polynôme", en: "Derivative of a polynomial", ar: "مشتقة كثير الحدود"}
+      - id: produit
+        requires: [polynôme]
+        related: [quotient]
+        titles: {fr: "Dérivée d'un produit", en: "Derivative of a product", ar: "مشتقة جداء دالتين"}
+      - id: inverse
+        requires: [puissance]
+        related: [quotient]
+        titles: {fr: "Dérivée de l'inverse", en: "Derivative of the reciprocal", ar: "مشتقة المقلوب"}
+      - id: quotient
+        requires: [produit, inverse]
+        related: []
+        titles: {fr: "Dérivée d'un quotient", en: "Derivative of a quotient", ar: "مشتقة خارج قسمة"}
+      - id: racine carrée
+        requires: [puissance]
+        related: []
+        titles: {fr: "Dérivée de la racine carrée", en: "Derivative of the square root", ar: "مشتقة الجذر التربيعي"}
+      - id: variations
+        requires: [nombre dérivé, polynôme]
+        related: [extremum]
+        titles: {fr: "Sens de variation", en: "Direction of variation", ar: "اتجاه تغير دالة"}
+      - id: extremum
+        requires: [variations]
+        related: []
+        titles: {fr: "Extremum", en: "Extremum", ar: "قيمة قصوى"}
