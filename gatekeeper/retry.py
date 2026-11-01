@@ -43,13 +43,13 @@ import httpx
 from config import ModelClass, Settings
 from gatekeeper.client import (ChatRequest, EmbedRequest, LLMClient, chars_per_token, estimate_tokens,
                                parse_chat, parse_embed, request_hash, set_chars_per_token)
-from gatekeeper.errors import (CeilingExceeded, ClassUnavailable, ConcurrencyLimited, FatalError, LLMError,
+from gatekeeper.errors import (CeilingExceeded, ClassUnavailable, Superseded, ConcurrencyLimited, FatalError, LLMError,
                                ModelSaturated,
                                QuotaExhausted, QuotaInfo, TransientError, classify_exception,
                                classify_response, parse_quota)
 from gatekeeper.limiter import Clock, Limiter, Sleep
 from gatekeeper.queue import PriorityQueue
-from metrics import CallRecord, MetricsSink
+from metrics import CallRecord, MetricsSink, identity
 
 EventFn = Callable[[str, dict[str, Any]], None]
 FixFn = Callable[[ChatRequest, CeilingExceeded], "ChatRequest | None"]
@@ -112,6 +112,7 @@ class CallContext:
     queue_seq: int | None = None          # set by the queue on first admission, reused by retries
     saturation_retries: int | None = None  # override the class budget (0 = fail fast, e.g. a nicety call)
     turn_id: str | None = None            # caller's learner-turn id, copied to every metrics record
+    owner: str | None = field(default_factory=lambda: identity.get().get("learner_id"))   # fairness key of the queue
 
     def emit(self, name: str, **data) -> None:
         if self.on_event:
@@ -299,7 +300,7 @@ class RetryingCaller:
                         slot.ghost_for_s = max(0.0, p.server_timeout_s - (self._clock() - t0))
                         raise
                     latency_ms = (self._clock() - t0) * 1000
-            except ClassUnavailable as cu:                           # the breaker opened while we waited: nothing sent
+            except (ClassUnavailable, Superseded) as cu:             # failed while waiting: nothing sent
                 ctx.emit("gave_up", error=cu.kind, retry_after_s=cu.retry_after_s)
                 cu.attempts = attempt - 1
                 raise

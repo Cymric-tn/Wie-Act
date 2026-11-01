@@ -76,6 +76,13 @@ class ClassUnavailable(LLMError):
 
 
 @dataclass(eq=False)
+class Superseded(LLMError):
+    """Raised locally, nothing was sent: the same learner queued a newer INTERACTIVE request, which replaces this
+    one (a learner has at most one INTERACTIVE request waiting)."""
+    kind: str = "superseded"
+
+
+@dataclass(eq=False)
 class CeilingExceeded(LLMError):
     kind: str = "ceiling"
     ceiling: str = "unknown"          # "max_tokens" | "prompt_tokens" | "unknown"
