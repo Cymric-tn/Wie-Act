@@ -25,6 +25,17 @@ H_RETRY_AFTER = "retry-after"
 DEFAULT_RETRY_AFTER_S = 5.0                         # recon: LiteLLM cooldown says 5 s
 
 
+# The proxy echoes a hash of the team's API key in its 429 bodies ("Rate limit exceeded for api_key: <hash>").
+# It is a credential fingerprint: it must not reach metrics, logs, degrade notes or reports.
+_KEY_HASH = re.compile(r"(api[_ -]?key(?: hash)?\s*[:=]\s*)[A-Za-z0-9_\-]{8,}", re.I)
+_BEARER = re.compile(r"\b(sk-[A-Za-z0-9_\-]{8,}|Bearer\s+[A-Za-z0-9._\-]{8,})")
+
+
+def scrub(text: str) -> str:
+    """Replace key hashes and key-looking tokens in provider text with <key-hash> / <redacted>."""
+    return _BEARER.sub("<redacted>", _KEY_HASH.sub(r"\1<key-hash>", text or ""))
+
+
 @dataclass(eq=False)
 class LLMError(Exception):
     kind: str = "error"
@@ -32,6 +43,9 @@ class LLMError(Exception):
     message: str = ""
     retry_after_s: float | None = None
     attempts: int = 0                 # set by retry.py when it gives up
+
+    def __post_init__(self) -> None:
+        self.message = scrub(self.message)
 
     def __str__(self) -> str:
         ra = f", retry_after={self.retry_after_s:g}s" if self.retry_after_s is not None else ""
