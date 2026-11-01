@@ -1,0 +1,58 @@
+{
+  "_source": "real",
+  "task": "quiz",
+  "request_id": "a1b2c3d4e5f6",
+  "text": "Trois exercices courts, du plus simple au plus difficile. Réponds au premier :\n\n1) Calculer la dérivée de f(x) = x⁴.\n2) Calculer la dérivée de f(x) = 5x⁴ − 3x² + x.\n3) Calculer la dérivée de f(x) = (2x + 1)(x − 4).",
+  "data": {
+    "exercises": [
+      {
+        "id": "d01",
+        "concept": "puissance",
+        "level": 1,
+        "statement": "Calculer la dérivée de f(x) = x⁴.",
+        "expression": "x⁴"
+      },
+      {
+        "id": "d04",
+        "concept": "polynôme",
+        "level": 2,
+        "statement": "Calculer la dérivée de f(x) = 5x⁴ − 3x² + x.",
+        "expression": "5x⁴ − 3x² + x"
+      },
+      {
+        "id": "d06",
+        "concept": "produit",
+        "level": 3,
+        "statement": "Calculer la dérivée de f(x) = (2x + 1)(x − 4).",
+        "expression": "(2x + 1)(x − 4)"
+      }
+    ],
+    "requested_concepts": [],
+    "diagnostic": true,
+    "intro": "Trois exercices courts, du plus simple au plus difficile. Réponds au premier :"
+  },
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "picking_exercise",
+      "t_ms": 0.0,
+      "data": {}
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": "table: quiz -> compact",
+  "repaired": false,
+  "safe_default": false,
+  "mode": "bank",
+  "followup_available": false,
+  "notes": {
+    "source": "bank"
+  }
+}

@@ -215,18 +215,20 @@ _REQUIRED = {"classify": ("message",), "hint": ("problem",), "explain": ("questi
 # ---------------------------------------------------------------------------- generic degraded outcomes
 def _generic(task: str, outcome: str, k: float) -> _Plan:
     if outcome == "quota_exhausted":
-        eta = 42.0
+        eta = 60.0                    # real: the 429's retry-after is the whole delay (interactive waits at most 30 s)
         return _Plan(_ev((0.0, "checking_cache", None), (0.01, "queued", {"position": 0, "eta_s": 2.0}),
-                         (0.02, "waiting_quota", {"seconds": 42.0}),
-                         (0.03, "queued", {"reason": "quota_exhausted", "eta_s": eta, "error": "quota_exhausted"})),
-                     0.03, {"degraded": True, "degrade_reason": "quota_exhausted", "eta_seconds": eta,
-                            "route_reason": "quota window full", **_empty_body(task)})
+                         (0.02, "generating", {"attempt": 1, "model_class": "compact"}),
+                         (0.4, "gave_up", {"error": "quota_exhausted", "retry_after_s": 60.0}),
+                         (0.4, "queued", {"reason": "quota_exhausted", "eta_s": eta, "error": "quota_exhausted"})),
+                     0.4, {"degraded": True, "degrade_reason": "quota_exhausted", "eta_seconds": eta,
+                           "route_reason": "quota window full", **_empty_body(task)})
     if outcome == "superseded":
         return _Plan(_ev((0.0, "checking_cache", None), (0.01, "queued", {"position": 1, "eta_s": 6.0}),
+                         (2.1, "gave_up", {"error": "superseded", "retry_after_s": None}),
                          (2.1, "unavailable", {"reason": "superseded", "eta_s": None, "error": "superseded"})),
                      2.1, {"degraded": True, "degrade_reason": "superseded", **_empty_body(task)})
-    return _Plan(_ev((0.0, "room_busy", {"room_id": "room-1", "eta_s": 5.0})), 0.0,
-                 {"degraded": True, "degrade_reason": "room_busy", "eta_seconds": 5.0, "route_reason": "room_busy",
+    return _Plan(_ev((0.0, "room_busy", {"room_id": "room-1", "eta_s": 8.0})), 0.0,
+                 {"degraded": True, "degrade_reason": "room_busy", "eta_seconds": 8.0, "route_reason": "room_busy",
                   "notes": {"room_id": "room-1"}})
 
 
@@ -262,7 +264,7 @@ def _classify(outcome, inputs, lang, k, ctx) -> _Plan:
                          (3.4 * k + 0.02, "generating", {"attempt": 1, "model_class": "compact"}),
                          (6.5 * k, "using_safe_default", {"error": "invalid JSON: Expecting value"})), 6.5 * k,
                      {"data": {**data, "confidence": 0.3}, "model_class_used": "compact", "model": "compact-a",
-                      "repaired": True, "safe_default": True, "degraded": True, "degrade_reason": "json_invalid",
+                      "repaired": True, "safe_default": True,
                       "tokens_in": 310, "tokens_out": 95, "route_reason": "compact by table"})
     tin, tout = _tokens("classify", inputs["message"])
     return _Plan(_ev((0.0, "checking_cache", None), (0.01, "queued", {"position": 0, "eta_s": 2.0}),

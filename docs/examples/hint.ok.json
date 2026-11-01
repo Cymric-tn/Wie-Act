@@ -1,0 +1,45 @@
+{
+  "_source": "real",
+  "task": "hint",
+  "request_id": "a1b2c3d4e5f6",
+  "text": "Quelle règle donne la dérivée d'une puissance ? Regarde l'exposant.",
+  "data": null,
+  "model_class_used": "compact",
+  "model": "compact-a",
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "checking_cache",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "queued",
+      "t_ms": 0.0,
+      "data": {
+        "position": 0,
+        "eta_s": 1.6
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 0.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "compact"
+      }
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 260,
+  "tokens_out": 22,
+  "route_reason": "table: hint -> compact",
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {}
+}

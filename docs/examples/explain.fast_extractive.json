@@ -1,0 +1,180 @@
+{
+  "_source": "real",
+  "task": "explain",
+  "request_id": "a1b2c3d4e5f6",
+  "text": "Voici les passages du cours qui répondent à ta question :\n\n- Pour une fonction f et un nombre a, le taux d'accroissement entre a et a + h est le quotient (f(a + h) − f(a)) / h.\n- Quand h devient de plus en plus petit (h tend vers 0), si ce quotient se rapproche d'un nombre fini, ce nombre s'appelle le nombre dérivé de f en a et se note f'(a).\n- Exemple : pour f(x) = x², le taux d'accroissement vaut (2ah + h²) / h = 2a + h, qui tend vers 2a quand h tend vers 0.\n\nÀ toi : Soit f(x) = x². Calculer f'(3).",
+  "data": {
+    "framing": "Voici les passages du cours qui répondent à ta question :",
+    "excerpts": [
+      {
+        "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+        "text": "Pour une fonction f et un nombre a, le taux d'accroissement entre a et a + h est le quotient (f(a + h) − f(a)) / h."
+      },
+      {
+        "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+        "text": "Quand h devient de plus en plus petit (h tend vers 0), si ce quotient se rapproche d'un nombre fini, ce nombre s'appelle le nombre dérivé de f en a et se note f'(a)."
+      },
+      {
+        "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+        "text": "Exemple : pour f(x) = x², le taux d'accroissement vaut (2ah + h²) / h = 2a + h, qui tend vers 2a quand h tend vers 0."
+      }
+    ],
+    "exercise": {
+      "id": "d10",
+      "concept": "nombre dérivé",
+      "level": 1,
+      "statement": "Soit f(x) = x². Calculer f'(3).",
+      "expression": "x²"
+    }
+  },
+  "model_class_used": "midsize",
+  "model": null,
+  "from_cache": false,
+  "degraded": true,
+  "degrade_reason": "midsize_saturated",
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "retrieving",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "checking_cache",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "partial_result",
+      "t_ms": 0.0,
+      "data": {
+        "excerpts": [
+          {
+            "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+            "text": "Pour une fonction f et un nombre a, le taux d'accroissement entre a et a + h est le quotient (f(a + h) − f(a)) / h."
+          },
+          {
+            "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+            "text": "Quand h devient de plus en plus petit (h tend vers 0), si ce quotient se rapproche d'un nombre fini, ce nombre s'appelle le nombre dérivé de f en a et se note f'(a)."
+          },
+          {
+            "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+            "text": "Exemple : pour f(x) = x², le taux d'accroissement vaut (2ah + h²) / h = 2a + h, qui tend vers 2a quand h tend vers 0."
+          }
+        ]
+      }
+    },
+    {
+      "name": "queued",
+      "t_ms": 0.0,
+      "data": {
+        "position": 0,
+        "eta_s": 2.0
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 0.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "midsize"
+      }
+    },
+    {
+      "name": "retry_after_interval",
+      "t_ms": 0.0,
+      "data": {
+        "error": "saturated",
+        "seconds": 4.0,
+        "attempt": 1
+      }
+    },
+    {
+      "name": "queued",
+      "t_ms": 4000.0,
+      "data": {
+        "position": 0,
+        "eta_s": 1.6
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 4000.0,
+      "data": {
+        "attempt": 2,
+        "model_class": "midsize"
+      }
+    },
+    {
+      "name": "gave_up",
+      "t_ms": 4000.0,
+      "data": {
+        "error": "saturated",
+        "retry_after_s": 4.0
+      }
+    },
+    {
+      "name": "falling_back_to_compact",
+      "t_ms": 4000.0,
+      "data": {
+        "reason": "midsize_saturated"
+      }
+    },
+    {
+      "name": "fast_extractive",
+      "t_ms": 4000.0,
+      "data": {
+        "reason": "midsize_saturated"
+      }
+    },
+    {
+      "name": "queued",
+      "t_ms": 4000.0,
+      "data": {
+        "position": 0,
+        "eta_s": 1.3
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 4000.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "compact"
+      }
+    },
+    {
+      "name": "gave_up",
+      "t_ms": 4000.0,
+      "data": {
+        "error": "saturated",
+        "retry_after_s": 4.0
+      }
+    }
+  ],
+  "latency_ms": 4000.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": "midsize saturated after retries -> fallback compact",
+  "repaired": false,
+  "safe_default": false,
+  "mode": "fast_extractive",
+  "followup_available": true,
+  "notes": {
+    "retrieved": [
+      {
+        "id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
+        "score": 11.666,
+        "coverage": 1.0
+      }
+    ],
+    "sources": [
+      "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
+    ],
+    "budget": {
+      "tokens": 598,
+      "limit": 2520
+    },
+    "dropped": []
+  }
+}

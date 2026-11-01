@@ -1,0 +1,43 @@
+{
+  "_source": "canned",
+  "task": "check_claim",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": {
+    "verdict": "CONTRADICTED",
+    "correction": "La dérivée de x² est 2x, pas x.",
+    "source_chunk_id": "derivee-formules.fr#puissance",
+    "checked_by": "sympy"
+  },
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "checking_formula",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "answered_by_rules",
+      "t_ms": 20.0,
+      "data": {
+        "checked_by": "sympy"
+      }
+    }
+  ],
+  "latency_ms": 30.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": null,
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "source": "sympy"
+  }
+}
