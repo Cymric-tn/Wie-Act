@@ -66,9 +66,10 @@ def estimate_text_tokens(text: str, per_token: float | None = None) -> int:
 DEFAULT_IMAGE_TOKENS = 1000     # an image whose part carries no estimate: the cost of a 1-megapixel image
 
 
-def image_part(data_url: str, est_tokens: int) -> dict[str, Any]:
-    """An image content part. x_est_tokens is what the budget guard counts; chat_body strips it before sending."""
-    return {"type": "image_url", "image_url": {"url": data_url}, "x_est_tokens": int(est_tokens)}
+def image_part(data_url: str, est_tokens: int, sha: str = "") -> dict[str, Any]:
+    """An image content part. x_est_tokens is what the budget guard counts and x_sha the image's identity for the
+    cache key; chat_body strips both before sending."""
+    return {"type": "image_url", "image_url": {"url": data_url}, "x_est_tokens": int(est_tokens), "x_sha": sha}
 
 
 def content_text(content: Any) -> str:

@@ -32,6 +32,7 @@ from engine.prompts import PromptTemplate, load_prompt
 from engine.result import Event, Result
 from engine.exercises import ExerciseBank
 from engine.grounding import check_formulas
+from engine.vision import ImageError, prepare_image
 from engine.language import ARABIC_SCRIPT, arabic_ratio, contamination, latin_words
 from engine.tasks import (Messages, Registry, TaskContext, TaskSpec, best_sentence, default_registry,
                           fast_excerpts, load_templates, load_terms_ar, trim_to_last_sentence)
@@ -265,6 +266,18 @@ class Engine:
     async def _execute(self, spec: TaskSpec, inputs: dict, tctx: TaskContext, prio: Priority, run: "_Run",
                        ctx: CallContext) -> Result:
         task, prompt = spec.name, self.prompts[spec.name]
+        if spec.vision:
+            try:
+                img = prepare_image(inputs["image"], self.settings.vision_max_pixels,
+                                    self.settings.image_tokens_per_megapixel, self.settings.vision_max_bytes)
+            except ImageError as e:     # the learner's photo, not a caller bug: answered, degraded, nothing sent
+                run.degrade("invalid_image", terminal=True)
+                run.emit("unavailable", {"reason": "invalid_image", "eta_s": None, "error": "image"})
+                return self._finish(run, ctx, route_reason="invalid image", notes={"error": str(e)})
+            if img.resized:
+                run.emit("resizing_image", {"from": f"{img.from_size[0]}x{img.from_size[1]}",
+                                            "to": f"{img.width}x{img.height}"})
+            tctx = replace(tctx, extra={**tctx.extra, "image": img})
         if spec.shortcut and (data := spec.shortcut(inputs, tctx)) is not None:
             run.emit("answered_by_rules")
             text = data.pop("_text", None)
@@ -427,6 +440,9 @@ class Engine:
                 notes = {**notes, **(detail or {})}
 
         notes = {**ground_notes, **notes}
+        if spec.vision and (img := tctx.extra.get("image")) is not None:
+            notes["image"] = {"sha": img.sha[:12], "size": f"{img.width}x{img.height}", "resized": img.resized,
+                              "est_tokens": img.est_tokens}
         body, raw_data = text, data                      # what the model wrote: the only thing cached
         if spec.decorate and text is not None:
             text, data = spec.decorate(body, inputs, tctx, True)

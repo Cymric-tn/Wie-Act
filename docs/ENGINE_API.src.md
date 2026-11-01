@@ -218,18 +218,26 @@ Transcribes a photo of handwritten or printed work. **It never grades**: feed th
 
 * inputs: `image` (required): a `data:image/...;base64,...` URL or a base64 string; JPEG/PNG. Resized to at most 1
   megapixel before sending (event `resizing_image`). No URL fetching.
-* `data`: `{text, latex, confidence_note}`. `latex` is set when math was detected, else `null`. `confidence_note` is
-  empty or one sentence saying what to double-check. `text` is also in `Result.text`.
+* `data`: `{text, latex, confidence_note}`. `latex` is set when math was detected (the maths lines as one LaTeX string,
+  lines joined by `\\`), else `null`. `confidence_note` is empty or says what to double-check, in the learner's
+  language: the model gives no confidence, so the note reports only what can be seen (a symbol it could not read, brackets
+  that do not close, no text, almost no text). `text` is also in `Result.text`. `notes.image` has the hash, the size sent
+  and `resized`. The text is transcribed, never corrected: a wrong line stays wrong.
 * priority: INTERACTIVE by default. Cache key = hash of the (resized) image.
 * cost: 1 vision request (~14 s). It shares the chat window and the 2 slots with everything else until the organizers
   say otherwise.
-* degrade: `low_confidence` (text still returned, ask the learner to check it), `quota_exhausted`, `service_busy`,
-  `superseded`, `room_busy`, `request_too_large` (image too big after resizing).
-* events: `checking_cache`, `resizing_image`, `queued`, `generating` (`model_class: vision`).
+* degrade: `low_confidence` (text still returned and shown with the note; not cached, so a retry reads again),
+  `invalid_image` (not a readable image, a URL, too big a file: `data` and `text` null, nothing sent),
+  `quota_exhausted`, `service_busy`, `superseded`, `room_busy`, `request_too_large` (the image alone exceeds the input
+  budget).
+* events: [`resizing_image`: only when the image was larger than 1 MP; it comes first because the cache key needs the
+  prepared image], `checking_cache`, [`cache_hit`] or [`queued`, `generating` (`model_class: vision`)].
 
 {{example ocr_transcribe.ok}}
 
 {{example ocr_transcribe.low_confidence}}
+
+{{example ocr_transcribe.invalid_image}}
 
 ### 3.8 `check_claim` (v1.3)
 
@@ -326,7 +334,8 @@ regenerates.
 | `ungrounded_formula` / `wrong_math` | a formula in the answer is not in the course / is wrong | course extracts are served instead |
 | `explain_guard:*`, `hint_guard:*` | answer failed a text guard (degenerate, loop, language drift, answer leak, too long) | safe fallback text is in the result |
 | `json_invalid` | `check_claim` only: no valid JSON after the repair call (`safe_default=true`, verdict `PARTLY`) | treat the verdict as unknown. (`classify` and `grade` set `safe_default=true` without degrading.) |
-| `low_confidence` | `ocr_transcribe`: text returned but unreliable | ask the learner to check it |
+| `low_confidence` | `ocr_transcribe`: text returned but with visible reading problems | show it with `confidence_note`, ask the learner to check |
+| `invalid_image` | `ocr_transcribe`: the image could not be read | ask for another photo |
 
 ## 6. Events
 

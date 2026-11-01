@@ -1,0 +1,35 @@
+{
+  "_source": "real",
+  "task": "ocr_transcribe",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": null,
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": true,
+  "degrade_reason": "invalid_image",
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "unavailable",
+      "t_ms": 0.0,
+      "data": {
+        "reason": "invalid_image",
+        "eta_s": null,
+        "error": "image"
+      }
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": "invalid image",
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "error": "not a readable image (UnidentifiedImageError)"
+  }
+}
