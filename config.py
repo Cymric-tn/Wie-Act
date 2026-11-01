@@ -108,6 +108,7 @@ class Settings:
     chunk_max_tokens: int = 300
     rag_course_index_dir: str = "data/index/courses"   # runtime material (uploads, professor documents), one file per course
     source_boost_professor: float = 1.3       # BM25 score factor of professor material (applied before the coverage gate)
+    ingest_min_tag_confidence: float = 0.6    # a chunk whose concept tag scores below this is flagged for the professor
     ingest_max_ocr_pages: int = 20            # scanned pages sent through ocr_transcribe per file
     retrieval_query_chars: int = 400          # a selected passage / whiteboard text is cut to this many characters as a search query
     passage_budget_share: float = 0.25        # explain `passage`: at most this share of the prompt budget (rest is trimmed)
@@ -288,6 +289,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         board_budget_share=get("BOARD_BUDGET_SHARE", float, defaults.board_budget_share),
         rag_course_index_dir=e.get("RAG_COURSE_INDEX_DIR") or defaults.rag_course_index_dir,
         source_boost_professor=get("SOURCE_BOOST_PROFESSOR", float, defaults.source_boost_professor),
+        ingest_min_tag_confidence=get("INGEST_MIN_TAG_CONFIDENCE", float, defaults.ingest_min_tag_confidence),
         ingest_max_ocr_pages=get("INGEST_MAX_OCR_PAGES", int, defaults.ingest_max_ocr_pages),
         budget_safety_margin=get("BUDGET_SAFETY_MARGIN", float, defaults.budget_safety_margin),
         glossary_path=e.get("GLOSSARY_PATH", defaults.glossary_path).strip(),
