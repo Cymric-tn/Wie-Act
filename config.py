@@ -73,6 +73,7 @@ class Settings:
     timeout_midsize_interactive_s: float = 40.0   # explain p95 is about 23 s, the 350-token cap about 30 s
     timeout_midsize_background_s: float = 85.0
     timeout_compact_s: float = 30.0
+    background_reserve: int = 6               # BACKGROUND chat waits while fewer than this many sends remain in the window
     midsize_max_slots: int = 1                # mid-size may hold at most this many concurrency slots (ghosts included); 0 = no cap
     interactive_deadline_s: float = 25.0      # an INTERACTIVE explain without a body by then is answered in fast mode
     max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
@@ -227,6 +228,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         timeout_midsize_background_s=get("TIMEOUT_MIDSIZE_BACKGROUND_S", float, defaults.timeout_midsize_background_s),
         timeout_compact_s=get("TIMEOUT_COMPACT_S", float, defaults.timeout_compact_s),
         midsize_max_slots=get("MIDSIZE_MAX_SLOTS", int, defaults.midsize_max_slots),
+        background_reserve=get("BACKGROUND_RESERVE", int, defaults.background_reserve),
         interactive_deadline_s=get("INTERACTIVE_DEADLINE_S", float, defaults.interactive_deadline_s),
         max_retry_wait_s=get("MAX_RETRY_WAIT_S", float, defaults.max_retry_wait_s),
         max_retry_wait_s_background=get("MAX_RETRY_WAIT_S_BACKGROUND", float, defaults.max_retry_wait_s_background),

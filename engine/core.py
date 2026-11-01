@@ -173,7 +173,8 @@ class Engine:
         client = client or create_client(settings, transport)
         limiter = Limiter(settings, clock, sleep)
         caller = RetryingCaller(client, limiter, sink, RetryPolicy.from_settings(settings),
-                                settings.input_token_budget, clock, sleep, rng, PriorityQueue(limiter, clock))
+                                settings.input_token_budget, clock, sleep, rng,
+                                PriorityQueue(limiter, clock, background_reserve=settings.background_reserve))
         cache = cache or ExactCache(settings.cache_path, settings.cache_ttl_s)
         return cls(settings, caller, cache, sink, registry, clock, retriever)
 
