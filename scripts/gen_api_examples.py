@@ -123,6 +123,17 @@ async def real_examples(index: str) -> dict[str, tuple[str, Result]]:
     await go("check_claim.llm_failed", junkclaim, "check_claim",
              {"claim": "La dérivée d'un produit est le produit des dérivées."}, ctx)
 
+    plan = Rig(lambda b: chat_ok("x"), index, COURSES_DIR="data/courses")
+    await go("prep_plan.ok", plan, "prep_plan",
+             {"scope": {"unit_ids": ["derivees"]}, "deadline": "2026-11-12", "pace_min_per_day": 45, "start": "2026-11-05",
+              "mastery": {"nombre dérivé": 0.9, "tangente": 0.88, "constante": 0.4, "puissance": 0.15}, "language": "FRENCH",
+              "level": "beginner"}, {"learner_id": "L1", "course_id": "analyse"}, "BACKGROUND")
+    pg = Rig(lambda b: chat_ok("La dérivée d'une puissance s'obtient en multipliant par l'exposant puis en baissant "
+                               "l'exposant de 1.", 900, 40), index)
+    out["generate_page.ok"] = ("real", await pg.engine.generate_page(
+        {}, {"concept_id": "puissance", "day_index": 0, "page_kind": "learn", "reason_code": "low_mastery",
+             "mastery": 0.15}, {"language": "FRENCH", "learner_id": "L1", "course_id": "analyse"}))
+
     ans = Rig(lambda b: chat_ok("Que devient l'exposant de x quand on dérive ?", 260, 20), index)
     actx = {"language": "FRENCH", "learner_id": "L1", "room_id": "R7", "course_id": "analyse"}
     await go("check_answer.ok", ans, "check_answer", {"problem": "Dérive f(x) = x⁴", "exercise_id": "d01",
@@ -172,7 +183,7 @@ async def canned_examples() -> dict[str, tuple[str, Result]]:
     return out
 
 
-async def build() -> dict[str, tuple[str, Result]]:
+async def build() -> dict[str, tuple[str, Result | dict]]:
     with tempfile.TemporaryDirectory() as d:
         index = os.path.join(d, "chunks.json")
         save_chunks(index, chunk_dir("data/docs"))
@@ -181,10 +192,17 @@ async def build() -> dict[str, tuple[str, Result]]:
     return {**canned, **{k: v for k, v in real.items() if v[1] is not None}}   # real wins over canned
 
 
-def render(source: str, r: Result) -> str:
-    d = r.model_dump()
-    d["request_id"] = "a1b2c3d4e5f6"
-    return json.dumps({"_source": source, **d}, ensure_ascii=False, indent=2) + "\n"
+def _dump(r) -> dict:
+    """A Result as a dict with a fixed request id; a plain dict (generate_page's page) is kept as it is."""
+    d = r.model_dump() if isinstance(r, Result) else dict(r)
+    for key in ("request_id", "explain_request_id"):
+        if key in d:
+            d[key] = "a1b2c3d4e5f6"
+    return d
+
+
+def render(source: str, r) -> str:
+    return json.dumps({"_source": source, **_dump(r)}, ensure_ascii=False, indent=2) + "\n"
 
 
 DOC_SRC, DOC_OUT = "docs/ENGINE_API.src.md", "docs/ENGINE_API.md"
@@ -199,7 +217,7 @@ def render_doc(examples: dict[str, tuple[str, Result]]) -> str:
         if name not in examples:
             raise SystemExit(f"{DOC_SRC}: unknown example {name!r}")
         source, r = examples[name]
-        body = json.dumps(r.model_dump() | {"request_id": "a1b2c3d4e5f6"}, ensure_ascii=False, indent=2)
+        body = json.dumps(_dump(r), ensure_ascii=False, indent=2)
         return f"*{name}: {'real engine output' if source == 'real' else 'canned (FakeEngine)'}*\n\n```json\n{body}\n```"
     return _MARK.sub(block, src)
 

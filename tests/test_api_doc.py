@@ -16,7 +16,10 @@ def test_every_example_is_a_valid_result():
     assert len(ex) >= 45
     for p, d in ex.items():
         assert d.pop("_source") in ("real", "canned"), p
-        Result.model_validate(d)
+        if "task" in d:
+            Result.model_validate(d)
+        else:                                   # a prep page (engine.generate_page)
+            assert {"concept_id", "page_kind", "explanation", "worked_example", "quiz"} <= set(d), p
 
 
 def test_doc_and_examples_are_up_to_date():
@@ -37,7 +40,7 @@ def test_every_event_name_in_the_examples_is_documented():
     doc = open("docs/ENGINE_API.src.md", encoding="utf-8").read()
     section = doc.split("## 6. Events")[1].split("## 7.")[0]
     documented = set(re.findall(r"`([a-z_]+)`", section))
-    used = {e["name"] for d in examples().values() for e in d["events"]}
+    used = {e["name"] for d in examples().values() for e in d.get("events", [])}
     assert used <= documented, f"undocumented events: {sorted(used - documented)}"
 
 
@@ -45,5 +48,5 @@ def test_every_degrade_reason_in_the_examples_is_documented():
     doc = open("docs/ENGINE_API.src.md", encoding="utf-8").read()
     section = doc.split("## 5. Degrade reasons")[1].split("## 6.")[0]
     documented = set(re.findall(r"`([a-z_:*]+)`", section))
-    used = {d["degrade_reason"] for d in examples().values() if d["degrade_reason"]}
+    used = {d["degrade_reason"] for d in examples().values() if d.get("degrade_reason")}
     assert used <= documented, f"undocumented reasons: {sorted(used - documented)}"
