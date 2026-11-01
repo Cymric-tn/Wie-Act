@@ -1,0 +1,103 @@
+{
+  "_source": "canned",
+  "task": "explain",
+  "request_id": "a1b2c3d4e5f6",
+  "text": "Bonne question, on la prend étape par étape.\n\nLe nombre dérivé mesure la pente de la courbe en un point. On regarde le taux d'accroissement (f(a+h) − f(a))/h entre a et a+h ; quand h devient très petit, ce taux se stabilise : sa limite est f'(a). Par exemple, pour f(x) = x², le taux vaut 2a + h, donc f'(a) = 2a.\n\nÀ toi : Dérive f(x) = x⁴.",
+  "data": {
+    "body": "Le nombre dérivé mesure la pente de la courbe en un point. On regarde le taux d'accroissement (f(a+h) − f(a))/h entre a et a+h ; quand h devient très petit, ce taux se stabilise : sa limite est f'(a). Par exemple, pour f(x) = x², le taux vaut 2a + h, donc f'(a) = 2a.",
+    "opener": "Bonne question, on la prend étape par étape.",
+    "exercise": {
+      "id": "d01",
+      "concept": "puissance",
+      "level": 1,
+      "statement": "Dérive f(x) = x⁴.",
+      "expression": "x⁴"
+    }
+  },
+  "model_class_used": "midsize",
+  "model": "mid-a",
+  "from_cache": false,
+  "degraded": true,
+  "degrade_reason": "wrong_math",
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "retrieving",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "expanding_query",
+      "t_ms": 40.0,
+      "data": {
+        "glossary": [
+          "nombre dérivé"
+        ]
+      }
+    },
+    {
+      "name": "checking_cache",
+      "t_ms": 50.0,
+      "data": {}
+    },
+    {
+      "name": "partial_result",
+      "t_ms": 60.0,
+      "data": {
+        "excerpts": [
+          {
+            "chunk_id": "derivee-definition.fr#nombre-derive",
+            "text": "Le nombre dérivé de f en a est la limite, quand h tend vers 0, du taux d'accroissement (f(a+h) − f(a))/h."
+          },
+          {
+            "chunk_id": "derivee-definition.fr#nombre-derive",
+            "text": "Géométriquement, c'est le coefficient directeur de la tangente à la courbe au point d'abscisse a."
+          }
+        ]
+      }
+    },
+    {
+      "name": "queued",
+      "t_ms": 70.0,
+      "data": {
+        "position": 0,
+        "eta_s": 6.0
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 80.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "midsize"
+      }
+    },
+    {
+      "name": "guarded",
+      "t_ms": 9500.0,
+      "data": {
+        "reason": "wrong_math",
+        "spans": [
+          "f'(x) = 5x"
+        ]
+      }
+    }
+  ],
+  "latency_ms": 9500.0,
+  "tokens_in": 1150,
+  "tokens_out": 214,
+  "route_reason": "mid-size by table",
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "sources": [
+      "derivee-definition.fr#nombre-derive"
+    ],
+    "formulas_verified": 0,
+    "wrong_math": [
+      "f'(x) = 5x"
+    ]
+  }
+}

@@ -633,6 +633,47 @@ curl -s -H "X-Engine-Token: $ENGINE_SERVICE_TOKEN" http://127.0.0.1:8765/health
 
 {{service health}}
 
+### Professor dashboard (data only)
+
+Four read/decide routes for the professor's screen. They return data; there is no HTML. The ids come from the `context`
+of the original `engine.run` (`class_id`, `course_id`, `learner_id`), so the app filters without keeping its own copy.
+`since` is epoch seconds or an ISO-8601 date / datetime (no zone = UTC); a bad value is a 422. Every route needs the token.
+
+What is stored: only two kinds of answer, in a small SQLite table next to the cache (same file, `CACHE_PATH`): answers a
+check flagged, and questions the course could not answer. The metrics JSONL stays ids and numbers.
+
+**`GET /review/flagged?class_id=&course_id=&since=&limit=50&offset=0`.** `explain`, `check_claim` and `check_answer`
+results degraded by `wrong_math` or `ungrounded_formula`, that have no decision yet, newest first. `limit` is 1..200.
+`spans` are the flagged formulas (`notes.wrong_math` + `notes.ungrounded`), `answer` is the text, or the result's `data`
+as JSON for the JSON tasks. A result served from the cache is not listed again (the original is).
+`next_offset` is `null` on the last page.
+
+{{service review_flagged}}
+
+**`POST /review/flagged/{request_id}`** with `{"action": "approve" | "reject"}`. Both record the decision, so the item
+leaves the queue. `reject` also calls the cache invalidation of that request (`removed` = entries dropped; a degraded
+answer is never cached, so it is usually 0: the call matters when the same request id was also cached). Deciding twice the
+same way is a 200 with `already: true`; the opposite way is a 409 `already_decided`; an unknown id is a 404
+`unknown_item`; a bad action is a 422.
+
+{{service review_decide}}
+
+**`GET /review/content-gaps?class_id=&course_id=&since=`.** Questions answered "not in the course" (`explain` with
+`notes.retrieval = "no_relevant_chunks"`, `check_claim` with verdict `NOT_IN_COURSE`), grouped by the nearest concept: the
+best BM25 hit with the relevance gate off (`notes.nearest_concept` of the original result). `concept: null` = no course
+chunk shares a term with the question. Most asked first, at most 5 distinct example questions each (newest first).
+A `check_claim` that retrieved a chunk and the model judged outside the course uses that chunk's concept.
+
+{{service review_gaps}}
+
+**`GET /metrics/summary?since=&class_id=&course_id=`.** What the team shows judges, computed from the metrics records on
+every call (10,000 records take about 50 ms, so there is no index). `runs` = engine calls, `provider_requests` = what
+reached the provider (cache hits excluded) by model class and model, `cache.hit_rate` = cached runs / runs,
+`degraded.by_reason` shares are of all runs, `latency_ms` is p50 / p95 per task (nearest rank), `server_429` = provider
+429s by outcome.
+
+{{service metrics_summary}}
+
 ### From Node (18 or later; `npm i ws`)
 
 ```js

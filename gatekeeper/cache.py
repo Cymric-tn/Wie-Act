@@ -59,7 +59,7 @@ class ExactCache:
     def __init__(self, path: str, ttl_s: float, clock: Callable[[], float] = time.time):
         if path != ":memory:":
             os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-        self.ttl_s, self._clock = ttl_s, clock
+        self.path, self.ttl_s, self._clock = path, ttl_s, clock
         self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.execute("CREATE TABLE IF NOT EXISTS exact (k TEXT PRIMARY KEY, task TEXT, v TEXT, ts REAL)")
         self.db.execute("CREATE TABLE IF NOT EXISTS negative (k TEXT PRIMARY KEY, task TEXT, reasons TEXT, "
