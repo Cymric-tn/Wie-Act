@@ -1,12 +1,12 @@
 {
-  "_source": "canned",
+  "_source": "real",
   "task": "check_claim",
   "request_id": "a1b2c3d4e5f6",
   "text": null,
   "data": {
     "verdict": "PARTLY",
     "correction": "",
-    "source_chunk_id": "derivee-formules.fr#puissance",
+    "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
     "checked_by": "llm"
   },
   "model_class_used": "compact",
@@ -23,12 +23,12 @@
     },
     {
       "name": "checking_cache",
-      "t_ms": 50.0,
+      "t_ms": 0.0,
       "data": {}
     },
     {
       "name": "queued",
-      "t_ms": 60.0,
+      "t_ms": 0.0,
       "data": {
         "position": 0,
         "eta_s": 2.0
@@ -36,7 +36,7 @@
     },
     {
       "name": "generating",
-      "t_ms": 70.0,
+      "t_ms": 0.0,
       "data": {
         "attempt": 1,
         "model_class": "compact"
@@ -44,26 +44,59 @@
     },
     {
       "name": "repairing_json",
-      "t_ms": 3000.0,
+      "t_ms": 0.0,
       "data": {
-        "error": "invalid JSON"
+        "error": "invalid JSON: Expecting value"
+      }
+    },
+    {
+      "name": "queued",
+      "t_ms": 0.0,
+      "data": {
+        "position": 0,
+        "eta_s": 1.6
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 0.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "compact"
       }
     },
     {
       "name": "using_safe_default",
-      "t_ms": 6000.0,
+      "t_ms": 0.0,
       "data": {
-        "error": "invalid JSON"
+        "error": "invalid JSON: Expecting value"
       }
     }
   ],
-  "latency_ms": 6000.0,
-  "tokens_in": 0,
-  "tokens_out": 0,
-  "route_reason": null,
-  "repaired": true,
+  "latency_ms": 0.0,
+  "tokens_in": 1280,
+  "tokens_out": 10,
+  "route_reason": "table: check_claim -> compact",
+  "repaired": false,
   "safe_default": true,
   "mode": null,
   "followup_available": false,
-  "notes": {}
+  "notes": {
+    "retrieved": [
+      {
+        "id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+        "score": 3.596,
+        "coverage": 1.0
+      }
+    ],
+    "sources": [
+      "derivee-erreurs.fr#erreurs-avec-le-produit"
+    ],
+    "budget": {
+      "tokens": 764,
+      "limit": 2520
+    },
+    "dropped": [],
+    "error": "invalid JSON: Expecting value"
+  }
 }

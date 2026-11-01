@@ -11,6 +11,7 @@ from typing import Any, Callable, Iterator, Literal, Mapping, Sequence
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from config import ModelClass
+from engine import grounding as G
 from engine import language as L
 from engine.prompts import PromptTemplate
 from gatekeeper.client import estimate_tokens
@@ -62,6 +63,12 @@ class TaskSpec:
     decorate: Callable[[str, Mapping, TaskContext, bool], tuple[str, dict]] | None = None
     # every equation in the model's text must come from the retrieved chunks / appended exercise / question
     check_grounding: bool = False
+    # grounded tasks whose input is not called "question" (check_claim: "claim"): aliased to inputs["question"]
+    query_input: str = "question"
+    max_chunks: int | None = None            # keep only the best N retrieved chunks
+    partial_result: bool = True              # emit the course excerpts while generating (explain only)
+    not_found_data: Callable[[PromptTemplate, Mapping, TaskContext], dict] | None = None   # JSON "nothing in the course"
+    safe_default_reason: str | None = None   # degrade_reason when the JSON could not be obtained (safe default used)
     # the task reads an image: engine.run prepares inputs["image"] (resize, hash) into ctx.extra["image"]
     vision: bool = False
     # re-apply finalize_data on cache hits, so rule changes (caps, floors, language checks) reach old entries;
@@ -636,6 +643,83 @@ GRADE = TaskSpec(
     finalize_data=_grade_finalize, safe_default=_grade_default)
 
 
+# ====================================================================== check_claim (sympy, rules, then one compact call)
+CLAIM_VERDICTS = ("SUPPORTED", "CONTRADICTED", "PARTLY", "NOT_IN_COURSE")
+
+
+class ClaimVerdict(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    verdict: Literal["SUPPORTED", "CONTRADICTED", "PARTLY", "NOT_IN_COURSE"]
+    correction: str = ""
+
+    @field_validator("verdict", mode="before")
+    @classmethod
+    def _upper(cls, v):
+        return re.sub(r"[\s-]+", "_", v.strip().upper()) if isinstance(v, str) else v
+
+    @field_validator("correction", mode="before")
+    @classmethod
+    def _text(cls, v):
+        return " ".join(str(v or "").split())
+
+
+def _claim_prepare(inputs: Mapping, ctx: TaskContext) -> TaskContext:
+    from engine import claims
+    ctx = ctx if ctx.language else replace(ctx, language=L.detect(str(inputs.get("claim", "")))[0])
+    return replace(ctx, extra={**ctx.extra, "formula": claims.analyse(str(inputs["claim"]))})
+
+
+def _claim_shortcut(inputs: Mapping, ctx: TaskContext) -> dict | None:
+    """A claim with a formula sympy settles never reaches retrieval or a model (0 requests)."""
+    from engine import claims
+    return claims.decide(ctx.extra["formula"], ctx.language)
+
+
+def _claim_render(p: PromptTemplate, inputs: Mapping, ctx: TaskContext, chunks: Sequence, history: Sequence) -> Messages:
+    lang = ctx.language or "FRENCH"
+    material = _chunk_parts(chunks[0])[1] if chunks else "(none)"
+    verified = (ctx.extra.get("formula") and ctx.extra["formula"].verified) or []
+    claim = str(inputs["claim"]).strip()
+    if verified:       # sympy checked part of the claim: the model must not re-judge that part
+        claim += "\n(Already verified by computation: " + "; ".join(verified) + ".)"
+    return [{"role": "system", "content": p.render("system", language_rule=p.sections[f"lang.{lang}"])},
+            {"role": "user", "content": p.render("user", material=material, claim=claim)}]
+
+
+def _claim_data(verdict: str, correction: str, chunk_id: str | None, by: str) -> dict:
+    return {"verdict": verdict, "correction": correction, "source_chunk_id": chunk_id, "checked_by": by}
+
+
+def _claim_not_found(p: PromptTemplate, inputs: Mapping, ctx: TaskContext) -> dict:
+    return _claim_data("NOT_IN_COURSE", "", None, "rules")
+
+
+def _claim_finalize(data: dict, inputs: Mapping, ctx: TaskContext) -> tuple[dict, dict]:
+    """The model's verdict + correction -> the contract: at most 25 words, nothing on SUPPORTED / NOT_IN_COURSE, a
+    correction whose formula sympy refutes is dropped (it would teach a wrong thing), source and checked_by added."""
+    from engine import claims
+    verdict, correction, notes = data["verdict"], data.get("correction", ""), {}
+    if verdict in ("SUPPORTED", "NOT_IN_COURSE"):
+        correction = ""
+    elif correction:
+        correction = claims._words(correction)
+        if claims.analyse(correction).wrong:
+            correction, notes["correction_dropped"] = "", "formula refuted by sympy"
+    return _claim_data(verdict, correction, ctx.extra.get("top_chunk"), "llm"), notes
+
+
+def _claim_default(inputs: Mapping, ctx: TaskContext) -> dict:
+    return _claim_data("PARTLY", "", ctx.extra.get("top_chunk"), "llm")
+
+
+CHECK_CLAIM = TaskSpec(
+    name="check_claim", prompt="check_claim", max_tokens=120, temperature=0.0, output_schema=ClaimVerdict,
+    required_inputs=("claim",), prepare=_claim_prepare, shortcut=_claim_shortcut, grounded=True,
+    render_grounded=_claim_render, finalize_data=_claim_finalize, safe_default=_claim_default,
+    not_found_data=_claim_not_found, query_input="claim", max_chunks=1, partial_result=False,
+    safe_default_reason="json_invalid", rules_on_hit=True)
+
+
 # ====================================================================== ocr_transcribe (vision)
 _FENCE = re.compile(r"^```[a-z]*\s*|\s*```$", re.I)
 _DET_TAGS = re.compile(r"<\|[^|>]*\|>|\[\[\s*\d+(?:\s*,\s*\d+){3}\s*\]\]")      # grounding tags some OCR models emit
@@ -736,4 +820,4 @@ OCR_TRANSCRIBE = TaskSpec(
 
 
 def default_registry() -> Registry:
-    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE, OCR_TRANSCRIBE])
+    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE, OCR_TRANSCRIBE, CHECK_CLAIM])

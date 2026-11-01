@@ -243,26 +243,51 @@ Transcribes a photo of handwritten or printed work. **It never grades**: feed th
 
 Is this statement true according to the course? For "check my notes" and whiteboard claims.
 
-* inputs: `claim` (required).
-* `data`: `{verdict: SUPPORTED|CONTRADICTED|PARTLY|NOT_IN_COURSE, correction (at most 25 words, empty when SUPPORTED),
-  source_chunk_id, checked_by: sympy|rules|llm}`.
-* How it decides: a claim with a formula goes through the formula checker first (`sympy`: verified = `SUPPORTED`,
-  refuted = `CONTRADICTED` with the correct form); otherwise retrieval with the coverage gate: nothing relevant =
-  `NOT_IN_COURSE` (`checked_by: rules`, 0 requests); otherwise one compact JSON call with the claim and the best
-  chunk. If the JSON cannot be obtained the answer is `PARTLY` with `checked_by: llm`, `safe_default=true`,
-  `degraded=true`. Cache key = normalized claim + chunk id.
-* cost: 0 (sympy, `NOT_IN_COURSE`, cache hit) or 1 compact (~3 s).
-* events: `checking_formula`, `retrieving`, `checking_cache`, `queued`, `generating`, `no_relevant_context`.
+* inputs: `claim` (required). `context.language` sets the language of the correction (detected when absent: a bare
+  formula has no language, pass it).
+* `data`: `{verdict: SUPPORTED|CONTRADICTED|PARTLY|NOT_IN_COURSE, correction (at most 25 words, empty when SUPPORTED or
+  NOT_IN_COURSE), source_chunk_id (the course chunk it was checked against, null when computed or not in the course),
+  checked_by: sympy|rules|llm}`.
+* How it decides, in this order:
+  1. **sympy.** A claim made of formulas is checked by computation (derivatives in `(x²)' = 2x`, `d/dx`, `f(x) = ...,
+     f'(x) = ...`, numeric identities). Verified and nothing else claimed: `SUPPORTED`. Refuted: `CONTRADICTED` with
+     the correct form as the correction (`Plutôt : (x³)' = 3x²`). Part verified and part refuted: `PARTLY`. Only
+     connectives (`donc`, `so`, `نعلم`) may surround the formulas: a claim with any other word
+     (`(x²)' = 2x et la dérivée d'une constante est 1`) is not settled by sympy and goes on, with the verified part
+     marked as verified for the model. `checked_by: sympy`, 0 requests, event `answered_by_rules`.
+  2. **The course.** Retrieval with the coverage gate (visibility rules of section 2). Nothing relevant:
+     `NOT_IN_COURSE`, `checked_by: rules`, 0 requests, event `no_relevant_context`.
+  3. **One compact JSON call** with the claim and the best chunk; the model may answer any of the four verdicts. The
+     correction is cut to 25 words; a correction containing a formula sympy refutes is dropped (`notes.correction_dropped`).
+     One repair call if the JSON is invalid; if it still is, `PARTLY` with `checked_by: llm`, `safe_default=true`,
+     `degraded=true`, `degrade_reason: json_invalid` (never cached).
+* cache key: the normalized claim, the chunk id and the language; learners share entries.
+* cost: 0 (sympy, `NOT_IN_COURSE`, cache hit) or 1 compact (~3 s), +1 on a repair.
+* events: `answered_by_rules`; or `retrieving`, [`expanding_query`], [`no_relevant_context`] or `checking_cache`, then
+  [`cache_hit`] or [`queued`, `generating`, [`repairing_json`, `using_safe_default`]].
+* degrade: `json_invalid`, `quota_exhausted`, `service_busy`, `superseded`, `room_busy` (with the safe default as `data`).
 
-{{example check_claim.SUPPORTED}}
+Settled by computation, refuted (real):
 
 {{example check_claim.CONTRADICTED}}
 
+Verified by computation (real):
+
+{{example check_claim.SUPPORTED}}
+
+Half right, half refuted by computation (real):
+
 {{example check_claim.PARTLY}}
+
+Judged by the model against the course (real):
+
+{{example check_claim.CONTRADICTED_llm}}
+
+Not in the course (real, 0 requests):
 
 {{example check_claim.NOT_IN_COURSE}}
 
-The model failed twice (safe default):
+The model failed twice (real; safe default):
 
 {{example check_claim.llm_failed}}
 
@@ -365,7 +390,7 @@ Each `Event` is `{name, t_ms, data}`; `t_ms` is since `run` started. Names and w
 | `no_relevant_context` | | the course does not cover it |
 | `unavailable` | `reason`, `eta_s`, `error` | final event of a non-retryable degrade (`superseded`, `request_too_large`) |
 | `room_busy` | `room_id`, `eta_s` | refused: the room already has a request running |
-| `resizing_image`, `checking_formula`, `parsing_steps`, `checking_steps`, `planning` | | v1.3 tasks |
+| `resizing_image`, `parsing_steps`, `checking_steps`, `planning` | | v1.3 tasks |
 
 New event names may be added; ignore names you do not know.
 

@@ -1656,18 +1656,75 @@ Transcribes a photo of handwritten or printed work. **It never grades**: feed th
 
 Is this statement true according to the course? For "check my notes" and whiteboard claims.
 
-* inputs: `claim` (required).
-* `data`: `{verdict: SUPPORTED|CONTRADICTED|PARTLY|NOT_IN_COURSE, correction (at most 25 words, empty when SUPPORTED),
-  source_chunk_id, checked_by: sympy|rules|llm}`.
-* How it decides: a claim with a formula goes through the formula checker first (`sympy`: verified = `SUPPORTED`,
-  refuted = `CONTRADICTED` with the correct form); otherwise retrieval with the coverage gate: nothing relevant =
-  `NOT_IN_COURSE` (`checked_by: rules`, 0 requests); otherwise one compact JSON call with the claim and the best
-  chunk. If the JSON cannot be obtained the answer is `PARTLY` with `checked_by: llm`, `safe_default=true`,
-  `degraded=true`. Cache key = normalized claim + chunk id.
-* cost: 0 (sympy, `NOT_IN_COURSE`, cache hit) or 1 compact (~3 s).
-* events: `checking_formula`, `retrieving`, `checking_cache`, `queued`, `generating`, `no_relevant_context`.
+* inputs: `claim` (required). `context.language` sets the language of the correction (detected when absent: a bare
+  formula has no language, pass it).
+* `data`: `{verdict: SUPPORTED|CONTRADICTED|PARTLY|NOT_IN_COURSE, correction (at most 25 words, empty when SUPPORTED or
+  NOT_IN_COURSE), source_chunk_id (the course chunk it was checked against, null when computed or not in the course),
+  checked_by: sympy|rules|llm}`.
+* How it decides, in this order:
+  1. **sympy.** A claim made of formulas is checked by computation (derivatives in `(x²)' = 2x`, `d/dx`, `f(x) = ...,
+     f'(x) = ...`, numeric identities). Verified and nothing else claimed: `SUPPORTED`. Refuted: `CONTRADICTED` with
+     the correct form as the correction (`Plutôt : (x³)' = 3x²`). Part verified and part refuted: `PARTLY`. Only
+     connectives (`donc`, `so`, `نعلم`) may surround the formulas: a claim with any other word
+     (`(x²)' = 2x et la dérivée d'une constante est 1`) is not settled by sympy and goes on, with the verified part
+     marked as verified for the model. `checked_by: sympy`, 0 requests, event `answered_by_rules`.
+  2. **The course.** Retrieval with the coverage gate (visibility rules of section 2). Nothing relevant:
+     `NOT_IN_COURSE`, `checked_by: rules`, 0 requests, event `no_relevant_context`.
+  3. **One compact JSON call** with the claim and the best chunk; the model may answer any of the four verdicts. The
+     correction is cut to 25 words; a correction containing a formula sympy refutes is dropped (`notes.correction_dropped`).
+     One repair call if the JSON is invalid; if it still is, `PARTLY` with `checked_by: llm`, `safe_default=true`,
+     `degraded=true`, `degrade_reason: json_invalid` (never cached).
+* cache key: the normalized claim, the chunk id and the language; learners share entries.
+* cost: 0 (sympy, `NOT_IN_COURSE`, cache hit) or 1 compact (~3 s), +1 on a repair.
+* events: `answered_by_rules`; or `retrieving`, [`expanding_query`], [`no_relevant_context`] or `checking_cache`, then
+  [`cache_hit`] or [`queued`, `generating`, [`repairing_json`, `using_safe_default`]].
+* degrade: `json_invalid`, `quota_exhausted`, `service_busy`, `superseded`, `room_busy` (with the safe default as `data`).
 
-*check_claim.SUPPORTED: canned (FakeEngine)*
+Settled by computation, refuted (real):
+
+*check_claim.CONTRADICTED: real engine output*
+
+```json
+{
+  "task": "check_claim",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": {
+    "verdict": "CONTRADICTED",
+    "correction": "Plutôt : (x³)' = 3x²",
+    "source_chunk_id": null,
+    "checked_by": "sympy"
+  },
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "answered_by_rules",
+      "t_ms": 0.0,
+      "data": {}
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": null,
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "source": "rules"
+  }
+}
+```
+
+Verified by computation (real):
+
+*check_claim.SUPPORTED: real engine output*
 
 ```json
 {
@@ -1677,7 +1734,7 @@ Is this statement true according to the course? For "check my notes" and whitebo
   "data": {
     "verdict": "SUPPORTED",
     "correction": "",
-    "source_chunk_id": "derivee-formules.fr#puissance",
+    "source_chunk_id": null,
     "checked_by": "sympy"
   },
   "model_class_used": null,
@@ -1688,19 +1745,12 @@ Is this statement true according to the course? For "check my notes" and whitebo
   "eta_seconds": null,
   "events": [
     {
-      "name": "checking_formula",
+      "name": "answered_by_rules",
       "t_ms": 0.0,
       "data": {}
-    },
-    {
-      "name": "answered_by_rules",
-      "t_ms": 20.0,
-      "data": {
-        "checked_by": "sympy"
-      }
     }
   ],
-  "latency_ms": 30.0,
+  "latency_ms": 0.0,
   "tokens_in": 0,
   "tokens_out": 0,
   "route_reason": null,
@@ -1709,59 +1759,14 @@ Is this statement true according to the course? For "check my notes" and whitebo
   "mode": null,
   "followup_available": false,
   "notes": {
-    "source": "sympy"
+    "source": "rules"
   }
 }
 ```
 
-*check_claim.CONTRADICTED: canned (FakeEngine)*
+Half right, half refuted by computation (real):
 
-```json
-{
-  "task": "check_claim",
-  "request_id": "a1b2c3d4e5f6",
-  "text": null,
-  "data": {
-    "verdict": "CONTRADICTED",
-    "correction": "La dérivée de x² est 2x, pas x.",
-    "source_chunk_id": "derivee-formules.fr#puissance",
-    "checked_by": "sympy"
-  },
-  "model_class_used": null,
-  "model": null,
-  "from_cache": false,
-  "degraded": false,
-  "degrade_reason": null,
-  "eta_seconds": null,
-  "events": [
-    {
-      "name": "checking_formula",
-      "t_ms": 0.0,
-      "data": {}
-    },
-    {
-      "name": "answered_by_rules",
-      "t_ms": 20.0,
-      "data": {
-        "checked_by": "sympy"
-      }
-    }
-  ],
-  "latency_ms": 30.0,
-  "tokens_in": 0,
-  "tokens_out": 0,
-  "route_reason": null,
-  "repaired": false,
-  "safe_default": false,
-  "mode": null,
-  "followup_available": false,
-  "notes": {
-    "source": "sympy"
-  }
-}
-```
-
-*check_claim.PARTLY: canned (FakeEngine)*
+*check_claim.PARTLY: real engine output*
 
 ```json
 {
@@ -1770,8 +1775,50 @@ Is this statement true according to the course? For "check my notes" and whitebo
   "text": null,
   "data": {
     "verdict": "PARTLY",
-    "correction": "C'est vrai pour les puissances entières ; la règle change pour la composée.",
-    "source_chunk_id": "derivee-formules.fr#puissance",
+    "correction": "Rather: (x³)' = 3x²",
+    "source_chunk_id": null,
+    "checked_by": "sympy"
+  },
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "answered_by_rules",
+      "t_ms": 0.0,
+      "data": {}
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": null,
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "source": "rules"
+  }
+}
+```
+
+Judged by the model against the course (real):
+
+*check_claim.CONTRADICTED_llm: real engine output*
+
+```json
+{
+  "task": "check_claim",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": {
+    "verdict": "CONTRADICTED",
+    "correction": "La dérivée d'un produit est (u·v)' = u'·v + u·v', pas u'·v'.",
+    "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
     "checked_by": "llm"
   },
   "model_class_used": "compact",
@@ -1788,12 +1835,12 @@ Is this statement true according to the course? For "check my notes" and whitebo
     },
     {
       "name": "checking_cache",
-      "t_ms": 50.0,
+      "t_ms": 0.0,
       "data": {}
     },
     {
       "name": "queued",
-      "t_ms": 60.0,
+      "t_ms": 0.0,
       "data": {
         "position": 0,
         "eta_s": 2.0
@@ -1801,26 +1848,44 @@ Is this statement true according to the course? For "check my notes" and whitebo
     },
     {
       "name": "generating",
-      "t_ms": 70.0,
+      "t_ms": 0.0,
       "data": {
         "attempt": 1,
         "model_class": "compact"
       }
     }
   ],
-  "latency_ms": 3100.0,
-  "tokens_in": 420,
-  "tokens_out": 52,
-  "route_reason": null,
+  "latency_ms": 0.0,
+  "tokens_in": 640,
+  "tokens_out": 40,
+  "route_reason": "table: check_claim -> compact",
   "repaired": false,
   "safe_default": false,
   "mode": null,
   "followup_available": false,
-  "notes": {}
+  "notes": {
+    "retrieved": [
+      {
+        "id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+        "score": 3.596,
+        "coverage": 1.0
+      }
+    ],
+    "sources": [
+      "derivee-erreurs.fr#erreurs-avec-le-produit"
+    ],
+    "budget": {
+      "tokens": 764,
+      "limit": 2520
+    },
+    "dropped": []
+  }
 }
 ```
 
-*check_claim.NOT_IN_COURSE: canned (FakeEngine)*
+Not in the course (real, 0 requests):
+
+*check_claim.NOT_IN_COURSE: real engine output*
 
 ```json
 {
@@ -1847,14 +1912,14 @@ Is this statement true according to the course? For "check my notes" and whitebo
     },
     {
       "name": "no_relevant_context",
-      "t_ms": 50.0,
+      "t_ms": 0.0,
       "data": {}
     }
   ],
-  "latency_ms": 50.0,
+  "latency_ms": 0.0,
   "tokens_in": 0,
   "tokens_out": 0,
-  "route_reason": null,
+  "route_reason": "table: check_claim -> compact",
   "repaired": false,
   "safe_default": false,
   "mode": null,
@@ -1865,9 +1930,9 @@ Is this statement true according to the course? For "check my notes" and whitebo
 }
 ```
 
-The model failed twice (safe default):
+The model failed twice (real; safe default):
 
-*check_claim.llm_failed: canned (FakeEngine)*
+*check_claim.llm_failed: real engine output*
 
 ```json
 {
@@ -1877,7 +1942,7 @@ The model failed twice (safe default):
   "data": {
     "verdict": "PARTLY",
     "correction": "",
-    "source_chunk_id": "derivee-formules.fr#puissance",
+    "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
     "checked_by": "llm"
   },
   "model_class_used": "compact",
@@ -1894,12 +1959,12 @@ The model failed twice (safe default):
     },
     {
       "name": "checking_cache",
-      "t_ms": 50.0,
+      "t_ms": 0.0,
       "data": {}
     },
     {
       "name": "queued",
-      "t_ms": 60.0,
+      "t_ms": 0.0,
       "data": {
         "position": 0,
         "eta_s": 2.0
@@ -1907,7 +1972,7 @@ The model failed twice (safe default):
     },
     {
       "name": "generating",
-      "t_ms": 70.0,
+      "t_ms": 0.0,
       "data": {
         "attempt": 1,
         "model_class": "compact"
@@ -1915,28 +1980,61 @@ The model failed twice (safe default):
     },
     {
       "name": "repairing_json",
-      "t_ms": 3000.0,
+      "t_ms": 0.0,
       "data": {
-        "error": "invalid JSON"
+        "error": "invalid JSON: Expecting value"
+      }
+    },
+    {
+      "name": "queued",
+      "t_ms": 0.0,
+      "data": {
+        "position": 0,
+        "eta_s": 1.6
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 0.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "compact"
       }
     },
     {
       "name": "using_safe_default",
-      "t_ms": 6000.0,
+      "t_ms": 0.0,
       "data": {
-        "error": "invalid JSON"
+        "error": "invalid JSON: Expecting value"
       }
     }
   ],
-  "latency_ms": 6000.0,
-  "tokens_in": 0,
-  "tokens_out": 0,
-  "route_reason": null,
-  "repaired": true,
+  "latency_ms": 0.0,
+  "tokens_in": 1280,
+  "tokens_out": 10,
+  "route_reason": "table: check_claim -> compact",
+  "repaired": false,
   "safe_default": true,
   "mode": null,
   "followup_available": false,
-  "notes": {}
+  "notes": {
+    "retrieved": [
+      {
+        "id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+        "score": 3.596,
+        "coverage": 1.0
+      }
+    ],
+    "sources": [
+      "derivee-erreurs.fr#erreurs-avec-le-produit"
+    ],
+    "budget": {
+      "tokens": 764,
+      "limit": 2520
+    },
+    "dropped": [],
+    "error": "invalid JSON: Expecting value"
+  }
 }
 ```
 
@@ -2284,7 +2382,7 @@ Each `Event` is `{name, t_ms, data}`; `t_ms` is since `run` started. Names and w
 | `no_relevant_context` | | the course does not cover it |
 | `unavailable` | `reason`, `eta_s`, `error` | final event of a non-retryable degrade (`superseded`, `request_too_large`) |
 | `room_busy` | `room_id`, `eta_s` | refused: the room already has a request running |
-| `resizing_image`, `checking_formula`, `parsing_steps`, `checking_steps`, `planning` | | v1.3 tasks |
+| `resizing_image`, `parsing_steps`, `checking_steps`, `planning` | | v1.3 tasks |
 
 New event names may be added; ignore names you do not know.
 

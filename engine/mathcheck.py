@@ -93,7 +93,8 @@ def parse_expression(text: str) -> sympy.Expr | None:
     s = re.sub(r"√\s*\(", "sqrt(", s)
     s = re.sub(r"√\s*([0-9]*[a-z]|[0-9.]+)", r"sqrt(\1)", s)
     s = s.replace("^", "**")
-    if not _GEN_ALLOWED.fullmatch(re.sub(r"\b(sqrt|ln|exp|sin|cos|tan)\b", "", s)):
+    # (lookarounds, not \b: "2sqrt(x)" has no word boundary between the digit and the name)
+    if not _GEN_ALLOWED.fullmatch(re.sub(r"(?<![a-z])(sqrt|ln|exp|sin|cos|tan)(?![a-z])", "", s)):
         return None
     try:
         expr = parse_expr(s, local_dict={**_GEN_SYMBOLS, **_GEN_FUNCS}, transformations=_GEN_TRANSFORMS)

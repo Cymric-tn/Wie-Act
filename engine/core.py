@@ -217,6 +217,8 @@ class Engine:
     async def _run(self, spec: TaskSpec, inputs: dict, context: Mapping[str, Any] | None, prio: Priority,
                    on_event: EventCallback | None) -> Result:
         task = spec.name
+        if spec.query_input != "question":          # grounded tasks search with their own input ("claim")
+            inputs = {**inputs, "question": inputs[spec.query_input]}
         tctx = TaskContext.from_mapping(context or {})
         tctx = replace(tctx, extra={**tctx.extra, "terms_ar": self.terms_ar, "course_words": self.course_words,
                                     "exercise_bank": self.exercises, "templates": self.templates})
@@ -292,9 +294,13 @@ class Engine:
             hits = await self._retrieve(inputs, tctx, run)
             if not hits:      # say so instead of letting the model invent an answer; no request spent
                 run.emit("no_relevant_context")
-                return self._finish(run, ctx, text=spec.not_found_text(prompt, inputs, tctx),
+                nf = spec.not_found_data(prompt, inputs, tctx) if spec.not_found_data else None
+                return self._finish(run, ctx, text=None if nf else spec.not_found_text(prompt, inputs, tctx), data=nf,
                                     route_reason=decision.reason, notes={"retrieval": "no_relevant_chunks"})
-            tctx = replace(tctx, extra={**tctx.extra, "concept": hits[0].chunk.concept})
+            if spec.max_chunks:
+                hits = hits[:spec.max_chunks]
+            tctx = replace(tctx, extra={**tctx.extra, "concept": hits[0].chunk.concept,
+                                        "top_chunk": hits[0].chunk.chunk_id})
             # cache identity = question (+ history) + WHICH chunks were retrieved, not the compressed text
             key_messages = spec.render_grounded(prompt, inputs, tctx, [], inputs.get("history") or [])
             messages: Messages = []
@@ -317,7 +323,7 @@ class Engine:
                 return await self._negative_hit(prompt, inputs, tctx, hits, key, reasons, ctx, run, decision)
             # the leader's result was degraded for another reason (never cached): produce our own
             return await self._produce(spec, prompt, inputs, tctx, prio, run, ctx, decision, hits, key, messages)
-        if hits:      # the course itself, verbatim, while the full answer is generated (no extra request)
+        if hits and spec.partial_result:    # the course itself, verbatim, while the full answer is generated
             run.emit("partial_result", {"excerpts": fast_excerpts(str(inputs["question"]),
                                                                   [h.chunk for h in hits], PARTIAL_SENTENCES)})
         done = self._inflight[key] = asyncio.Event()
@@ -414,6 +420,8 @@ class Engine:
         status, notes = "ok", {}
         if spec.output_schema is not None:      # a cut JSON reply is invalid: the repair ladder handles it
             data, status, notes = await self._json_output(spec, prompt, chat, messages, inputs, tctx, ctx, run)
+            if status == "safe_default" and spec.safe_default_reason:
+                run.degrade(spec.safe_default_reason)
         else:
             reply = chat.text
             if chat.truncated:                   # hit the output cap: keep whole sentences only

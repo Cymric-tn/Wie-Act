@@ -77,11 +77,6 @@ def _hint_text(lang: str) -> str:
             }.get(lang, "Quelle règle donne la dérivée de xⁿ ? Commence par regarder l'exposant.")
 
 
-def _claim_correction(lang: str) -> str:
-    return {"ENGLISH": "The derivative of x² is 2x, not x.",
-            "ARABIC": "مشتقة x² هي 2x وليست x."}.get(lang, "La dérivée de x² est 2x, pas x.")
-
-
 class FakeEngine:
     """Drop-in stand-in for Engine on the UI side. Same run(); extras are no-ops that keep calling code unchanged."""
 
@@ -95,7 +90,7 @@ class FakeEngine:
         "compress": ("ok",),
         "ocr_transcribe": ("ok", "math", "low_confidence", "invalid_image", "quota_exhausted", "superseded",
                            "room_busy"),
-        "check_claim": ("SUPPORTED", "CONTRADICTED", "PARTLY", "NOT_IN_COURSE", "SUPPORTED_llm", "llm_failed",
+        "check_claim": ("SUPPORTED", "CONTRADICTED", "PARTLY", "NOT_IN_COURSE", "CONTRADICTED_llm", "llm_failed",
                         "quota_exhausted", "superseded", "room_busy"),
         "check_answer": ("ok", "wrong_step", "unchecked", "llm_feedback", "quota_exhausted", "room_busy"),
         "prep_plan": ("ok", "all_mastered"),
@@ -379,29 +374,33 @@ def _ocr(outcome, inputs, lang, k, ctx) -> _Plan:
 
 
 def _claim(outcome, inputs, lang, k, ctx) -> _Plan:
-    cid = "derivee-formules.fr#puissance"
-    if outcome in ("SUPPORTED", "CONTRADICTED"):
+    cid = "derivee-formules.fr#produit-et-quotient"
+    if outcome in ("SUPPORTED", "CONTRADICTED"):          # settled by sympy: no retrieval, no model
         sup = outcome == "SUPPORTED"
-        return _Plan(_ev((0.0, "checking_formula", None), (0.02, "answered_by_rules", {"checked_by": "sympy"})), 0.03,
-                     {"data": {"verdict": outcome, "correction": "" if sup else _claim_correction(lang),
-                               "source_chunk_id": cid, "checked_by": "sympy"}, "notes": {"source": "sympy"}})
+        return _Plan(_ev((0.0, "answered_by_rules", None)), 0.03,
+                     {"data": {"verdict": outcome, "correction": "" if sup else "Plutôt : (x³)' = 3x²",
+                               "source_chunk_id": None, "checked_by": "sympy"}, "notes": {"source": "rules"}})
     if outcome == "NOT_IN_COURSE":
         return _Plan(_ev((0.0, "retrieving", None), (0.05, "no_relevant_context", None)), 0.05,
                      {"data": {"verdict": "NOT_IN_COURSE", "correction": "", "source_chunk_id": None,
                                "checked_by": "rules"}, "notes": {"retrieval": "no_relevant_chunks"}})
-    base = [(0.0, "retrieving", None), (0.05, "checking_cache", None), (0.06, "queued", {"position": 0, "eta_s": 2.0}),
+    base = [(0.0, "retrieving", None), (0.04, "expanding_query", {"glossary": ["dérivée", "produit"]}),
+            (0.05, "checking_cache", None), (0.06, "queued", {"position": 0, "eta_s": 2.0}),
             (0.07, "generating", {"attempt": 1, "model_class": "compact"})]
     if outcome == "llm_failed":
-        return _Plan(_ev(*base, (3.0 * k, "repairing_json", {"error": "invalid JSON"}),
-                         (6.0 * k, "using_safe_default", {"error": "invalid JSON"})), 6.0 * k,
+        return _Plan(_ev(*base, (3.0 * k, "repairing_json", {"error": "invalid JSON: Expecting value"}),
+                         (3.0 * k + 0.01, "queued", {"position": 0, "eta_s": 2.0}),
+                         (3.0 * k + 0.02, "generating", {"attempt": 1, "model_class": "compact"}),
+                         (6.0 * k, "using_safe_default", {"error": "invalid JSON: Expecting value"})), 6.0 * k,
                      {"data": {"verdict": "PARTLY", "correction": "", "source_chunk_id": cid, "checked_by": "llm"},
                       "model_class_used": "compact", "model": "compact-a", "safe_default": True, "degraded": True,
-                      "degrade_reason": "json_invalid", "repaired": True})
-    verdict = "PARTLY" if outcome == "PARTLY" else "SUPPORTED"
-    corr = "" if verdict == "SUPPORTED" else "C'est vrai pour les puissances entières ; la règle change pour la composée."
+                      "degrade_reason": "json_invalid", "repaired": True, "tokens_in": 640, "tokens_out": 60})
+    verdict = outcome.removesuffix("_llm") if outcome != "PARTLY" else "PARTLY"
+    corr = "" if verdict == "SUPPORTED" else "La règle du produit est (u·v)' = u'·v + u·v', pas u'·v'."
     return _Plan(_ev(*base), 3.1 * k,
                  {"data": {"verdict": verdict, "correction": corr, "source_chunk_id": cid, "checked_by": "llm"},
-                  "model_class_used": "compact", "model": "compact-a", "tokens_in": 420, "tokens_out": 52})
+                  "model_class_used": "compact", "model": "compact-a", "tokens_in": 420, "tokens_out": 52,
+                  "route_reason": "table: check_claim -> compact"})
 
 
 def _answer(outcome, inputs, lang, k, ctx) -> _Plan:
