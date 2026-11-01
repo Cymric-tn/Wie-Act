@@ -1,5 +1,5 @@
 {
-  "_source": "canned",
+  "_source": "real",
   "task": "check_answer",
   "request_id": "a1b2c3d4e5f6",
   "text": null,
@@ -7,18 +7,13 @@
     "steps": [
       {
         "index": 0,
-        "verdict": "OK",
-        "note": ""
-      },
-      {
-        "index": 1,
         "verdict": "UNCHECKED",
         "note": "Ligne non reconnue : je ne peux pas la vérifier."
       }
     ],
     "first_wrong": null,
     "final_verdict": "UNKNOWN",
-    "feedback": "Écris la dernière ligne avec des symboles mathématiques pour que je puisse la vérifier.",
+    "feedback": "",
     "graded_by": "sympy"
   },
   "model_class_used": null,
@@ -32,24 +27,24 @@
       "name": "parsing_steps",
       "t_ms": 0.0,
       "data": {
-        "steps": 2
+        "steps": 1
       }
     },
     {
       "name": "checking_steps",
-      "t_ms": 30.0,
+      "t_ms": 0.0,
       "data": {}
     }
   ],
-  "latency_ms": 60.0,
+  "latency_ms": 0.0,
   "tokens_in": 0,
   "tokens_out": 0,
-  "route_reason": null,
+  "route_reason": "table: check_answer -> compact",
   "repaired": false,
   "safe_default": false,
-  "mode": null,
+  "mode": "rules",
   "followup_available": false,
   "notes": {
-    "source": "sympy"
+    "target": null
   }
 }

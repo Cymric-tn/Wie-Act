@@ -123,6 +123,19 @@ async def real_examples(index: str) -> dict[str, tuple[str, Result]]:
     await go("check_claim.llm_failed", junkclaim, "check_claim",
              {"claim": "La dérivée d'un produit est le produit des dérivées."}, ctx)
 
+    ans = Rig(lambda b: chat_ok("Que devient l'exposant de x quand on dérive ?", 260, 20), index)
+    actx = {"language": "FRENCH", "learner_id": "L1", "room_id": "R7", "course_id": "analyse"}
+    await go("check_answer.ok", ans, "check_answer", {"problem": "Dérive f(x) = x⁴", "exercise_id": "d01",
+                                                       "steps": ["f(x) = x⁴", "f'(x) = 4x³"]}, actx)
+    await go("check_answer.wrong_step", ans, "check_answer", {"problem": "Dérive f(x) = x⁴", "exercise_id": "d01",
+                                                               "steps": ["f(x) = x⁴", "f'(x) = x³"]}, actx)
+    await go("check_answer.rule", ans, "check_answer", {"problem": "Dérive f(x) = x⁵",
+                                                         "steps": ["f(x) = x⁵", "f'(x) = 5x⁵"]}, actx)
+    await go("check_answer.llm_feedback", ans, "check_answer", {"problem": "Dérive f(x) = x⁴",
+                                                                 "steps": ["f(x) = x⁴", "f'(x) = 7x"]}, actx)
+    await go("check_answer.unchecked", ans, "check_answer", {"problem": "Trouve la dérivée",
+                                                              "steps": ["je pense que c'est 6x"]}, actx)
+
     junk = Rig(lambda b: chat_ok("je ne sais pas, désolé", 300, 12), index)
     await go("classify.safe_default", junk, "classify", {"message": "explique-moi les limites"})
 

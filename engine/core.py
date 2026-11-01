@@ -32,6 +32,7 @@ from engine.prompts import PromptTemplate, load_prompt
 from engine.result import Event, Result
 from engine.exercises import ExerciseBank
 from engine.grounding import check_formulas
+from engine import answers
 from engine.vision import ImageError, prepare_image
 from engine.language import ARABIC_SCRIPT, arabic_ratio, contamination, latin_words
 from engine.tasks import (Messages, Registry, TaskContext, TaskSpec, best_sentence, default_registry,
@@ -85,6 +86,7 @@ class _Run:
         self.decision: Decision | None = None
         self.glossary: list[str] = []
         self.negative_hit = False
+        self.eta: float | None = None             # when a helper run (grade) was refused with a delay
         self.silent = False                      # a run that finishes after its caller left: no "run" metrics record
         self.started = asyncio.get_running_loop().time()    # the deadline is measured on the event loop's clock
 
@@ -286,6 +288,8 @@ class Engine:
             return self._finish(run, ctx, text=text, data=data, notes={"source": data.get("source", "rules")})
         if spec.local is not None:
             return await self._local(spec, prompt, inputs, tctx, ctx, run)
+        if spec.name == "check_answer":
+            return await self._check_answer(prompt, inputs, tctx, prio, run, ctx)
 
         decision = run.decision = self.router.decide(task, tctx.as_mapping(),
                                                      self.caller.limiter.buckets["chat"].tokens, ctx)
@@ -555,7 +559,7 @@ class Engine:
         fctx = CallContext(request_id=ctx.request_id, turn_id=ctx.turn_id, task=ctx.task, priority=ctx.priority,
                            purpose=purpose, on_event=run.emit, queue_seq=ctx.queue_seq, saturation_retries=0)
         try:
-            cap = self.settings.task_max_tokens["quiz_intro" if kind == "intro" else "framing"]
+            cap = self.settings.task_max_tokens[{"intro": "quiz_intro", "guide": "check_answer"}.get(kind, "framing")]
             chat = await self.caller.chat(ChatRequest(ModelClass.COMPACT, tuple(msgs), max_tokens=cap,
                                                       temperature=0.2), fctx)
         except LLMError:
@@ -570,6 +574,110 @@ class Engine:
             return template
         self.cache.put(key, cache_task, {"text": line, "model": chat.model})
         return line
+
+    # ================================================================== check_answer
+    @staticmethod
+    def _sub_context(tctx: TaskContext) -> dict:
+        """The context of a run this engine starts for itself (compress, grade): language, turn and the learner's
+        ids, but never room_id: the room is held by the run that is calling, it must not refuse its own helper."""
+        keep = ("turn_id", "learner_id", "course_id", "class_id")
+        return {"language": tctx.language, **{k: tctx.extra[k] for k in keep if tctx.extra.get(k) is not None}}
+
+    async def _check_answer(self, prompt: PromptTemplate, inputs: dict, tctx: TaskContext, prio: Priority,
+                            run: "_Run", ctx: CallContext) -> Result:
+        """Line by line (engine.answers): safe parse -> OK / WRONG / UNCHECKED; the first WRONG line is explained by
+        the exercise's stored mistakes, then by the buggy rules, else by one compact guiding question that is never
+        allowed to state the answer; the last line goes through grade."""
+        steps = inputs["steps"]
+        steps = steps.splitlines() if isinstance(steps, str) else steps
+        if not isinstance(steps, (list, tuple)):
+            raise ValueError("task 'check_answer': steps must be a list of lines")
+        lines = [str(s).strip() for s in steps if str(s).strip()][:answers.MAX_LINES]
+        if not lines:
+            raise ValueError("task 'check_answer' needs at least one non-empty step")
+        exercise = None
+        if inputs.get("exercise_id"):
+            exercise = self.exercises.get(str(inputs["exercise_id"])) if self.exercises else None
+            if exercise is None:
+                raise ValueError(f"unknown exercise_id {inputs['exercise_id']!r}")
+        run.decision = self.router.decide("check_answer", tctx.as_mapping(),
+                                          self.caller.limiter.buckets["chat"].tokens, ctx)
+        lang, problem = tctx.language or "FRENCH", str(inputs["problem"])
+        run.emit("parsing_steps", {"steps": len(lines)})
+        target = answers.target_for(problem, exercise)
+        results = answers.check_steps(lines, target)
+        run.emit("checking_steps")
+        notes: dict[str, Any] = {"target": target.kind if target else None}
+        solution = str(inputs.get("solution") or (exercise.solution if exercise else "") or
+                       (target.solution_text() if target else "") or "").strip() or None
+        used_llm = used_rules = False
+
+        first = next((r.index for r in results if r.verdict == "WRONG"), None)
+        feedback = ""
+        if first is not None:
+            w = results[first]
+            diag = answers.diagnose(w.value, target, exercise, lang) if w.value is not None and w.note == "wrong" else None
+            if diag is not None:
+                feedback, notes["diagnosis"] = diag
+                used_rules = True
+            else:
+                feedback, asked = await self._guiding_question(prompt, problem, w, target, solution, tctx, ctx, run)
+                used_llm = asked
+                notes["diagnosis"] = "llm" if asked else "template"
+
+        final, final_fb, graded_llm = await self._final_verdict(lines, results, exercise, problem, solution, tctx, prio,
+                                                                run)
+        used_llm = used_llm or graded_llm
+        if not feedback and final == "INCORRECT" and final_fb:
+            feedback = final_fb
+            used_rules = used_rules or not graded_llm
+        data = {"steps": [{"index": r.index, "verdict": r.verdict, "note": answers.note(r.note, lang)} for r in results],
+                "first_wrong": first, "final_verdict": final, "feedback": feedback,
+                "graded_by": "llm" if used_llm else "rules" if used_rules else "sympy"}
+        return self._finish(run, ctx, data=data, route_reason=run.decision.reason, notes=notes,
+                            mode=None if used_llm else "rules", eta=getattr(run, "eta", None))
+
+    async def _guiding_question(self, prompt, problem, wrong, target, solution, tctx, ctx, run) -> tuple[str, bool]:
+        """One compact line asking the learner to look at their first wrong line. Never the answer: a line that
+        leaks (the hint guard + the derivative written out) is replaced by the fixed question."""
+        lang = tctx.language or "FRENCH"
+        template = prompt.sections[f"guide_template.{lang}"]
+        line = await self._one_liner(prompt, "guide", {"problem": problem, "n": wrong.index + 1, "step": wrong.line},
+                                     "guide_template", tctx, ctx, run)
+        if answers.leaks(line, target, solution):
+            run.emit("guarded", {"reason": "hint_guard:answer_leak"})
+            return template, False
+        return line, line != template
+
+    async def _final_verdict(self, lines, results, exercise, problem, solution, tctx, prio, run) -> tuple[str, str, bool]:
+        """(verdict, feedback, used_llm): the last line against the solution. The exercise's stored answers are
+        compared first (text included: variations, extrema); everything else goes through the grade task, which
+        is sympy first and the compact grader only for text it cannot compare."""
+        if not solution:
+            return "UNKNOWN", "", False
+        last = results[-1].line
+        if answers.normalize_answer(last) and answers.normalize_answer(last) == answers.normalize_answer(solution):
+            return "CORRECT", "", False                       # the stated solution, written the same way: no request
+        if exercise is not None:
+            for expr, fb in exercise.common_mistakes:
+                if answers.normalize_answer(last) == answers.normalize_answer(expr):
+                    return "INCORRECT", fb, False
+        attempt = last.split("=")[-1].strip() if results[-1].value is not None and "=" in last else last
+        mistakes = [{"expr": e, "feedback": f} for e, f in (exercise.common_mistakes if exercise else ())]
+        res = await self.run("grade", {"problem": problem, "solution": solution, "attempt": attempt,
+                                       "common_mistakes": mistakes}, self._sub_context(tctx), prio,
+                             on_event=lambda ev: run.emit(ev.name, ev.data))
+        run.tokens_in += res.tokens_in
+        run.tokens_out += res.tokens_out
+        if res.model_class_used and not res.from_cache:
+            run.model_class, run.model = res.model_class_used, res.model
+        for reason in ([res.degrade_reason] if res.degraded else []):
+            run.degrade(reason)
+        if res.degraded and res.eta_seconds is not None:
+            run.eta = res.eta_seconds
+        d = res.data or {}
+        verdict = d.get("verdict") if d.get("verdict") in ("CORRECT", "INCORRECT", "PARTIAL") else "UNKNOWN"
+        return verdict, d.get("feedback") or "", d.get("graded_by") == "llm" and not res.from_cache
 
     # ================================================================== local tasks (exercise bank)
     async def _local(self, spec: TaskSpec, prompt: PromptTemplate, inputs: dict, tctx: TaskContext,
@@ -681,7 +789,7 @@ class Engine:
             run.emit("compressing", {"chunks": len(chunks), "over_budget": over})
             comp = await self.run("compress",
                                   {"question": inputs["question"], "chunks": [c.to_dict() for c in chunks]},
-                                  {"language": tctx.language, "turn_id": tctx.extra.get("turn_id")}, prio)
+                                  self._sub_context(tctx), prio)
             run.tokens_in += comp.tokens_in
             run.tokens_out += comp.tokens_out
             kept: dict[str, list[str]] = {}
