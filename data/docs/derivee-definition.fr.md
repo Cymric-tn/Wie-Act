@@ -1,5 +1,7 @@
 ---
 topic: derivative
+course: analyse
+unit: derivees
 level: beginner
 language: FRENCH
 title: La dérivée d'une fonction : définition

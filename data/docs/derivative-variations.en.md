@@ -1,5 +1,7 @@
 ---
 topic: derivative
+course: analyse
+unit: derivees
 level: beginner
 language: ENGLISH
 title: Derivatives and the variations of a function
