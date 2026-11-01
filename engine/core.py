@@ -666,6 +666,7 @@ class Engine:
                 return I.OcrPage(ok=False, reason=r.degrade_reason)
             return I.OcrPage((r.data or {}).get("text", ""), True, r.degrade_reason == "low_confidence")
 
+        kw.setdefault("min_confidence", self.settings.ingest_min_tag_confidence)
         res = await I.ingest_with_ocr(file, course_id, unit_id, owner, visibility, source, class_id=class_id,
                                       ocr=read if ocr else None, max_ocr_pages=self.settings.ingest_max_ocr_pages,
                                       course=self.courses.get(course_id), glossary=self.glossary,
