@@ -4,6 +4,7 @@ python-dotenv>=1.0
 pyyaml>=6.0
 sympy>=1.12
 Pillow>=10.0                # scripts/probe_felcloud.py renders the image probes
+pymupdf>=1.24               # rag/ingest.py: PDF text (lazy import; DOCX and Markdown need nothing extra)
 # dev
 pytest>=8
 pytest-asyncio>=0.23
