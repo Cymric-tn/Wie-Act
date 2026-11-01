@@ -5,6 +5,10 @@ pyyaml>=6.0
 sympy>=1.12
 Pillow>=10.0                # scripts/probe_felcloud.py renders the image probes
 pymupdf>=1.24               # rag/ingest.py: PDF text (lazy import; DOCX and Markdown need nothing extra)
+fastapi>=0.110          # services/engine_server.py
+uvicorn>=0.29
+python-multipart>=0.0.9   # multipart uploads (images, materials)
+websockets>=12            # uvicorn WebSocket support
 # dev
 pytest>=8
 pytest-asyncio>=0.23

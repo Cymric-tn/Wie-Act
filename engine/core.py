@@ -221,6 +221,19 @@ class Engine:
     async def __aexit__(self, *exc):
         await self.aclose()
 
+    def status(self) -> dict:
+        """A snapshot for a health check: breaker per class, the chat window, the queue. No request, no model."""
+        queue = self.caller.queue
+        lim = queue.limiter
+        chat = lim.buckets["chat"]
+        return {
+            "breaker": {cls.value: {"state": br.state, "retry_in_s": round(br.retry_in(), 1), "trips": br.trips}
+                        for cls, br in self.router.breakers.items()},
+            "window": {"limit": chat.limit, "window_s": chat.window_s, "remaining": int(chat.tokens),
+                       "in_flight": lim.in_flight, "max_concurrent": lim.max_concurrent},
+            "queue": {"depth": queue.depth("chat")},
+        }
+
     # ================================================================== public
     async def run(self, task: str, inputs: Mapping[str, Any] | None = None,
                   context: Mapping[str, Any] | None = None, priority: Priority | str = Priority.INTERACTIVE,

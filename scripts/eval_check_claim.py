@@ -59,11 +59,27 @@ async def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="tests/eval/claims_set.jsonl")
     ap.add_argument("--out", default="reports/eval_check_claim.json")
+    ap.add_argument("--guard-out", help="write {chat_requests, non_200, server_429, exceptions} here")
     a = ap.parse_args()
     s = load_settings()
     print(f"provider={s.base_url} compact={s.model_for(next(iter(s.models)))}")
-    async with Engine.create(s, cache=ExactCache(":memory:", s.cache_ttl_s)) as engine:
-        rows = await run(a.data, engine)
+    guard = None
+    if a.guard_out:
+        from scripts.slot_guard import Guard
+        guard = Guard("eval_check_claim")
+    rows = []
+    try:
+        async with Engine.create(s, cache=ExactCache(":memory:", s.cache_ttl_s),
+                                 transport=guard.transport if guard else None) as engine:
+            rows = await run(a.data, engine)
+    except Exception as e:
+        if guard is None:
+            raise
+        guard.exception("check_claim", e)
+        print(f"EXCEPTION {type(e).__name__}")
+    finally:
+        if guard:
+            print("guard:", json.dumps(guard.write(a.guard_out)))
     summary = summarize(rows)
     print(json.dumps(summary, ensure_ascii=False, indent=1))
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)

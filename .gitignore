@@ -23,3 +23,6 @@ data/*.sqlite
 data/*.sqlite-journal
 metrics/*.summary.json
 _legacy/*.sqlite
+
+# engine service
+runtime/

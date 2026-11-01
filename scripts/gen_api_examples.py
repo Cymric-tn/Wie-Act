@@ -207,10 +207,66 @@ def render(source: str, r) -> str:
 
 DOC_SRC, DOC_OUT = "docs/ENGINE_API.src.md", "docs/ENGINE_API.md"
 _MARK = re.compile(r"^\{\{example ([\w.]+)\}\}$", re.M)
+_SERVICE_MARK = re.compile(r"^\{\{service ([\w.]+)\}\}$", re.M)
+
+SERVICE_TOKEN = "change-me"
+SERVICE_NOTES = (b"# Asymptotes\n\nUne asymptote oblique est une droite dont la courbe se rapproche a l'infini.\n\n"
+                 b"## Branches infinies\n\nOn etudie la limite de f(x)/x en l'infini pour trouver la direction.\n")
 
 
-def render_doc(examples: dict[str, tuple[str, Result]]) -> str:
+def _fixed_ids(x):
+    """The request ids of a response replaced by the fixed one the examples use."""
+    if isinstance(x, dict):
+        return {k: ("a1b2c3d4e5f6" if k == "request_id" and isinstance(v, str) else _fixed_ids(v)) for k, v in x.items()}
+    return [_fixed_ids(v) for v in x] if isinstance(x, list) else x
+
+
+async def build_service() -> dict[str, tuple[str, object]]:
+    """The HTTP service's own answers, from the fake engine served in-process through the real app: name -> (what was
+    called, the JSON body or list of frames)."""
+    from services import engine_server as S
+    from services.testing import ASGIWebSocket
+    auth = {S.TOKEN_HEADER: SERVICE_TOKEN}
+    app = S.create_app(FakeEngine(speed=0), token=SERVICE_TOKEN, fake=True, fake_mode="normal")
+    out: dict[str, tuple[str, object]] = {}
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://127.0.0.1", headers=auth) as c:
+        def put(name, label, r):
+            out[name] = (f"{label} -> {r.status_code}", _fixed_ids(r.json()))
+        put("health", "GET /health", await c.get("/health"))
+        put("run", "POST /run", await c.post("/run", json={"task": "hint", "inputs": {"problem": "Dérive f(x) = 3x² + 5x"},
+                                                           "context": {"language": "FRENCH", "learner_id": "L42"}}))
+        put("run_invalid", "POST /run (a task without its input)", await c.post("/run", json={"task": "hint", "inputs": {}}))
+        put("run_ocr", "POST /run (multipart, task ocr_transcribe)", await c.post(
+            "/run", data={"task": "ocr_transcribe", "context": json.dumps({"language": "FRENCH"})},
+            files={"image": ("work.png", b"\x89PNG fake bytes", "image/png")}))
+        put("run_unauthorized", "POST /run (no token)", await c.post("/run", headers={S.TOKEN_HEADER: ""},
+                                                                        json={"task": "hint", "inputs": {"problem": "x"}}))
+        up = await c.post("/materials", data={"course_id": "analyse", "unit_id": "derivees", "owner": "prof-7",
+                                              "visibility": "class", "class_id": "C1", "source": "professor"},
+                          files={"file": ("asymptotes.md", SERVICE_NOTES, "text/markdown")})
+        put("materials_upload", "POST /materials", up)
+        put("materials_delete", "DELETE /materials/{material_id}", await c.delete(f"/materials/{up.json()['material_id']}"))
+        put("cache_invalidate", "POST /cache/invalidate", await c.post("/cache/invalidate", json={"request_id": "a1b2c3d4e5f6"}))
+    async with ASGIWebSocket(app, auth) as ws:
+        await ws.send({"task": "hint", "inputs": {"problem": "Dérive f(x) = 3x² + 5x"}, "context": {"language": "FRENCH"}})
+        out["stream"] = ("WS /run/stream (frames, in order)", _fixed_ids(await ws.frames()))
+    async with ASGIWebSocket(app, {}) as ws:
+        out["stream_unauthorized"] = ("WS /run/stream (no token)", [ws.first])
+    return out
+
+
+def render_doc(examples: dict[str, tuple[str, Result]], service: dict[str, tuple[str, object]] | None = None) -> str:
     src = open(DOC_SRC, encoding="utf-8").read()
+    if service is None and _SERVICE_MARK.search(src):
+        service = asyncio.run(build_service())
+
+    def service_block(m: re.Match) -> str:
+        name = m.group(1)
+        if name not in (service or {}):
+            raise SystemExit(f"{DOC_SRC}: unknown service example {name!r}")
+        label, body = service[name]
+        return f"*{label}*\n\n```json\n{json.dumps(body, ensure_ascii=False, indent=2)}\n```"
+    src = _SERVICE_MARK.sub(service_block, src)
 
     def block(m: re.Match) -> str:
         name = m.group(1)
