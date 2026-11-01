@@ -29,6 +29,8 @@ from typing import Any, Callable, Mapping
 
 from engine.result import Event, Result
 from gatekeeper.queue import Priority
+from metrics import IDENTITY_KEYS, CallRecord, MemorySink
+from metrics.review import ReviewStore
 
 MODES = ("normal", "slow", "degraded")
 SLOW_FACTOR = 3.0
@@ -84,7 +86,7 @@ class FakeEngine:
         "classify": ("ok", "cache_hit", "safe_default", "quota_exhausted", "superseded", "room_busy"),
         "hint": ("ok", "stored", "quota_exhausted", "superseded", "room_busy"),
         "explain": ("ok", "cache_hit", "fast_extractive", "deadline", "quota_exhausted", "not_in_course",
-                    "superseded", "room_busy"),
+                    "wrong_math", "superseded", "room_busy"),
         "quiz": ("ok", "diagnostic"),
         "grade": ("correct", "incorrect", "quota_exhausted"),
         "compress": ("ok",),
@@ -107,11 +109,16 @@ class FakeEngine:
         self._rooms: set[str] = set()
         self.calls: list[tuple[str, str]] = []              # (task, outcome) of every call, for UI tests
         self.cache = _FakeCache()
+        self.review = ReviewStore(":memory:")               # same dashboard data as the real engine, in memory
+        self.sink = MemorySink()                            # one "run" record per call, for /metrics/summary
         self.materials: list = []                           # chunks added through add_material / ingest_file(add=True)
 
     # ---------------------------------------------------------------- lifecycle (same as Engine)
     async def aclose(self) -> None:
         return None
+
+    def metrics_records(self) -> list[dict]:
+        return [r.model_dump(exclude_none=True) for r in self.sink.records]
 
     async def __aenter__(self):
         return self
@@ -178,7 +185,15 @@ class FakeEngine:
         try:
             plan = self._plan(task, outcome, inputs, context, prio)
             self.calls.append((task, outcome))
-            return await self._play(task, plan, on_event)
+            result = await self._play(task, plan, on_event)
+            ids = {k: str(context[k]) for k in IDENTITY_KEYS if context.get(k) is not None}
+            self.review.observe(task, inputs, ids, result)
+            self.sink.write(CallRecord(request_id=result.request_id, kind="run", task=task, priority=prio.value,
+                                       model_class=result.model_class_used, model=result.model, outcome="degraded" if result.degraded else "ok",
+                                       from_cache=result.from_cache, degraded=result.degraded,
+                                       degrade_reason=result.degrade_reason, latency_ms=result.latency_ms,
+                                       tokens_in=result.tokens_in, tokens_out=result.tokens_out, **ids))
+            return result
         finally:
             if room is not None and outcome != "room_busy":
                 self._rooms.discard(room)
@@ -329,13 +344,21 @@ def _explain(outcome, inputs, lang, k, ctx) -> _Plan:
     if outcome == "not_in_course":
         return _Plan(_ev((0.0, "retrieving", None), (0.05, "no_relevant_context", None)), 0.05,
                      {"text": "Ce sujet ne figure pas dans le cours : je préfère ne pas inventer de réponse.",
-                      "route_reason": "mid-size by table", "notes": {"retrieval": "no_relevant_chunks"}})
+                      "route_reason": "mid-size by table",
+                      "notes": {"retrieval": "no_relevant_chunks", "nearest_concept": "nombre dérivé"}})
     if outcome == "cache_hit":
         return _Plan(_ev(*retr, (0.06, "cache_hit", None)), 0.06,
                      {**_explain_body(lang), "from_cache": True, "model_class_used": "midsize", "model": "mid-a",
                       "route_reason": "mid-size by table", "notes": {"sources": [EXCERPTS[0]["chunk_id"]]}})
     partial = (0.06, "partial_result", {"excerpts": EXCERPTS[:2]})
     gen = [(0.07, "queued", {"position": 0, "eta_s": 6.0}), (0.08, "generating", {"attempt": 1, "model_class": "midsize"})]
+    if outcome == "wrong_math":       # generated, then refuted by sympy: the text is still returned, flagged
+        bad = "f'(x) = 5x"
+        return _Plan(_ev(*retr, partial, *gen, (9.5 * k, "guarded", {"reason": "wrong_math", "spans": [bad]})), 9.5 * k,
+                     {**_explain_body(lang), "model_class_used": "midsize", "model": "mid-a", "tokens_in": 1150,
+                      "tokens_out": 214, "route_reason": "mid-size by table", "degraded": True,
+                      "degrade_reason": "wrong_math",
+                      "notes": {"sources": [EXCERPTS[0]["chunk_id"]], "formulas_verified": 0, "wrong_math": [bad]}})
     if outcome == "ok":
         t = 9.5 * k
         return _Plan(_ev(*retr, partial, *gen), t,
@@ -422,7 +445,8 @@ def _claim(outcome, inputs, lang, k, ctx) -> _Plan:
     if outcome == "NOT_IN_COURSE":
         return _Plan(_ev((0.0, "retrieving", None), (0.05, "no_relevant_context", None)), 0.05,
                      {"data": {"verdict": "NOT_IN_COURSE", "correction": "", "source_chunk_id": None,
-                               "checked_by": "rules"}, "notes": {"retrieval": "no_relevant_chunks"}})
+                               "checked_by": "rules"},
+                      "notes": {"retrieval": "no_relevant_chunks", "nearest_concept": "produit"}})
     base = [(0.0, "retrieving", None), (0.04, "expanding_query", {"glossary": ["dérivée", "produit"]}),
             (0.05, "checking_cache", None), (0.06, "queued", {"position": 0, "eta_s": 2.0}),
             (0.07, "generating", {"attempt": 1, "model_class": "compact"})]

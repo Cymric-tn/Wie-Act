@@ -365,7 +365,7 @@ async def test_explain_applies_the_glossary(vt):
     assert r.event_names[:2] == ["retrieving", "expanding_query"]
     eng2, _, _ = engine_with(vt, lambda b: chat_ok("ok"), GLOSSARY_PATH="")
     r2 = await eng2.run("explain", {"question": "كيفاش نكتب معادلة المماس؟"})
-    assert r2.notes == {"retrieval": "no_relevant_chunks"}                    # without it: not found
+    assert r2.notes["retrieval"] == "no_relevant_chunks" and "sources" not in r2.notes    # without it: not found
 
 
 async def test_explain_max_tokens_capped_and_env_configurable(vt):

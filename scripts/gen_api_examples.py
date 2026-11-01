@@ -227,7 +227,10 @@ async def build_service() -> dict[str, tuple[str, object]]:
     from services import engine_server as S
     from services.testing import ASGIWebSocket
     auth = {S.TOKEN_HEADER: SERVICE_TOKEN}
-    app = S.create_app(FakeEngine(speed=0), token=SERVICE_TOKEN, fake=True, fake_mode="normal")
+    fake = FakeEngine(speed=0)
+    ticks = iter(range(1_793_600_000, 1_793_700_000, 60))        # the dashboard's created_at: fixed, a minute apart
+    fake.review._clock = lambda: float(next(ticks))
+    app = S.create_app(fake, token=SERVICE_TOKEN, fake=True, fake_mode="normal")
     out: dict[str, tuple[str, object]] = {}
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://127.0.0.1", headers=auth) as c:
         def put(name, label, r):
@@ -247,6 +250,20 @@ async def build_service() -> dict[str, tuple[str, object]]:
         put("materials_upload", "POST /materials", up)
         put("materials_delete", "DELETE /materials/{material_id}", await c.delete(f"/materials/{up.json()['material_id']}"))
         put("cache_invalidate", "POST /cache/invalidate", await c.post("/cache/invalidate", json={"request_id": "a1b2c3d4e5f6"}))
+        ids = {"language": "FRENCH", "class_id": "C1", "course_id": "analyse", "learner_id": "L42"}
+        for task, inputs, outcome in (
+                ("explain", {"question": "Quelle est la dérivée de x³ ?"}, "wrong_math"),
+                ("explain", {"question": "C'est quoi la continuité d'une fonction ?"}, "not_in_course"),
+                ("explain", {"question": "Explique la continuité en un point"}, "not_in_course"),
+                ("check_claim", {"claim": "Une fonction continue est dérivable."}, "NOT_IN_COURSE"),
+                ("hint", {"problem": "Dérive f(x) = 3x² + 5x"}, "ok")):
+            await c.post("/run", json={"task": task, "inputs": inputs, "context": {**ids, "fake_outcome": outcome}})
+        put("review_flagged", "GET /review/flagged?class_id=C1&limit=20", await c.get("/review/flagged", params={"class_id": "C1", "limit": 20}))
+        put("review_decide", "POST /review/flagged/{request_id}", await c.post(
+            "/review/flagged/" + (await c.get("/review/flagged")).json()["items"][0]["request_id"], json={"action": "reject"}))
+        put("review_gaps", "GET /review/content-gaps?class_id=C1&course_id=analyse", await c.get(
+            "/review/content-gaps", params={"class_id": "C1", "course_id": "analyse"}))
+        put("metrics_summary", "GET /metrics/summary", await c.get("/metrics/summary"))
     async with ASGIWebSocket(app, auth) as ws:
         await ws.send({"task": "hint", "inputs": {"problem": "Dérive f(x) = 3x² + 5x"}, "context": {"language": "FRENCH"}})
         out["stream"] = ("WS /run/stream (frames, in order)", _fixed_ids(await ws.frames()))
