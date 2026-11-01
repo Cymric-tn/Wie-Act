@@ -14,6 +14,7 @@ class JsonlSink:
     """Append-only JSONL, flushed per record so a crash loses nothing."""
 
     def __init__(self, path: str):
+        self.path = path
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         self._f = open(path, "a", encoding="utf-8")
 

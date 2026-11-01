@@ -3185,6 +3185,174 @@ curl -s -H "X-Engine-Token: $ENGINE_SERVICE_TOKEN" http://127.0.0.1:8765/health
 }
 ```
 
+### Professor dashboard (data only)
+
+Four read/decide routes for the professor's screen. They return data; there is no HTML. The ids come from the `context`
+of the original `engine.run` (`class_id`, `course_id`, `learner_id`), so the app filters without keeping its own copy.
+`since` is epoch seconds or an ISO-8601 date / datetime (no zone = UTC); a bad value is a 422. Every route needs the token.
+
+What is stored: only two kinds of answer, in a small SQLite table next to the cache (same file, `CACHE_PATH`): answers a
+check flagged, and questions the course could not answer. The metrics JSONL stays ids and numbers.
+
+**`GET /review/flagged?class_id=&course_id=&since=&limit=50&offset=0`.** `explain`, `check_claim` and `check_answer`
+results degraded by `wrong_math` or `ungrounded_formula`, that have no decision yet, newest first. `limit` is 1..200.
+`spans` are the flagged formulas (`notes.wrong_math` + `notes.ungrounded`), `answer` is the text, or the result's `data`
+as JSON for the JSON tasks. A result served from the cache is not listed again (the original is).
+`next_offset` is `null` on the last page.
+
+*GET /review/flagged?class_id=C1&limit=20 -> 200*
+
+```json
+{
+  "items": [
+    {
+      "request_id": "a1b2c3d4e5f6",
+      "task": "explain",
+      "course_id": "analyse",
+      "class_id": "C1",
+      "learner_id": "L42",
+      "question": "Quelle est la dérivée de x³ ?",
+      "answer": "Bonne question, on la prend étape par étape.\n\nLe nombre dérivé mesure la pente de la courbe en un point. On regarde le taux d'accroissement (f(a+h) − f(a))/h entre a et a+h ; quand h devient très petit, ce taux se stabilise : sa limite est f'(a). Par exemple, pour f(x) = x², le taux vaut 2a + h, donc f'(a) = 2a.\n\nÀ toi : Dérive f(x) = x⁴.",
+      "spans": [
+        "f'(x) = 5x"
+      ],
+      "reasons": [
+        "wrong_math"
+      ],
+      "created_at": "2026-11-02T06:13:20Z"
+    }
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0,
+  "next_offset": null
+}
+```
+
+**`POST /review/flagged/{request_id}`** with `{"action": "approve" | "reject"}`. Both record the decision, so the item
+leaves the queue. `reject` also calls the cache invalidation of that request (`removed` = entries dropped; a degraded
+answer is never cached, so it is usually 0: the call matters when the same request id was also cached). Deciding twice the
+same way is a 200 with `already: true`; the opposite way is a 409 `already_decided`; an unknown id is a 404
+`unknown_item`; a bad action is a 422.
+
+*POST /review/flagged/{request_id} -> 200*
+
+```json
+{
+  "request_id": "a1b2c3d4e5f6",
+  "action": "reject",
+  "decided_at": "2026-11-02T06:17:20Z",
+  "already": false,
+  "removed": 1
+}
+```
+
+**`GET /review/content-gaps?class_id=&course_id=&since=`.** Questions answered "not in the course" (`explain` with
+`notes.retrieval = "no_relevant_chunks"`, `check_claim` with verdict `NOT_IN_COURSE`), grouped by the nearest concept: the
+best BM25 hit with the relevance gate off (`notes.nearest_concept` of the original result). `concept: null` = no course
+chunk shares a term with the question. Most asked first, at most 5 distinct example questions each (newest first).
+A `check_claim` that retrieved a chunk and the model judged outside the course uses that chunk's concept.
+
+*GET /review/content-gaps?class_id=C1&course_id=analyse -> 200*
+
+```json
+{
+  "gaps": [
+    {
+      "concept": "nombre dérivé",
+      "count": 2,
+      "examples": [
+        "Explique la continuité en un point",
+        "C'est quoi la continuité d'une fonction ?"
+      ],
+      "last_at": "2026-11-02T06:15:20Z"
+    },
+    {
+      "concept": "produit",
+      "count": 1,
+      "examples": [
+        "Une fonction continue est dérivable."
+      ],
+      "last_at": "2026-11-02T06:16:20Z"
+    }
+  ],
+  "total": 3
+}
+```
+
+**`GET /metrics/summary?since=&class_id=&course_id=`.** What the team shows judges, computed from the metrics records on
+every call (10,000 records take about 50 ms, so there is no index). `runs` = engine calls, `provider_requests` = what
+reached the provider (cache hits excluded) by model class and model, `cache.hit_rate` = cached runs / runs,
+`degraded.by_reason` shares are of all runs, `latency_ms` is p50 / p95 per task (nearest rank), `server_429` = provider
+429s by outcome.
+
+*GET /metrics/summary -> 200*
+
+```json
+{
+  "since": null,
+  "filters": {
+    "class_id": null,
+    "course_id": null
+  },
+  "runs": {
+    "total": 7,
+    "by_task": {
+      "check_claim": 1,
+      "explain": 3,
+      "hint": 2,
+      "ocr_transcribe": 1
+    }
+  },
+  "provider_requests": {
+    "total": 0,
+    "by_class": {},
+    "by_model": {}
+  },
+  "cache": {
+    "hits": 0,
+    "runs": 7,
+    "hit_rate": 0.0
+  },
+  "degraded": {
+    "count": 1,
+    "share": 0.1429,
+    "by_reason": {
+      "wrong_math": {
+        "count": 1,
+        "share": 0.1429
+      }
+    }
+  },
+  "latency_ms": {
+    "check_claim": {
+      "count": 1,
+      "p50": 50.0,
+      "p95": 50.0
+    },
+    "explain": {
+      "count": 3,
+      "p50": 50.0,
+      "p95": 9500.0
+    },
+    "hint": {
+      "count": 2,
+      "p50": 3800.0,
+      "p95": 3800.0
+    },
+    "ocr_transcribe": {
+      "count": 1,
+      "p50": 14000.0,
+      "p95": 14000.0
+    }
+  },
+  "server_429": {
+    "count": 0,
+    "by_outcome": {}
+  }
+}
+```
+
 ### From Node (18 or later; `npm i ws`)
 
 ```js

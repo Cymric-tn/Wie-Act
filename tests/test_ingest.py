@@ -242,3 +242,37 @@ def test_a_real_three_page_pdf_with_one_image_only_page(tmp_path):
     assert [c.chunk_id.split("#")[1] for c in res.chunks] == ["1-la-tangente-et-le-nombre-derive", "2-derivee-d-un-produit"]
     png = res.render_page(3)                                            # the real renderer gives a PNG for the OCR
     assert png[:8] == b"\x89PNG\r\n\x1a\n" and Image.open(io.BytesIO(png)).width > 500
+
+
+def test_the_generated_pdf_page_one_at_054_is_flagged_by_the_default_cutoff(tmp_path):
+    """The three-page PDF checked by hand on 2026-11-01 (page 3 is a picture): page 1's tag scores 0.54, under
+    INGEST_MIN_TAG_CONFIDENCE (0.6) and over the old 0.5, so only the new default flags it."""
+    from engine.course import load_courses
+    from rag.glossary import Glossary
+    from tests.conftest import make_settings
+    pymupdf = pytest.importorskip("pymupdf")
+    doc = pymupdf.open()
+    for title, body in (
+            ("1. La tangente et le nombre derive",
+             "Le nombre derive de f en a est la limite du taux d'accroissement (f(a+h) - f(a))/h quand h tend vers 0.\n"
+             "Graphiquement, f'(a) est la pente de la tangente a la courbe au point d'abscisse a.\n"
+             "L'equation de la tangente en a est y = f'(a)(x - a) + f(a)."),
+            ("2. Derivee d'un produit",
+             "Si u et v sont derivables, la derivee du produit uv est u'v + uv'.\n"
+             "Par exemple, pour f(x) = x(x + 3), on obtient f'(x) = (x + 3) + x = 2x + 3.\n"
+             "Attention: la derivee d'un produit n'est pas le produit des derivees.")):
+        pg = doc.new_page()
+        pg.insert_text((72, 90), title, fontsize=18, fontname="hebo")
+        pg.insert_textbox(pymupdf.Rect(72, 120, 520, 700), body, fontsize=11, fontname="helv")
+    path = tmp_path / "cours.pdf"
+    doc.save(str(path))
+    default = make_settings().ingest_min_tag_confidence
+    assert default == 0.6
+    kw = dict(class_id="C1", course=load_courses("data/courses")["analyse"], glossary=Glossary.load("data/glossary.yaml"))
+    res = ingest(str(path), "analyse", "derivees", "prof-7", "class", "professor", min_confidence=default, **kw)
+    conf = {c.chunk_id.split("#")[1]: c.confidence for c in res.chunks}
+    assert conf["1-la-tangente-et-le-nombre-derive"] == pytest.approx(0.54, abs=0.01)    # 0.536
+    assert [c.chunk_id.split("#")[1] for c in res.low_confidence] == ["1-la-tangente-et-le-nombre-derive"]
+    old = ingest(str(path), "analyse", "derivees", "prof-7", "class", "professor", min_confidence=0.5, **kw)
+    assert old.low_confidence == []                                     # the old cutoff let it through
+    assert make_settings(INGEST_MIN_TAG_CONFIDENCE="0.8").ingest_min_tag_confidence == 0.8

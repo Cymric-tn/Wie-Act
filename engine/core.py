@@ -55,6 +55,8 @@ from gatekeeper.limiter import Limiter
 from gatekeeper.queue import Priority, PriorityQueue
 from gatekeeper.retry import CallContext, ChatResult, RetryingCaller, RetryPolicy
 from metrics import IDENTITY_KEYS, CallRecord, JsonlSink, MetricsSink, identity
+from metrics.review import ReviewStore
+from metrics.summary import read_jsonl
 from rag.budget import BudgetError, assemble, limit_for
 from rag.glossary import Glossary
 from rag.retriever import VIEWER, Hit, Retriever, language_plan, make_retriever
@@ -89,6 +91,7 @@ class _Run:
         self.decision: Decision | None = None
         self.glossary: list[str] = []
         self.negative_hit = False
+        self.nearest = ""                          # concept of the best chunk (check_claim: for the content-gap report)
         self.retrieval_on: str | None = None      # which input found the course chunks: passage | question | board_text
         self.eta: float | None = None             # when a helper run (grade) was refused with a delay
         self.silent = False                      # a run that finishes after its caller left: no "run" metrics record
@@ -157,6 +160,7 @@ class Engine:
                  registry: Registry | None = None, clock: Callable[[], float] = time.monotonic,
                  retriever: Retriever | None = None):
         self.settings, self.caller, self.cache, self.sink = settings, caller, cache, sink
+        self.review = ReviewStore(getattr(cache, 'path', ':memory:'))     # flagged answers + content gaps (the dashboard)
         self.registry = registry or default_registry()
         self.router = Router.from_settings(sink, settings, clock)
         caller.observer = self.router.observe
@@ -212,6 +216,7 @@ class Engine:
         await self.caller.queue.aclose()
         await self.caller.client.aclose()
         self.cache.close()
+        self.review.close()
         if hasattr(self.sink, "close"):
             self.sink.close()
 
@@ -247,9 +252,17 @@ class Engine:
         ids = {k: str(context[k]) for k in IDENTITY_KEYS if context and context.get(k) is not None}
         token = identity.set(ids)
         try:
-            return await self._run(spec, inputs, context, prio, on_event)
+            result = await self._run(spec, inputs, context, prio, on_event)
+            self.review.observe(task, inputs, ids, result)
+            return result
         finally:
             identity.reset(token)
+
+    def metrics_records(self) -> list[dict]:
+        """Every metrics record so far, as dicts: from the sink itself when it keeps them, else from the JSONL file."""
+        if hasattr(self.sink, "records"):
+            return [r.model_dump(exclude_none=True) for r in self.sink.records]
+        return read_jsonl(getattr(self.sink, "path", None) or self.settings.metrics_path)
 
     async def _run(self, spec: TaskSpec, inputs: dict, context: Mapping[str, Any] | None, prio: Priority,
                    on_event: EventCallback | None) -> Result:
@@ -295,6 +308,23 @@ class Engine:
                 self._room_ewma_s = 0.7 * self._room_ewma_s + 0.3 * took
             if run.decision is not None:     # a half-open probe that never reached mid-size frees its slot
                 self.router.release_probe(run.decision)
+
+    async def _nearest_concept(self, inputs: Mapping, tctx: TaskContext) -> str:
+        """The concept of the best chunk for a question the course cannot answer, with the relevance gate off. Same
+        visibility as the search that failed. '' when the retriever has no such search or nothing shares a term."""
+        search = getattr(self.retriever, "nearest", None)
+        if search is None:
+            return ""
+        viewer = {k: tctx.extra.get(k) for k in ("course_id", "class_id", "learner_id")}
+        filters = {VIEWER: viewer}
+        limit = self.settings.retrieval_query_chars
+        for query in (str(inputs.get("passage") or "")[:limit], str(inputs["question"]), str(inputs.get("board_text") or "")[:limit]):
+            if not query.strip():
+                continue
+            hit = await search(query, filters, self.glossary.expand(query) if self.glossary else None)
+            if hit is not None:
+                return hit.chunk.concept or ""
+        return ""
 
     # ================================================================== breaker probe
     def _maybe_probe(self) -> None:
@@ -351,11 +381,14 @@ class Engine:
             hits = await self._retrieve(inputs, tctx, run)
             if not hits:      # say so instead of letting the model invent an answer; no request spent
                 run.emit("no_relevant_context")
+                nearest = await self._nearest_concept(inputs, tctx) if task in ("explain", "check_claim") else ""
                 nf = spec.not_found_data(prompt, inputs, tctx) if spec.not_found_data else None
                 return self._finish(run, ctx, text=None if nf else spec.not_found_text(prompt, inputs, tctx), data=nf,
-                                    route_reason=decision.reason, notes={"retrieval": "no_relevant_chunks"})
+                                    route_reason=decision.reason,
+                                    notes={"retrieval": "no_relevant_chunks", **({"nearest_concept": nearest} if nearest else {})})
             if spec.max_chunks:
                 hits = hits[:spec.max_chunks]
+            run.nearest = hits[0].chunk.concept
             tctx = replace(tctx, extra={**tctx.extra, "concept": hits[0].chunk.concept,
                                         "top_chunk": hits[0].chunk.chunk_id})
             # cache identity = question (+ history) + WHICH chunks were retrieved, not the compressed text
@@ -666,6 +699,7 @@ class Engine:
                 return I.OcrPage(ok=False, reason=r.degrade_reason)
             return I.OcrPage((r.data or {}).get("text", ""), True, r.degrade_reason == "low_confidence")
 
+        kw.setdefault("min_confidence", self.settings.ingest_min_tag_confidence)
         res = await I.ingest_with_ocr(file, course_id, unit_id, owner, visibility, source, class_id=class_id,
                                       ocr=read if ocr else None, max_ocr_pages=self.settings.ingest_max_ocr_pages,
                                       course=self.courses.get(course_id), glossary=self.glossary,
@@ -1115,6 +1149,8 @@ class Engine:
     def _finish(self, run: _Run, ctx: CallContext, *, text=None, data=None, from_cache=False, route_reason=None,
                 eta=None, status="ok", notes=None, mode=None, followup_available=False) -> Result:
         notes = dict(notes or {})
+        if run.nearest and ctx.task == "check_claim" and (data or {}).get("verdict") == "NOT_IN_COURSE":
+            notes.setdefault("nearest_concept", run.nearest)
         if len(run.reasons) > 1:
             notes["degrade_reasons"] = run.reasons
         res = Result(task=ctx.task, request_id=ctx.request_id, text=text, data=data,
