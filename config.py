@@ -109,6 +109,9 @@ class Settings:
     rag_course_index_dir: str = "data/index/courses"   # runtime material (uploads, professor documents), one file per course
     source_boost_professor: float = 1.3       # BM25 score factor of professor material (applied before the coverage gate)
     ingest_max_ocr_pages: int = 20            # scanned pages sent through ocr_transcribe per file
+    retrieval_query_chars: int = 400          # a selected passage / whiteboard text is cut to this many characters as a search query
+    passage_budget_share: float = 0.25        # explain `passage`: at most this share of the prompt budget (rest is trimmed)
+    board_budget_share: float = 0.25          # explain `board_text`: same
     budget_safety_margin: float = 0.1         # assemble prompts within INPUT_TOKEN_BUDGET * (1 - margin)
     glossary_path: str = "data/glossary.yaml"  # learner terms -> course terms; empty = no expansion
     glossary_weight: float = 0.5              # glossary course terms count this much vs question terms
@@ -280,6 +283,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         rag_top_k=get("RAG_TOP_K", int, defaults.rag_top_k),
         rag_min_coverage=get("RAG_MIN_COVERAGE", float, defaults.rag_min_coverage),
         chunk_max_tokens=get("CHUNK_MAX_TOKENS", int, defaults.chunk_max_tokens),
+        retrieval_query_chars=get("RETRIEVAL_QUERY_CHARS", int, defaults.retrieval_query_chars),
+        passage_budget_share=get("PASSAGE_BUDGET_SHARE", float, defaults.passage_budget_share),
+        board_budget_share=get("BOARD_BUDGET_SHARE", float, defaults.board_budget_share),
         rag_course_index_dir=e.get("RAG_COURSE_INDEX_DIR") or defaults.rag_course_index_dir,
         source_boost_professor=get("SOURCE_BOOST_PROFESSOR", float, defaults.source_boost_professor),
         ingest_max_ocr_pages=get("INGEST_MAX_OCR_PAGES", int, defaults.ingest_max_ocr_pages),

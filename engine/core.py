@@ -17,6 +17,7 @@ missing required input, bad priority) — as ValueError, before any request is m
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -88,6 +89,7 @@ class _Run:
         self.decision: Decision | None = None
         self.glossary: list[str] = []
         self.negative_hit = False
+        self.retrieval_on: str | None = None      # which input found the course chunks: passage | question | board_text
         self.eta: float | None = None             # when a helper run (grade) was refused with a delay
         self.silent = False                      # a run that finishes after its caller left: no "run" metrics record
         self.started = asyncio.get_running_loop().time()    # the deadline is measured on the event loop's clock
@@ -125,6 +127,22 @@ class _FastMode(Exception):
     def __init__(self, decision: Decision, eta: float | None = None):
         self.decision = decision
         self.eta = eta                       # when the unavailable class is probed again
+
+
+def trim_to_tokens(text: str, max_tokens: int) -> str:
+    """Keep the head of `text` within about max_tokens (the estimator's own chars-per-token), ending on a line or
+    sentence boundary when one is near, marked with an ellipsis. Text that fits is returned as it is."""
+    from gatekeeper.client import chars_per_token
+    limit = max(40, int(max_tokens * chars_per_token()))
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    best = max(cut.rfind("\n"), *(cut.rfind(m) for m in (". ", "? ", "! ", "。", "؟ ")))
+    if best >= limit * 0.6:
+        cut = cut[:best + 1]
+    else:
+        cut = cut[:max(cut.rfind(" "), int(limit * 0.8))]
+    return cut.rstrip() + " […]"
 
 
 def _extract_json(text: str) -> str:
@@ -235,6 +253,18 @@ class Engine:
         run = _Run(self._clock, on_event)
         ctx = CallContext(task=task, priority=prio.value, on_event=run.emit, turn_id=tctx.extra.get("turn_id"))
         self._maybe_probe()
+        key_extra: list[str] = []
+        for name, share in spec.budgeted_inputs.items():      # passage, board_text: a share of the prompt budget
+            raw = str(inputs.get(name) or "").strip()
+            if not raw:
+                continue
+            key_extra.append(f"{name}:{hashlib.sha256(raw.encode()).hexdigest()[:12]}")   # the FULL original is the identity
+            kept = trim_to_tokens(raw, int(self.limit * getattr(self.settings, share)))
+            if kept != raw:
+                run.emit("trimming_input", {"input": name, "from_chars": len(raw), "to_chars": len(kept)})
+            inputs = {**inputs, name: kept}
+        if key_extra:
+            tctx = replace(tctx, extra={**tctx.extra, "key_extra": key_extra})
         room = str(context["room_id"]) if context and context.get("room_id") is not None else None
         if room is not None:
             now = asyncio.get_running_loop().time()
@@ -322,7 +352,7 @@ class Engine:
             key_messages = messages = spec.build(prompt, inputs, tctx, self.limit)
         run.emit("checking_cache")
         key = cache_key(task, decision.preferred.value, key_messages, tctx.language, tctx.level, tctx.style,
-                        prompt.version, extra=[h.chunk.chunk_id for h in hits])
+                        prompt.version, extra=[h.chunk.chunk_id for h in hits] + list(tctx.extra.get("key_extra", ())))
         if (hit := self.cache.get(key)) is not None:
             return self._cache_hit(run, ctx, key, hit, decision, spec, inputs, tctx, hits)
         if spec.grounded and (reasons := self.cache.get_negative(key)):
@@ -338,7 +368,7 @@ class Engine:
             # the leader's result was degraded for another reason (never cached): produce our own
             return await self._produce(spec, prompt, inputs, tctx, prio, run, ctx, decision, hits, key, messages)
         if hits and spec.partial_result:    # the course itself, verbatim, while the full answer is generated
-            run.emit("partial_result", {"excerpts": fast_excerpts(str(inputs["question"]),
+            run.emit("partial_result", {"excerpts": fast_excerpts(self._query_text(inputs),
                                                                   [h.chunk for h in hits], PARTIAL_SENTENCES)})
         done = self._inflight[key] = asyncio.Event()
         if self._has_deadline(spec, prio, decision):
@@ -369,6 +399,7 @@ class Engine:
         bg = _Run(self._clock, forward)
         bg.t0, bg.started = run.t0, run.started
         bg.glossary = list(run.glossary)         # state the retrieval already put on the learner's run
+        bg.retrieval_on = run.retrieval_on
         bg_ctx = CallContext(request_id=ctx.request_id, task=ctx.task, priority=ctx.priority, purpose=ctx.purpose,
                              on_event=bg.emit, queue_seq=ctx.queue_seq, turn_id=ctx.turn_id,
                              owner=None)       # the learner was answered: a newer question must not kill this fill
@@ -524,7 +555,7 @@ class Engine:
         course sentences verbatim (formulas intact), introduced by one line. Never cached.
         llm_framing=False: the framing line comes from the cache or the template, never from a request."""
         run.emit("fast_extractive", {"reason": run.reason})
-        excerpts = fast_excerpts(str(inputs["question"]), chunks)
+        excerpts = fast_excerpts(self._query_text(inputs), chunks)
         framing = await self._fast_framing(prompt, str(inputs["question"]), tctx, ctx, run, llm_framing)
         text = framing + "\n\n" + "\n".join(f"- {e['text']}" for e in excerpts)
         extra: dict = {}
@@ -795,22 +826,34 @@ class Engine:
                 self.course_store.save(cid, [c for c in self.retriever.chunks
                                              if c.course_id == cid and c.chunk_id not in base])
 
+    @staticmethod
+    def _query_text(inputs: Mapping) -> str:
+        """What the lexical parts (fast-mode extracts) match against: the question and the selected passage."""
+        return " ".join(x for x in (str(inputs.get("question") or ""), str(inputs.get("passage") or "")) if x.strip())
+
     async def _retrieve(self, inputs: Mapping, tctx: TaskContext, run: _Run) -> list[Hit]:
+        """The searches, in order, until one passes the coverage gate: the selected passage (it IS the topic, when the
+        learner selected one), the question, and the whiteboard text (when the question alone names no topic)."""
         run.emit("retrieving")
         await self._ensure_index()
         filters = {"topic": tctx.extra.get("topic")} if tctx.extra.get("topic") else None
         viewer = {k: tctx.extra.get(k) for k in ("course_id", "class_id", "learner_id")}
         filters = {**(filters or {}), VIEWER: viewer}      # public course docs, this class's material, own uploads
-        question = str(inputs["question"])
-        expansion = self.glossary.expand(question) if self.glossary else None   # deterministic, no LLM
-        if expansion:
-            run.emit("expanding_query", {"glossary": list(expansion.terms)})
-            run.glossary = list(expansion.terms)
-        for lang_filter in language_plan(tctx.language):
-            hits = await self.retriever.search(question, self.settings.rag_top_k,
-                                               {**(filters or {}), **(lang_filter or {})} or None, expansion)
-            if hits:
-                return hits
+        limit = self.settings.retrieval_query_chars
+        passage, board = str(inputs.get("passage") or "").strip(), str(inputs.get("board_text") or "").strip()
+        queries = [(n, q) for n, q in (("passage", passage[:limit]), ("question", str(inputs["question"])),
+                                       ("board_text", board[:limit])) if q.strip()]
+        for source, query in queries:
+            expansion = self.glossary.expand(query) if self.glossary else None   # deterministic, no LLM
+            if expansion:
+                run.emit("expanding_query", {"glossary": list(expansion.terms)})
+                run.glossary = list(expansion.terms)
+            for lang_filter in language_plan(tctx.language):
+                hits = await self.retriever.search(query, self.settings.rag_top_k,
+                                                   {**(filters or {}), **(lang_filter or {})} or None, expansion)
+                if hits:
+                    run.retrieval_on = source
+                    return hits
         return []
 
     async def _ground(self, spec: TaskSpec, prompt, inputs, tctx, hits: list[Hit], prio: Priority,
@@ -825,6 +868,8 @@ class Engine:
                                                for h in hits]}
         if run.glossary:
             notes["glossary"] = run.glossary
+        if run.retrieval_on and run.retrieval_on != "question" and ("passage" in inputs or "board_text" in inputs):
+            notes["retrieval_on"] = run.retrieval_on
         if not asm.all_chunks_fit:
             over = [d["id"] for d in asm.dropped if d["kind"] == "chunk"]
             run.emit("compressing", {"chunks": len(chunks), "over_budget": over})

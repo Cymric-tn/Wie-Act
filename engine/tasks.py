@@ -69,6 +69,9 @@ class TaskSpec:
     partial_result: bool = True              # emit the course excerpts while generating (explain only)
     not_found_data: Callable[[PromptTemplate, Mapping, TaskContext], dict] | None = None   # JSON "nothing in the course"
     safe_default_reason: str | None = None   # degrade_reason when the JSON could not be obtained (safe default used)
+    # inputs that share the prompt budget: name -> Settings attribute holding the share (e.g. {"board_text": ...}).
+    # engine.run trims each to its share (events: trimming_input) and puts a hash of the FULL original in the cache key.
+    budgeted_inputs: Mapping[str, str] = field(default_factory=dict)
     needs_index: bool = False                # the shortcut reads the retriever's chunks: load the index first
     # the task reads an image: engine.run prepares inputs["image"] (resize, hash) into ctx.extra["image"]
     vision: bool = False
@@ -475,8 +478,12 @@ def _explain_render(p: PromptTemplate, inputs: Mapping, ctx: TaskContext, chunks
                                                    language_rule=p.sections[f"lang.{lang}"], terms_rule=terms)}]
     msgs += [{"role": "assistant" if t.get("role") == "assistant" else "user", "content": str(t.get("content", ""))}
              for t in history]
-    msgs.append({"role": "user", "content": p.render("user", material=_material(chunks),
-                                                     question=str(inputs["question"]).strip())})
+    question = str(inputs["question"]).strip()
+    if str(inputs.get("passage") or "").strip():
+        question += "\n\n" + p.render("passage", text=str(inputs["passage"]).strip())
+    if str(inputs.get("board_text") or "").strip():
+        question += "\n\n" + p.render("board", text=str(inputs["board_text"]).strip())
+    msgs.append({"role": "user", "content": p.render("user", material=_material(chunks), question=question)})
     return msgs
 
 
@@ -547,7 +554,7 @@ EXPLAIN = TaskSpec(
     name="explain", prompt="explain", max_tokens=350, temperature=0.3, required_inputs=("question",),
     prepare=_explain_prepare, grounded=True, render_grounded=_explain_render, finalize_text=_explain_finalize,
     fallback_text=_explain_unavailable, not_found_text=_explain_not_found, decorate=_explain_decorate,
-    check_grounding=True)
+    check_grounding=True, budgeted_inputs={"passage": "passage_budget_share", "board_text": "board_budget_share"})
 
 
 # ====================================================================== quiz (exercise bank, no LLM)

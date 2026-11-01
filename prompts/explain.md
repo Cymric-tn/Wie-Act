@@ -16,6 +16,15 @@ $material
 
 Question: $question
 
+## passage
+The student selected this passage on their study page and says it confuses them. Explain it using the course material:
+"$text"
+
+## board
+The student asks about what is on their whiteboard (their own notes and steps, they may contain mistakes). The text of the
+whiteboard is:
+"$text"
+
 ## fast_system
 Write ONE short sentence (max 20 words) that introduces course excerpts answering the student's question,
 for example "Here are the parts of the course about ...". Do not explain anything yourself. $language_rule
