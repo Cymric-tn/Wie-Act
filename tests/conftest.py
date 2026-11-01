@@ -2,7 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+import atexit
+import itertools
 import json
+import os
+import shutil
+import tempfile
 from collections import deque
 
 import httpx
@@ -26,8 +31,18 @@ BASE_ENV = {
 }
 
 
+# Runtime course material (Engine.add_material / ingest_file) is persisted per course. Every settings object a test
+# builds gets a directory of its own under one temp root (removed at exit): no test may write into data/index/courses,
+# where the next engine would load it and change every retrieval statistic.
+_COURSES_ROOT = tempfile.mkdtemp(prefix="ednova-courses-")
+_COURSES_SEQ = itertools.count()
+atexit.register(shutil.rmtree, _COURSES_ROOT, True)
+
+
 def make_settings(**overrides):
-    return load_settings({**BASE_ENV, **{k: str(v) for k, v in overrides.items()}})
+    env = {**BASE_ENV, "RAG_COURSE_INDEX_DIR": os.path.join(_COURSES_ROOT, str(next(_COURSES_SEQ))),
+           **{k: str(v) for k, v in overrides.items()}}
+    return load_settings(env)
 
 
 class VirtualTime:

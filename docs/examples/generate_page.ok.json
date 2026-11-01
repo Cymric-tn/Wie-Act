@@ -1,0 +1,55 @@
+{
+  "_source": "real",
+  "concept_id": "puissance",
+  "page_kind": "learn",
+  "title": "Dérivée d'une puissance",
+  "language": "FRENCH",
+  "explanation": "Voici l'essentiel du cours sur ce point.\n\nLa dérivée d'une puissance s'obtient en multipliant par l'exposant puis en baissant l'exposant de 1.",
+  "explanation_sections": {
+    "body": "La dérivée d'une puissance s'obtient en multipliant par l'exposant puis en baissant l'exposant de 1.",
+    "opener": "Voici l'essentiel du cours sur ce point."
+  },
+  "explain_request_id": "a1b2c3d4e5f6",
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "worked_example": {
+    "source": "bank",
+    "exercise_id": "d01",
+    "statement": "Calculer la dérivée de f(x) = x⁴.",
+    "steps": [
+      "Quelle règle donne la dérivée de xⁿ ?",
+      "(xⁿ)' = n·xⁿ⁻¹ : ici, que vaut n ?",
+      "Multiplie par l'exposant, puis baisse l'exposant de 1."
+    ],
+    "solution": "f'(x) = 4x³"
+  },
+  "quiz": [
+    {
+      "id": "d10",
+      "concept": "nombre dérivé",
+      "level": 1,
+      "statement": "Soit f(x) = x². Calculer f'(3).",
+      "expression": "x²",
+      "source": "bank"
+    },
+    {
+      "id": "d11",
+      "concept": "nombre dérivé",
+      "level": 2,
+      "statement": "Soit f(x) = x³ − 2x. Calculer f'(1).",
+      "expression": "x³ − 2x",
+      "source": "bank"
+    },
+    {
+      "id": "d01~v1",
+      "concept": "puissance",
+      "level": 1,
+      "statement": "Dérive f(x) = 2x⁴.",
+      "expression": "2x⁴",
+      "source": "variant",
+      "solution": "f'(x) = 8x³"
+    }
+  ]
+}

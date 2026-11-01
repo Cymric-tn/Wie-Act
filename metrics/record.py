@@ -6,15 +6,31 @@ tokens in/out, repeated identical requests (request_hash), refusals and how they
 from __future__ import annotations
 
 import time
+from contextvars import ContextVar
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+
+# Identity of the caller of the current engine.run (ids only, never names). engine.run sets it; every record
+# created under that call (also in tasks it spawns: asyncio copies the context) picks it up as a default, so no
+# call site has to pass it. Ids are not part of any cache key.
+IDENTITY_KEYS = ("learner_id", "room_id", "course_id", "class_id")
+identity: ContextVar[dict] = ContextVar("ednova_identity", default={})
+
+
+def _id(key: str):
+    return lambda: identity.get().get(key)
 
 
 class CallRecord(BaseModel):
     ts: float = Field(default_factory=time.time)
     request_id: str                       # one logical engine call; shared by its retries
     turn_id: str | None = None            # one learner turn (context["turn_id"]), for requests-per-turn
+    learner_id: str | None = Field(default_factory=_id("learner_id"))
+    room_id: str | None = Field(default_factory=_id("room_id"))
+    course_id: str | None = Field(default_factory=_id("course_id"))
+    class_id: str | None = Field(default_factory=_id("class_id"))
     attempt: int = 1
     kind: Literal["chat", "embed", "route", "run", "breaker"] = "chat"
     # route = router decision, run = one engine.run, breaker = circuit-breaker state change

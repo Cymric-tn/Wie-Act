@@ -13,6 +13,14 @@ v1.2: the dispatcher grants the best ELIGIBLE waiter. A request of a model class
 cap (MIDSIZE_MAX_SLOTS, ghosts included) is not eligible, so compact work behind a hung mid-size request is
 never blocked; and a waiter whose class breaker opens meanwhile is failed at once (ClassUnavailable, nothing
 is sent) instead of waiting for a slot it should not use.
+
+v1.3 fairness: a learner (ctx.owner = learner_id) has at most one INTERACTIVE request WAITING in the chat queue.
+A newer one replaces the older, which is failed at once with Superseded (nothing sent; the engine answers it
+degraded "superseded"). A request that already holds a slot is never touched. BACKGROUND work is not limited.
+
+v1.3 background reserve: a BACKGROUND chat request is not granted while fewer than BACKGROUND_RESERVE sends remain
+in the rate window (it waits for entries to expire, "waiting_reserve" event once), so a prep plan or an ingest can
+never use up the window a learner is about to need. Interactive requests ignore the reserve.
 """
 from __future__ import annotations
 
@@ -24,7 +32,7 @@ from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any
 
-from gatekeeper.errors import ClassUnavailable
+from gatekeeper.errors import ClassUnavailable, Superseded
 from gatekeeper.limiter import Clock, Kind, Limiter, SlotInfo
 
 
@@ -44,11 +52,13 @@ def rank(p: Priority | str | None) -> int:
 
 
 class PriorityQueue:
-    def __init__(self, limiter: Limiter, clock: Clock = time.monotonic, initial_hold_s: float = 4.0):
+    def __init__(self, limiter: Limiter, clock: Clock = time.monotonic, initial_hold_s: float = 4.0,
+                 background_reserve: int = 0):
         self.limiter = limiter
+        self.background_reserve = background_reserve
         self._clock = clock
         self._seq = itertools.count()
-        # entries: (rank, seq, future, model_class | None, unavailable() -> seconds | None)
+        # entries: (rank, seq, future, model_class | None, unavailable() -> seconds | None, owner | None, ctx | None)
         self._heaps: dict[str, list[tuple]] = {"chat": [], "embed": []}
         self._wake: dict[str, asyncio.Event] = {}
         self._tasks: dict[str, asyncio.Task] = {}
@@ -99,10 +109,16 @@ class PriorityQueue:
             if ctx is not None:
                 ctx.queue_seq = seq
         fut: asyncio.Future = asyncio.get_running_loop().create_future()
-        entry = (rank(priority), seq, fut, model_class, unavailable)
+        owner = getattr(ctx, "owner", None)
+        entry = (rank(priority), seq, fut, model_class, unavailable, owner, ctx)
         if (err := self._down(entry)) is not None:
             raise err
         heap = self._heaps[kind]
+        if owner and kind == "chat" and entry[0] == _RANK[Priority.INTERACTIVE]:
+            for old in heap:
+                if old[5] == owner and old[0] == entry[0] and not old[2].done():
+                    old[2].set_exception(Superseded(message=f"replaced by a newer request of {owner}"))
+            self._prune(heap)
         ahead = sum(1 for e in heap if e[:2] < entry[:2] and not e[2].done())
         heapq.heappush(heap, entry)
         if ctx is not None:
@@ -135,15 +151,42 @@ class PriorityQueue:
         while heap and heap[0][2].done():
             heapq.heappop(heap)
 
-    def _best_eligible(self, heap) -> tuple | None:
+    def _reserve_blocks(self, kind: str, taken: int = 0) -> bool:
+        """Fewer than background_reserve sends remain in the window? `taken` = tokens already taken for the pick."""
+        if kind != "chat" or self.background_reserve <= 0:
+            return False
+        limit = self.limiter.buckets["chat"].limit
+        return self.limiter.buckets["chat"].tokens + taken < min(self.background_reserve, limit - 1)
+
+    def _reserve_wait(self, kind: str) -> float | None:
+        """Seconds until the window has background_reserve free sends again (None = not blocked)."""
+        if not self._reserve_blocks(kind):
+            return None
+        b = self.limiter.buckets["chat"]
+        return b.wait_time(min(self.background_reserve, b.limit - 1)) or None
+
+    def _best_eligible(self, heap, kind: str = "chat", taken: int = 0) -> tuple | None:
         self.limiter.reap()
-        ok = [e for e in heap if not e[2].done() and (e[3] is None or self.limiter.class_free(e[3]))]
+        held = self._reserve_blocks(kind, taken)
+        ok = [e for e in heap if not e[2].done() and (e[3] is None or self.limiter.class_free(e[3]))
+              and not (held and e[0] >= _RANK[Priority.BACKGROUND])]
+        if held:
+            for e in heap:
+                if not e[2].done() and e[0] >= _RANK[Priority.BACKGROUND] and e[6] is not None \
+                        and not getattr(e[6], "_reserve_noted", False):
+                    e[6]._reserve_noted = True
+                    free = int(self.limiter.buckets["chat"].tokens) + taken
+                    e[6].emit("waiting_reserve", remaining=free, reserve=self.background_reserve,
+                              eta_s=round(self._reserve_wait(kind) or 0.0, 1))
         return min(ok, key=lambda e: e[:2]) if ok else None
 
-    async def _idle(self, heap, wake: asyncio.Event) -> None:
-        """Nothing can be granted: wait for a change (slot freed, new waiter, breaker) or the next ghost expiry."""
+    async def _idle(self, heap, wake: asyncio.Event, kind: str = "chat") -> None:
+        """Nothing can be granted: wait for a change (slot freed, new waiter, breaker), the next ghost expiry or
+        the end of a background-reserve hold."""
         wake.clear()
         exp = self.limiter.next_ghost_expiry() if heap else None
+        if heap and (rw := self._reserve_wait(kind)) is not None:
+            exp = rw if exp is None else min(exp, rw)
         if exp is None:
             await wake.wait()
             return
@@ -160,12 +203,12 @@ class PriorityQueue:
         heap, wake = self._heaps[kind], self._wake[kind]
         while True:
             self._fail_unavailable(heap)
-            if self._best_eligible(heap) is None:
-                await self._idle(heap, wake)
+            if self._best_eligible(heap, kind) is None:
+                await self._idle(heap, wake, kind)
                 continue
             info = await self.limiter.acquire(kind)
             self._fail_unavailable(heap)             # the waiting may have taken a while: choose NOW
-            pick = self._best_eligible(heap)
+            pick = self._best_eligible(heap, kind, taken=1)     # the acquire above already took a token
             if pick is None:
                 self.limiter.release(refund=kind)
                 continue

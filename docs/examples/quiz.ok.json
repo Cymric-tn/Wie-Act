@@ -1,0 +1,46 @@
+{
+  "_source": "real",
+  "task": "quiz",
+  "request_id": "a1b2c3d4e5f6",
+  "text": "Voici un exercice pour t'entraîner :\n\nCalculer la dérivée de f(x) = x⁴.",
+  "data": {
+    "exercises": [
+      {
+        "id": "d01",
+        "concept": "puissance",
+        "level": 1,
+        "statement": "Calculer la dérivée de f(x) = x⁴.",
+        "expression": "x⁴"
+      }
+    ],
+    "requested_concepts": [
+      "puissance"
+    ],
+    "diagnostic": false,
+    "intro": "Voici un exercice pour t'entraîner :"
+  },
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "picking_exercise",
+      "t_ms": 0.0,
+      "data": {}
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": "table: quiz -> compact",
+  "repaired": false,
+  "safe_default": false,
+  "mode": "bank",
+  "followup_available": false,
+  "notes": {
+    "source": "bank"
+  }
+}

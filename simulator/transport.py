@@ -96,6 +96,13 @@ class ConstraintSimulator(httpx.AsyncBaseTransport):
         return httpx.Response(status, json={"error": {"message": msg, "type": etype, "code": str(status)}},
                               headers=headers or {}, request=request)
 
+    def _content_chars(self, content) -> float:
+        """Prompt size in characters-equivalent: text as is, an image as the tokens the provider would count."""
+        if isinstance(content, list):
+            return sum(len(str(p.get("text") or "")) if p.get("type") == "text" else self.cfg.vision_image_tokens * 2.5
+                       for p in content if isinstance(p, dict))
+        return len(str(content or ""))
+
     def _forced(self, what: str) -> bool:
         return self.force == what
 
@@ -134,7 +141,7 @@ class ConstraintSimulator(httpx.AsyncBaseTransport):
             return self._refuse(request, 400, "ceiling_exceeded",
                                 f"max_tokens {mt} exceeds ceiling {self.cfg.max_tokens_ceiling}")
         # the provider counts with its real tokenizer: ~2.5 chars/token on average (measured on data/docs)
-        prompt_tokens = int(sum(len(str(m.get("content", ""))) for m in body.get("messages", [])) / 2.5)
+        prompt_tokens = int(sum(self._content_chars(m.get("content")) for m in body.get("messages", [])) / 2.5)
         if prompt_tokens > self.cfg.prompt_tokens_ceiling:
             return self._refuse(request, 400, "ceiling_exceeded",
                                 f"prompt is {prompt_tokens} tokens, exceeds ceiling "
@@ -170,7 +177,8 @@ class ConstraintSimulator(httpx.AsyncBaseTransport):
         self.midsize_in_flight += is_mid
         self.stats.max_in_flight = max(self.stats.max_in_flight, self.in_flight)
         try:
-            lo, hi = self.cfg.latency_midsize_s if is_mid else self.cfg.latency_compact_s
+            lo, hi = (self.cfg.latency_midsize_s if is_mid else self.cfg.latency_vision_s
+                      if cls is ModelClass.VISION else self.cfg.latency_compact_s)
             delay = self.cfg.latency_scale * self.rng.uniform(lo, hi)
             resp, _ = await asyncio.gather(self._forward(request), self._sleep(delay))
         finally:

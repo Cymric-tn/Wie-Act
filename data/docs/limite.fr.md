@@ -1,5 +1,7 @@
 ---
 topic: derivative
+course: analyse
+unit: derivees
 level: beginner
 language: FRENCH
 title: La limite, la notion derrière la dérivée
