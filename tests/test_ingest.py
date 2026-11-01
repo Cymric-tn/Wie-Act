@@ -165,6 +165,7 @@ def test_a_fully_scanned_pdf_has_no_chunks_and_says_so(tmp_path, fake_fitz):
 
 def test_pdf_without_pymupdf_says_how_to_install_it(tmp_path, monkeypatch):
     monkeypatch.setitem(sys.modules, "fitz", None)
+    monkeypatch.setitem(sys.modules, "pymupdf", None)
     f = tmp_path / "x.pdf"
     f.write_bytes(b"%PDF")
     with pytest.raises(IngestError, match="pip install pymupdf"):
@@ -214,3 +215,30 @@ async def test_ingested_professor_chunks_are_found_by_their_class_only_and_boost
     assert hits[0].chunk.origin == "professor"                      # boosted above the official docs
     stranger = await r.search(q, 3, {VIEWER: {"course_id": "analyse", "class_id": "C2"}})
     assert all(h.chunk.origin == "course" for h in stranger) and stranger
+
+
+# ---------------------------------------------------------------- a real PDF (PyMuPDF installed: skipped otherwise)
+def test_a_real_three_page_pdf_with_one_image_only_page(tmp_path):
+    import io
+
+    pymupdf = pytest.importorskip("pymupdf")
+    from PIL import Image, ImageDraw
+
+    doc = pymupdf.open()
+    for title, body in (("1. La tangente et le nombre derive", TANGENTE), ("2. Derivee d'un produit", PRODUIT)):
+        pg = doc.new_page()
+        pg.insert_text((72, 90), title, fontsize=18, fontname="hebo")
+        pg.insert_textbox(pymupdf.Rect(72, 120, 520, 700), body, fontsize=11, fontname="helv")
+    img = Image.new("RGB", (1200, 700), "white")
+    ImageDraw.Draw(img).text((60, 60), "3. Derivee d'un quotient", fill="black")
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    doc.new_page().insert_image(pymupdf.Rect(36, 36, 560, 340), stream=buf.getvalue())
+    path = tmp_path / "cours.pdf"
+    doc.save(str(path))
+    res = ingest(str(path), "analyse", "derivees", "prof-7", "class", "professor", class_id="C1")
+    assert res.pages == 3 and res.needs_ocr == [3]                      # the picture page is flagged, not guessed
+    assert [c.page for c in res.chunks] == [1, 2] and all(c.course_id == "analyse" for c in res.chunks)
+    assert [c.chunk_id.split("#")[1] for c in res.chunks] == ["1-la-tangente-et-le-nombre-derive", "2-derivee-d-un-produit"]
+    png = res.render_page(3)                                            # the real renderer gives a PNG for the OCR
+    assert png[:8] == b"\x89PNG\r\n\x1a\n" and Image.open(io.BytesIO(png)).width > 500
