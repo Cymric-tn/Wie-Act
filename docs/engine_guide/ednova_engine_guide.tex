@@ -155,7 +155,7 @@ own project, and explains how every part works so you can customize or improve i
 \begin{tabularx}{\linewidth}{@{}lX@{}}
 Interface & one async call: \texttt{await engine.run(task, inputs, context, priority)} → \texttt{Result}\\
 Tasks & classify · hint · explain (RAG) · grade · quiz · compress (+ your own)\\
-Model classes & \textit{compact} (default for everything) and \textit{mid-size} (explain only)\\
+Model classes & \textit{compact} (default for everything) and \textit{mid-size} (explain only) (superseded in v1.3: three classes, with \textit{vision} for \texttt{ocr\_transcribe}; see section ``What is new in v1.3)\\
 Guarantee & never raises a provider error: every failure comes back as a degraded \texttt{Result} with a reason\\
 Platform & any OpenAI-compatible API (FelCloud, Ollama); switching = editing \texttt{.env}\\
 Tests & 768 unit + 5 integration (the integration tests were not run for v1.2 and v1.3: Ollama stays off)\\
@@ -774,7 +774,7 @@ FelCloud is a LiteLLM proxy behind Caddy (server timeout 90 s → client timeout
 arrived as \textbf{429 \texttt{all\_deployments\_in\_cooldown}} with \texttt{Retry-After: 5}, not the annex's
 503, so both are mapped to \texttt{ModelSaturated}. There was \textbf{no 400 for long prompts}: input was
 \textbf{silently truncated near 2048 tokens}. The client therefore enforces its own input budget
-(\texttt{INPUT\_TOKEN\_BUDGET}=1800 then) and trims \emph{before} sending.
+(\texttt{INPUT\_TOKEN\_BUDGET}=1800 then) and trims \emph{before} sending. (superseded in v1.1: truncation starts near 4096 tokens, not 2048, and the budget is now 2800; see ``Measured behaviour)
 \end{note}
 
 \begin{note}[Updated by the probes of 26 Oct (engine v1.1)]
@@ -886,7 +886,7 @@ half-open.
   \node[sbox, right=of g, minimum width=2.4cm] (b) {BM25 per\\language plan};
   \node[sbox, right=of b, minimum width=2.3cm] (c) {coverage\\gate ≥ 0.4};
   \node[tbox, right=of c, minimum width=1.6cm] (k) {top 2\\chunks};
-  \node[sbox, below=0.9cm of b, minimum width=4.6cm] (bud) {budget assembly (≤ 1620 est. tokens)\\system + question → chunks → history};
+  \node[sbox, below=0.9cm of b, minimum width=4.6cm] (bud) {budget assembly (≤ 2520 est. tokens (was 1620 in v1))\\system + question → chunks → history};
   \node[sbox, left=0.7cm of bud, minimum width=3.4cm] (cmp) {extractive compress\\only if chunks don't fit};
   \node[box, right=0.7cm of bud, minimum width=2.6cm] (m) {mid-size\\prompt};
   \draw[arr] (q) -- (t); \draw[arr] (t) -- (g); \draw[arr] (g) -- (b); \draw[arr] (b) -- (c); \draw[arr] (c) -- (k);
@@ -917,7 +917,7 @@ half-open.
   \item[Language plan] DARIJA/ARABIZI → French chunks; ARABIC → Arabic, else French; ENGLISH →
   English, else French; FRENCH → all.
   \item[Budget] prompts are assembled within \texttt{INPUT\_TOKEN\_BUDGET × (1 − 0.1)} = 1620 estimated
-  tokens; history is dropped oldest-first without gaps; everything dropped is listed in \texttt{notes.dropped}.
+  tokens; history is dropped oldest-first without gaps; everything dropped is listed in \texttt{notes.dropped}. (superseded in v1.1: \texttt{INPUT\_TOKEN\_BUDGET} is 2800, so 2520 estimated tokens; the 1620 above is the v1 figure.)
 \end{description}
 
 \begin{idea}[Swap the retriever]

@@ -176,7 +176,7 @@ provider supports it, keep prompts short, give one example.
 
 Wraps the client when `SIMULATE_CONSTRAINTS=true`. Configurable via env:
 - extra latency per class (compact ~2–6 s, mid-size ~8–30 s)
-- token bucket quota (the provider's own; the engine's limiter is a sliding window) → quota-exhausted error with a delay
+- token bucket quota (the provider's own; the engine's limiter is a sliding window) → quota-exhausted error with a delay (superseded in v1.1: the engine's own limiter is a sliding window, 20 sends in any 60 s; the bucket exists only in the simulator, see `DECISIONS.md` "Engine v1.1")
 - random 503 + Retry-After on mid-size (e.g. 15%)
 - 400 when `max_tokens` or prompt length exceeds a configured ceiling
 - quota headers on success

@@ -77,7 +77,7 @@ Tests: 592 → 762, then 768 after the fixes below.
 
 ### Simulated mixed load (virtual time, constraint simulator, canned model replies)
 
-`reports/load-mixed-virtual-v13.md` (cache on) and `reports/load-mixed-virtual-nocache-v13.md` (cache off, the harsher mix). 3 learners, 1 room
+Both runs use seed 1: `reports/load-mixed-virtual-v13.{md,json}` (cache on) and `reports/load-mixed-virtual-nocache-v13.{md,json}` (cache off, the harsher mix); the same files are cited in `DECISIONS.md` (Engine v1.3). 3 learners, 1 room
 (check_claim, check_answer, ocr_transcribe in turn), 1 prep plan generating pages at BACKGROUND, 240 s, FelCloud-like latencies
 (compact 2–5 s, mid-size 8–15 s, vision 10–18 s), 20/min, 2 in flight, random mid-size saturation. It tests the engine's
 **scheduling**, not the models, and not FelCloud.
