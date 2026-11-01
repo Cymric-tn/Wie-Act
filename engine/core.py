@@ -45,7 +45,7 @@ TEMPLATE_ONLY_LANGUAGES = {"DARIJA", "ARABIZI"}     # one-liners in these come f
 from gatekeeper.cache import ExactCache, cache_key
 from gatekeeper.client import ChatRequest, EmbedRequest, LLMClient, create_client
 from gatekeeper.errors import (DEFAULT_RETRY_AFTER_S, CeilingExceeded, ClassUnavailable, ConcurrencyLimited, FatalError, LLMError,
-                               ModelSaturated, QuotaExhausted, TransientError)
+                               ModelSaturated, QuotaExhausted, Superseded, TransientError)
 from gatekeeper.limiter import Limiter
 from gatekeeper.queue import Priority, PriorityQueue
 from gatekeeper.retry import CallContext, ChatResult, RetryingCaller, RetryPolicy
@@ -65,6 +65,7 @@ _UNAVAILABLE: list[tuple[type[LLMError], str, bool]] = [
     (QuotaExhausted, "quota_exhausted", True),
     (TransientError, "service_unavailable", True),
     (ClassUnavailable, "service_unavailable", True),
+    (Superseded, "superseded", False),
     (CeilingExceeded, "request_too_large", False),
     (FatalError, "provider_error", False),
 ]
@@ -156,6 +157,8 @@ class Engine:
         self._indexed = retriever is not None and bool(getattr(retriever, "chunks", None))
         self._index_lock = asyncio.Lock()
         self._inflight: dict[str, asyncio.Event] = {}     # cache key -> done, for identical concurrent requests
+        self._rooms: dict[str, float] = {}                # room_id -> loop time its in-flight run started
+        self._room_ewma_s = 8.0                           # typical duration of a room's run (for room_busy eta)
         self._probes: set[asyncio.Task] = set()           # half-open breaker probes in flight
         self._background: set[asyncio.Task] = set()       # generations that outlived the interactive deadline
         self.prompts: dict[str, PromptTemplate] = {
@@ -217,9 +220,21 @@ class Engine:
         run = _Run(self._clock, on_event)
         ctx = CallContext(task=task, priority=prio.value, on_event=run.emit, turn_id=tctx.extra.get("turn_id"))
         self._maybe_probe()
+        room = str(context["room_id"]) if context and context.get("room_id") is not None else None
+        if room is not None:
+            now = asyncio.get_running_loop().time()
+            if room in self._rooms:       # one AI request in flight per room: say so, with when to come back
+                eta = round(max(1.0, self._room_ewma_s - (now - self._rooms[room])), 1)
+                run.degrade("room_busy", terminal=True)
+                run.emit("room_busy", {"room_id": room, "eta_s": eta})
+                return self._finish(run, ctx, eta=eta, route_reason="room_busy", notes={"room_id": room})
+            self._rooms[room] = now
         try:
             return await self._execute(spec, inputs, tctx, prio, run, ctx)
         finally:
+            if room is not None:
+                took = asyncio.get_running_loop().time() - self._rooms.pop(room)
+                self._room_ewma_s = 0.7 * self._room_ewma_s + 0.3 * took
             if run.decision is not None:     # a half-open probe that never reached mid-size frees its slot
                 self.router.release_probe(run.decision)
 
@@ -318,7 +333,8 @@ class Engine:
         bg.t0, bg.started = run.t0, run.started
         bg.glossary = list(run.glossary)         # state the retrieval already put on the learner's run
         bg_ctx = CallContext(request_id=ctx.request_id, task=ctx.task, priority=ctx.priority, purpose=ctx.purpose,
-                             on_event=bg.emit, queue_seq=ctx.queue_seq, turn_id=ctx.turn_id)
+                             on_event=bg.emit, queue_seq=ctx.queue_seq, turn_id=ctx.turn_id,
+                             owner=None)       # the learner was answered: a newer question must not kill this fill
         d = replace(decision, reason=decision.reason + "; completes after the learner's deadline")
         bg.decision = d
         task = loop.create_task(self._produce(spec, prompt, inputs, tctx, prio, bg, bg_ctx, d, hits, key, messages))

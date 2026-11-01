@@ -13,6 +13,10 @@ v1.2: the dispatcher grants the best ELIGIBLE waiter. A request of a model class
 cap (MIDSIZE_MAX_SLOTS, ghosts included) is not eligible, so compact work behind a hung mid-size request is
 never blocked; and a waiter whose class breaker opens meanwhile is failed at once (ClassUnavailable, nothing
 is sent) instead of waiting for a slot it should not use.
+
+v1.3 fairness: a learner (ctx.owner = learner_id) has at most one INTERACTIVE request WAITING in the chat queue.
+A newer one replaces the older, which is failed at once with Superseded (nothing sent; the engine answers it
+degraded "superseded"). A request that already holds a slot is never touched. BACKGROUND work is not limited.
 """
 from __future__ import annotations
 
@@ -24,7 +28,7 @@ from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any
 
-from gatekeeper.errors import ClassUnavailable
+from gatekeeper.errors import ClassUnavailable, Superseded
 from gatekeeper.limiter import Clock, Kind, Limiter, SlotInfo
 
 
@@ -48,7 +52,7 @@ class PriorityQueue:
         self.limiter = limiter
         self._clock = clock
         self._seq = itertools.count()
-        # entries: (rank, seq, future, model_class | None, unavailable() -> seconds | None)
+        # entries: (rank, seq, future, model_class | None, unavailable() -> seconds | None, owner | None)
         self._heaps: dict[str, list[tuple]] = {"chat": [], "embed": []}
         self._wake: dict[str, asyncio.Event] = {}
         self._tasks: dict[str, asyncio.Task] = {}
@@ -99,10 +103,16 @@ class PriorityQueue:
             if ctx is not None:
                 ctx.queue_seq = seq
         fut: asyncio.Future = asyncio.get_running_loop().create_future()
-        entry = (rank(priority), seq, fut, model_class, unavailable)
+        owner = getattr(ctx, "owner", None)
+        entry = (rank(priority), seq, fut, model_class, unavailable, owner)
         if (err := self._down(entry)) is not None:
             raise err
         heap = self._heaps[kind]
+        if owner and kind == "chat" and entry[0] == _RANK[Priority.INTERACTIVE]:
+            for old in heap:
+                if old[5] == owner and old[0] == entry[0] and not old[2].done():
+                    old[2].set_exception(Superseded(message=f"replaced by a newer request of {owner}"))
+            self._prune(heap)
         ahead = sum(1 for e in heap if e[:2] < entry[:2] and not e[2].done())
         heapq.heappush(heap, entry)
         if ctx is not None:
