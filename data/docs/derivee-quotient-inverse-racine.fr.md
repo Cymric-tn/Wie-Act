@@ -1,5 +1,7 @@
 ---
 topic: derivative
+course: analyse
+unit: derivees
 level: beginner
 language: FRENCH
 title: Dérivées du quotient, de l'inverse et de la racine carrée

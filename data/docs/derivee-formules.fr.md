@@ -1,5 +1,7 @@
 ---
 topic: derivative
+course: analyse
+unit: derivees
 level: beginner
 language: FRENCH
 title: Formules de dérivation

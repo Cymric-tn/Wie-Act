@@ -27,6 +27,25 @@ _AR = re.compile("[\u0600-\u06FF]")
 
 Filters = Mapping[str, Any] | None
 
+# The filter key that carries who is asking: {"course_id", "class_id", "learner_id"} (each may be None).
+VIEWER = "visible_to"
+
+
+def visible(c: Chunk, viewer: Mapping[str, Any] | None) -> bool:
+    """May this viewer see the chunk?
+      public   everybody in the course (a legacy chunk with no course_id is in every course);
+      class    only a viewer of that class_id;
+      private  only the learner who uploaded it.
+    A viewer without an id never sees class / private material: leaking is worse than missing."""
+    viewer = viewer or {}
+    if c.course_id and viewer.get("course_id") and c.course_id != viewer["course_id"]:
+        return False
+    if c.visibility == "class":
+        return bool(c.class_id) and viewer.get("class_id") == c.class_id
+    if c.visibility == "private":
+        return bool(c.owner) and viewer.get("learner_id") == c.owner
+    return True
+
 
 @dataclass(frozen=True)
 class Hit:
@@ -43,8 +62,11 @@ class Retriever(Protocol):
 
 
 def _match(c: Chunk, filters: Filters) -> bool:
+    # the visibility rule always applies, also when the caller passes no viewer (then only public chunks pass)
+    if not visible(c, (filters or {}).get(VIEWER)):
+        return False
     for key, want in (filters or {}).items():
-        if want is None:
+        if want is None or key == VIEWER:
             continue
         have = getattr(c, key, None)
         if isinstance(want, (list, tuple, set, frozenset)):
@@ -56,8 +78,10 @@ def _match(c: Chunk, filters: Filters) -> bool:
 
 
 class BM25Retriever:
-    def __init__(self, min_coverage: float = 0.0, k1: float = 1.5, b: float = 0.75, glossary_weight: float = 0.5):
+    def __init__(self, min_coverage: float = 0.0, k1: float = 1.5, b: float = 0.75, glossary_weight: float = 0.5,
+                 professor_boost: float = 1.0):
         self.min_coverage, self.k1, self.b, self.glossary_weight = min_coverage, k1, b, glossary_weight
+        self.professor_boost = professor_boost       # SOURCE_BOOST_PROFESSOR: score factor of origin="professor"
         self.chunks: list[Chunk] = []
         self._tf: list[Counter] = []
         self._len: list[int] = []
@@ -67,6 +91,27 @@ class BM25Retriever:
 
     async def index(self, chunks: Sequence[Chunk]) -> None:
         self.chunks = list(chunks)
+        self._rebuild()
+
+    # ---- runtime changes: the statistics are recomputed from the chunks (cheap at course scale)
+    def add(self, chunks: Sequence[Chunk]) -> int:
+        """Add chunks (a chunk with an existing id replaces the old one). Returns how many were added or replaced."""
+        new = {c.chunk_id: c for c in chunks}
+        self.chunks = [new.pop(c.chunk_id, c) for c in self.chunks] + list(new.values())
+        self._rebuild()
+        return len(chunks)
+
+    def remove(self, chunk_ids: Sequence[str] = (), *, where: Callable[[Chunk], bool] | None = None) -> list[Chunk]:
+        """Remove chunks by id and/or predicate; returns the removed chunks."""
+        ids = set(chunk_ids)
+        gone = [c for c in self.chunks if c.chunk_id in ids or (where is not None and where(c))]
+        if gone:
+            drop = {c.chunk_id for c in gone}
+            self.chunks = [c for c in self.chunks if c.chunk_id not in drop]
+            self._rebuild()
+        return gone
+
+    def _rebuild(self) -> None:
         docs = [tokenize(c.text) for c in self.chunks]
         self._tf = [Counter(d) for d in docs]
         self._scripts = [{_script(t) for t in d} for d in docs]
@@ -78,6 +123,7 @@ class BM25Retriever:
         # a query word absent from the corpus ("python") weighs like a TYPICAL corpus word (median idf),
         # not the rarest one: measured, this keeps on-topic >= 0.49 and off-topic <= 0.28 coverage
         self._unseen_idf = statistics.median(self._idf.values()) if self._idf else 1.0
+        self._boost = [self.professor_boost if c.origin == "professor" else 1.0 for c in self.chunks]
 
     def weights(self, query: str, expansion: Expansion | None = None) -> dict[str, float]:
         """Question terms weigh 1; course terms added by the glossary GLOSSARY_WEIGHT (unless also asked)."""
@@ -125,10 +171,12 @@ class BM25Retriever:
         if not q:
             return []
         units = self.units(query, expansion)
-        hits = [Hit(c, round(self.score(q, i), 3), round(self.coverage(units, i, bool(expansion)), 3))
+        # the professor boost scales the score; it is applied before the coverage gate and does not touch coverage, so
+        # boosting can reorder relevant chunks but never lets an off-topic one through
+        hits = [Hit(c, round(self.score(q, i) * self._boost[i], 3), round(self.coverage(units, i, bool(expansion)), 3))
                 for i, c in enumerate(self.chunks) if _match(c, filters)]
         hits = [h for h in hits if h.score > 0 and h.coverage >= self.min_coverage]
-        return sorted(hits, key=lambda h: (-h.score, h.chunk.chunk_id))[:k]
+        return sorted(hits, key=lambda h: (-h.score, h.chunk.origin != "professor", h.chunk.chunk_id))[:k]
 
 
 def _script(token: str) -> str:
@@ -182,9 +230,10 @@ def language_plan(learner_language: str | None) -> list[dict | None]:
 
 
 def make_retriever(kind: str, min_coverage: float, embed: EmbedFn | None = None,
-                   glossary_weight: float = 0.5) -> Retriever:
+                   glossary_weight: float = 0.5, professor_boost: float = 1.0) -> Retriever:
     if kind == "bm25":
-        return BM25Retriever(min_coverage=min_coverage, glossary_weight=glossary_weight)
+        return BM25Retriever(min_coverage=min_coverage, glossary_weight=glossary_weight,
+                             professor_boost=professor_boost)
     if kind == "embedding":
         if embed is None:
             raise ValueError("RETRIEVER=embedding needs an embed function (and MODEL_EMBED)")

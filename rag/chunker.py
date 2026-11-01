@@ -46,6 +46,15 @@ class Chunk:
     title: str = ""
     section: str = ""
     concept: str = ""            # exercise-bank concept id: explain appends a practice exercise on it
+    # v1.3 scope. "" course = a legacy chunk, visible in every course. Defaults describe the course docs of
+    # data/docs: public, official. Uploaded material sets them (rag/ingest.py).
+    course_id: str = ""
+    unit_id: str = ""
+    visibility: str = "public"   # public (everyone in the course) | class (class_id only) | private (owner only)
+    owner: str = ""              # who uploaded it: a professor id, or the learner_id of a private upload
+    class_id: str = ""           # visibility "class": the class whose material this is
+    origin: str = "course"       # course (official docs) | professor | learner: professor material is boosted
+    confidence: float = 1.0      # ingest: how sure the concept tag is (low = a professor should confirm it)
 
     @property
     def tokens(self) -> int:
@@ -80,7 +89,9 @@ def _split_section(body: str, max_tokens: int) -> list[str]:
     return _pack(units, max_tokens, "\n\n")
 
 
-def chunk_markdown(text: str, source: str, max_tokens: int = 300) -> list[Chunk]:
+def chunk_markdown(text: str, source: str, max_tokens: int = 300, **scope) -> list[Chunk]:
+    """scope: course_id, unit_id, visibility, owner, class_id, origin: set on every chunk (the front matter keys
+    `course` and `unit` fill course_id / unit_id when scope does not)."""
     m = _FRONT.match(text)
     meta = {}
     if m:
@@ -99,8 +110,9 @@ def chunk_markdown(text: str, source: str, max_tokens: int = 300) -> list[Chunk]
         header = f"{title} — {heading}\n"
         for i, part in enumerate(_split_section(body, max_tokens - estimate_text_tokens(header))):
             cid = f"{stem}#{slug(heading)}" + (f"-{i + 1}" if i else "")
+            sc = {"course_id": meta.get("course", ""), "unit_id": meta.get("unit", ""), **scope}
             chunks.append(Chunk(cid, header + part, meta.get("topic", ""), meta.get("level", ""),
-                                meta.get("language", ""), os.path.basename(source), title, heading, concept))
+                                meta.get("language", ""), os.path.basename(source), title, heading, concept, **sc))
     return chunks
 
 

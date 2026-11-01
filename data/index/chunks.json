@@ -1,6 +1,6 @@
 {
- "version": 2,
- "built_at": 1792848686.3217425,
+ "version": 3,
+ "built_at": 1793532655.39321,
  "docs_dir": "data/docs",
  "chunks": [
   {
@@ -12,7 +12,14 @@
    "source": "derivative-variations.en.md",
    "title": "Derivatives and the variations of a function",
    "section": "Sign of the derivative and monotonicity",
-   "concept": "variations"
+   "concept": "variations",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivative-variations.en#finding-a-maximum-or-a-minimum",
@@ -23,7 +30,14 @@
    "source": "derivative-variations.en.md",
    "title": "Derivatives and the variations of a function",
    "section": "Finding a maximum or a minimum",
-   "concept": "extremum"
+   "concept": "extremum",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivative-variations.en#worked-example",
@@ -34,7 +48,14 @@
    "source": "derivative-variations.en.md",
    "title": "Derivatives and the variations of a function",
    "section": "Worked example",
-   "concept": "extremum"
+   "concept": "extremum",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivee-definition.fr#idee-intuitive",
@@ -45,7 +66,14 @@
    "source": "derivee-definition.fr.md",
    "title": "La dérivée d'une fonction : définition",
    "section": "Idée intuitive",
-   "concept": "nombre dérivé"
+   "concept": "nombre dérivé",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
@@ -56,7 +84,14 @@
    "source": "derivee-definition.fr.md",
    "title": "La dérivée d'une fonction : définition",
    "section": "Nombre dérivé et taux d'accroissement",
-   "concept": "nombre dérivé"
+   "concept": "nombre dérivé",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivee-definition.fr#interpretation-graphique-la-tangente",
@@ -67,7 +102,14 @@
    "source": "derivee-definition.fr.md",
    "title": "La dérivée d'une fonction : définition",
    "section": "Interprétation graphique : la tangente",
-   "concept": "tangente"
+   "concept": "tangente",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivee-erreurs.fr#erreurs-avec-les-puissances",
@@ -78,7 +120,14 @@
    "source": "derivee-erreurs.fr.md",
    "title": "Erreurs fréquentes en dérivation",
    "section": "Erreurs avec les puissances",
-   "concept": "puissance"
+   "concept": "puissance",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
@@ -89,7 +138,14 @@
    "source": "derivee-erreurs.fr.md",
    "title": "Erreurs fréquentes en dérivation",
    "section": "Oublier que la dérivée d'une constante est nulle",
-   "concept": "constante"
+   "concept": "constante",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
@@ -100,7 +156,14 @@
    "source": "derivee-erreurs.fr.md",
    "title": "Erreurs fréquentes en dérivation",
    "section": "Erreurs avec le produit",
-   "concept": "produit"
+   "concept": "produit",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivee-formules.fr#derivees-des-fonctions-usuelles",
@@ -111,7 +174,14 @@
    "source": "derivee-formules.fr.md",
    "title": "Formules de dérivation",
    "section": "Dérivées des fonctions usuelles",
-   "concept": "puissance"
+   "concept": "puissance",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivee-formules.fr#somme-et-produit-par-une-constante",
@@ -122,7 +192,14 @@
    "source": "derivee-formules.fr.md",
    "title": "Formules de dérivation",
    "section": "Somme et produit par une constante",
-   "concept": "polynôme"
+   "concept": "polynôme",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "derivee-formules.fr#produit-et-quotient",
@@ -133,7 +210,14 @@
    "source": "derivee-formules.fr.md",
    "title": "Formules de dérivation",
    "section": "Produit et quotient",
-   "concept": "produit"
+   "concept": "produit",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "mochtaqa.ar#تعريف-العدد-المشتق",
@@ -144,7 +228,14 @@
    "source": "mochtaqa.ar.md",
    "title": "المشتقة: تعريف وقواعد أساسية",
    "section": "تعريف العدد المشتق",
-   "concept": "nombre dérivé"
+   "concept": "nombre dérivé",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
@@ -155,7 +246,14 @@
    "source": "mochtaqa.ar.md",
    "title": "المشتقة: تعريف وقواعد أساسية",
    "section": "مشتقات الدوال المألوفة",
-   "concept": "puissance"
+   "concept": "puissance",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   },
   {
    "chunk_id": "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة",
@@ -166,7 +264,14 @@
    "source": "mochtaqa.ar.md",
    "title": "المشتقة: تعريف وقواعد أساسية",
    "section": "إشارة المشتقة واتجاه تغيّر الدالة",
-   "concept": "variations"
+   "concept": "variations",
+   "course_id": "analyse",
+   "unit_id": "derivees",
+   "visibility": "public",
+   "owner": "",
+   "class_id": "",
+   "origin": "course",
+   "confidence": 1.0
   }
  ]
 }

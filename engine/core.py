@@ -52,8 +52,8 @@ from gatekeeper.retry import CallContext, ChatResult, RetryingCaller, RetryPolic
 from metrics import IDENTITY_KEYS, CallRecord, JsonlSink, MetricsSink, identity
 from rag.budget import BudgetError, assemble, limit_for
 from rag.glossary import Glossary
-from rag.retriever import Hit, Retriever, language_plan, make_retriever
-from rag.store import load_chunks
+from rag.retriever import VIEWER, Hit, Retriever, language_plan, make_retriever
+from rag.store import CourseStore, load_chunks
 from router.policy import Decision, Router
 
 EventCallback = Callable[[Event], None]
@@ -143,7 +143,8 @@ class Engine:
         window_room = int(settings.context_window * settings.context_fill) - max(settings.task_max_tokens.values())
         self.limit = min(limit_for(settings.input_token_budget, settings.budget_safety_margin), window_room)
         self.retriever = retriever or make_retriever(settings.retriever, settings.rag_min_coverage, self._embed,
-                                                     settings.glossary_weight)
+                                                     settings.glossary_weight, settings.source_boost_professor)
+        self.course_store = CourseStore(settings.rag_course_index_dir) if settings.rag_course_index_dir else None
         self.glossary = Glossary.load(settings.glossary_path) \
             if settings.glossary_path and os.path.exists(settings.glossary_path) else None
         self.terms_ar = load_terms_ar(settings.terms_ar_path)
@@ -578,13 +579,53 @@ class Engine:
     async def _ensure_index(self) -> None:
         async with self._index_lock:
             if not self._indexed:
-                await self.retriever.index(load_chunks(self.settings.rag_index_path))
+                base = load_chunks(self.settings.rag_index_path)
+                extra = self.course_store.load_all() if self.course_store else []   # runtime material of every course
+                await self.retriever.index(base + extra)
                 self._indexed = True
+
+    # ================================================================== runtime material
+    async def add_material(self, chunks: list) -> int:
+        """Add chunks to the live index (professor documents, learner uploads) and persist them per course, so they
+        survive a restart. A chunk with an existing id replaces the old one. Returns the number added."""
+        if not hasattr(self.retriever, "add"):
+            raise NotImplementedError(f"{type(self.retriever).__name__} cannot add chunks at runtime")
+        await self._ensure_index()
+        async with self._index_lock:
+            n = self.retriever.add(chunks)
+            self._persist({c.course_id for c in chunks})
+        return n
+
+    async def remove_material(self, chunk_ids=(), *, source: str | None = None, course_id: str | None = None,
+                              owner: str | None = None) -> int:
+        """Remove chunks by id, and/or all chunks of one uploaded `source` file (optionally within a course /
+        of an owner). Course docs of the base index can be removed too, but they come back at the next restart
+        unless the index is rebuilt. Returns how many were removed."""
+        await self._ensure_index()
+
+        def where(c) -> bool:
+            return (source is not None and c.source == source and (course_id is None or c.course_id == course_id)
+                    and (owner is None or c.owner == owner))
+        async with self._index_lock:
+            gone = self.retriever.remove(list(chunk_ids), where=where)
+            self._persist({c.course_id for c in gone})
+        return len(gone)
+
+    def _persist(self, course_ids) -> None:
+        if not self.course_store:
+            return
+        base = {c.chunk_id for c in load_chunks(self.settings.rag_index_path)}
+        for cid in course_ids:
+            if cid:
+                self.course_store.save(cid, [c for c in self.retriever.chunks
+                                             if c.course_id == cid and c.chunk_id not in base])
 
     async def _retrieve(self, inputs: Mapping, tctx: TaskContext, run: _Run) -> list[Hit]:
         run.emit("retrieving")
         await self._ensure_index()
         filters = {"topic": tctx.extra.get("topic")} if tctx.extra.get("topic") else None
+        viewer = {k: tctx.extra.get(k) for k in ("course_id", "class_id", "learner_id")}
+        filters = {**(filters or {}), VIEWER: viewer}      # public course docs, this class's material, own uploads
         question = str(inputs["question"])
         expansion = self.glossary.expand(question) if self.glossary else None   # deterministic, no LLM
         if expansion:
