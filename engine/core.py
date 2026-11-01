@@ -357,16 +357,34 @@ class Engine:
             return self._cache_hit(run, ctx, key, hit, decision, spec, inputs, tctx, hits)
         if spec.grounded and (reasons := self.cache.get_negative(key)):
             return await self._negative_hit(prompt, inputs, tctx, hits, key, reasons, ctx, run, decision)
-        if (leader := self._inflight.get(key)) is not None:
+        announced = False
+        while (leader := self._inflight.get(key)) is not None:
             # the same request is already being generated: wait for it instead of sending a duplicate
-            run.emit("waiting_identical_request")
-            await leader.wait()
+            if not announced:
+                run.emit("waiting_identical_request")
+                announced = True
+            if self._has_deadline(spec, prio, decision):
+                # a learner waiting for someone else's identical request has the same deadline as any learner: the leader
+                # may be a slow generation (or a BACKGROUND page) that takes far longer than INTERACTIVE_DEADLINE_S
+                left = max(0.0, self.settings.interactive_deadline_s - (asyncio.get_running_loop().time() - run.started))
+                try:
+                    await asyncio.wait_for(leader.wait(), timeout=left)
+                except asyncio.TimeoutError:
+                    run.degrade("deadline")
+                    run.emit("deadline", {"deadline_s": self.settings.interactive_deadline_s, "generation_continues": True})
+                    log.warning("%s %s: the identical request in flight has no body after %.0f s, serving extracts",
+                                ctx.request_id, ctx.task, self.settings.interactive_deadline_s)
+                    return await self._fast_extractive(prompt, inputs, tctx, [h.chunk for h in hits], {}, ctx, run,
+                                                       replace(decision, reason=decision.reason + "; interactive deadline"),
+                                                       llm_framing=False)
+            else:
+                await leader.wait()
             if (hit := self.cache.get(key)) is not None:
                 return self._cache_hit(run, ctx, key, hit, decision, spec, inputs, tctx, hits)
             if spec.grounded and (reasons := self.cache.get_negative(key)):
                 return await self._negative_hit(prompt, inputs, tctx, hits, key, reasons, ctx, run, decision)
-            # the leader's result was degraded for another reason (never cached): produce our own
-            return await self._produce(spec, prompt, inputs, tctx, prio, run, ctx, decision, hits, key, messages)
+            # the leader's result was degraded (never cached): nobody has it. Whoever wakes first becomes the leader
+            # (below, with the same deadline as any request); the others wait for that one in this loop.
         if hits and spec.partial_result:    # the course itself, verbatim, while the full answer is generated
             run.emit("partial_result", {"excerpts": fast_excerpts(self._query_text(inputs),
                                                                   [h.chunk for h in hits], PARTIAL_SENTENCES)})

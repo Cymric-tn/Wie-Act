@@ -162,7 +162,8 @@ A grounded explanation of a course concept. Mid-size model, retrieval over the c
 * degrade: **fast mode** (`mode="fast_extractive"`, `followup_available=true`): the learner gets up to 5 course
   sentences verbatim plus the exercise, with reason `midsize_saturated`, `midsize_unavailable`, `quota_low`,
   `breaker_open` or **`deadline`** (no body after 25 s: the learner is answered, the mid-size generation continues
-  into the cache and the next ask is a hit). Also `ungrounded_formula`, `wrong_math`, `explain_guard:*`,
+  into the cache and the next ask is a hit; the 25 s also count while the request waits for an identical one that
+  another learner or a prep page is generating). Also `ungrounded_formula`, `wrong_math`, `explain_guard:*`,
   `input_truncated`, `quota_exhausted`, `superseded`, `room_busy`. A question the course does not cover returns
   `text` saying so, `0` requests, event `no_relevant_context`.
 * events: `retrieving`, `expanding_query`, `checking_cache`, then [`cache_hit`] or [`partial_result` (course
