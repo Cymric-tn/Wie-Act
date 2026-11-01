@@ -19,6 +19,7 @@ photo that needs the real model).
 | `prep_plan` | no model | v1.3 |
 | `generate_page` (a helper, not a task) | mid-size via `explain` | v1.3 |
 | `add_material`, `remove_material`, `ingest_file` | none (OCR of scans: vision) | v1.3, section 4 |
+| HTTP + WebSocket service (`services/engine_server.py`) | none (a front for `Engine.run`) | section 10 |
 
 ## 1. The call
 
@@ -514,3 +515,149 @@ and `fake.generate_page` exist.
 FelCloud has no embedding model, so retrieval is lexical. Expect 2-5 s for compact tasks and 8-15 s for mid-size;
 the engine never makes a learner wait more than 25 s for an explanation. With a class of 30 learners the quota is
 the bottleneck: caching, rules-first tasks and `superseded` exist to protect it.
+
+## 10. HTTP service (for the app side)
+
+`services/engine_server.py` puts `Engine.run` behind HTTP and WebSocket so a Node app can call it. It is a thin front: the
+bodies are exactly the arguments of `engine.run`, and the answers are exactly its `Result` (sections 1 to 7).
+
+```bash
+export ENGINE_SERVICE_TOKEN=change-me                       # required; every route checks it
+python -m services.engine_server                            # real engine, reads .env / ENV_FILE as everything else
+python -m services.engine_server --fake --fake-mode slow    # FakeEngine behind the identical API (no key, no provider)
+```
+
+* **Local only.** It binds `127.0.0.1` (there is no option for anything else), refuses a `Host` header that is not
+  `127.0.0.1` or `localhost`, and serves no OpenAPI page. Port: `--port` or `ENGINE_SERVICE_PORT` (default 8765).
+* **Auth.** Send `X-Engine-Token: <ENGINE_SERVICE_TOKEN>` on every call, WebSocket handshake included (compared in constant
+  time). Without it: HTTP 401 `{"error": "unauthorized", ...}`; a WebSocket is closed with code 1008 (HTTP 403 to a browser).
+  Never put the token in a URL.
+* **One process per API key.** The real engine takes a lock file (`runtime/engine-<digest>.lock`, directory from
+  `ENGINE_SERVICE_LOCK_DIR`) holding its pid; a second start for the same key sees a live pid and exits with status 3. The
+  quota is per key (20 a minute, 2 in flight), so two processes would fight over it. A lock left by a crashed process is
+  taken over. `--fake` uses no key and no lock.
+* **A run is not tied to its connection.** If the HTTP request is dropped or the WebSocket closes, the run finishes and
+  fills the cache; nothing is cancelled. A reconnect with the same body is then a cache hit.
+* **Errors.** Every error body is `{"error": ..., "detail": ...}`: 401 `unauthorized`, 413 too large (25 MB), 422
+  `invalid_request` (malformed body, unknown task, missing input) or `ingest_error`. A provider problem is never an HTTP error:
+  it is a 200 with a degraded `Result`.
+
+### POST /run
+
+Body `{task, inputs, context, priority}` (`priority`: `INTERACTIVE` by default, or `BACKGROUND`; case does not matter).
+Answer: the `Result`. For `ocr_transcribe` the image goes either as base64 or a data URL in `inputs.image`, or as a
+multipart upload (`image` file part; `task`, `priority` and the JSON strings `inputs` and `context` as form fields).
+
+```bash
+curl -s -H "X-Engine-Token: $ENGINE_SERVICE_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"task":"hint","inputs":{"problem":"Dérive f(x) = 3x² + 5x"},"context":{"language":"FRENCH","learner_id":"L42"}}' \
+  http://127.0.0.1:8765/run
+curl -s -H "X-Engine-Token: $ENGINE_SERVICE_TOKEN" -F task=ocr_transcribe -F image=@work.jpg \
+  -F 'context={"language":"FRENCH"}' http://127.0.0.1:8765/run
+```
+
+{{service run}}
+
+{{service run_ocr}}
+
+{{service run_invalid}}
+
+{{service run_unauthorized}}
+
+### WS /run/stream
+
+Connect (with the token header), send **one text message with the same body as `POST /run`**, and read frames until the
+server closes. Each `Event` arrives as it happens, then the `Result` (which repeats the events in `result.events`):
+
+| frame | meaning |
+|---|---|
+| `{"type": "event", "event": {name, t_ms, data}}` | one progress event (section 7), in order |
+| `{"type": "result", "result": <Result>}` | the answer; the server then closes with code 1000 |
+| `{"type": "error", "error": ..., "detail": ...}` | the body was refused (`invalid_request`), close code 1003; or `internal`, 1011 |
+
+A client that sends nothing for 10 s gets an `invalid_request` error. Closing the socket early is safe (see above).
+
+```bash
+# prints each frame; needs `npm i ws` (the Node example at the end of this section is the same call as a function)
+node --input-type=module -e '
+import WebSocket from "ws";
+const ws = new WebSocket("ws://127.0.0.1:8765/run/stream", { headers: { "X-Engine-Token": process.env.ENGINE_SERVICE_TOKEN } });
+ws.on("open", () => ws.send(JSON.stringify({ task: "hint", inputs: { problem: "Dérive f(x) = 3x² + 5x" }, context: { language: "FRENCH" } })));
+ws.on("message", (m) => console.log(m.toString()));
+ws.on("close", () => process.exit());'
+```
+
+{{service stream}}
+
+{{service stream_unauthorized}}
+
+### POST /materials and DELETE /materials/{material_id}
+
+Multipart upload of a PDF, DOCX or Markdown file: `file` and `course_id` are required; `unit_id`, `owner`, `visibility`
+(`public`, `class`, `private`), `class_id`, `source` (`professor`, `learner`, `course`), `language` and `ocr` (`true` by
+default) are optional and mean what they mean in section 4. The service runs `engine.ingest_file(..., add=True)` (read,
+tag, OCR the scanned pages at BACKGROUND, add to the live index), keeping the upload's own file name, and answers with a
+summary of the chunks, not their text. `material_id` is opaque; DELETE with it removes that upload's chunks
+(`engine.remove_material`) and says how many.
+
+```bash
+curl -s -H "X-Engine-Token: $ENGINE_SERVICE_TOKEN" -F file=@polycopie.pdf -F course_id=analyse -F owner=prof-7 \
+  -F visibility=class -F class_id=C1 http://127.0.0.1:8765/materials
+curl -s -X DELETE -H "X-Engine-Token: $ENGINE_SERVICE_TOKEN" http://127.0.0.1:8765/materials/$MATERIAL_ID
+```
+
+{{service materials_upload}}
+
+{{service materials_delete}}
+
+### POST /cache/invalidate
+
+Body `{"request_id": ...}`: `engine.cache.invalidate` (section 5). Answer `{request_id, removed}`.
+
+```bash
+curl -s -H "X-Engine-Token: $ENGINE_SERVICE_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"request_id":"a1b2c3d4e5f6"}' http://127.0.0.1:8765/cache/invalidate
+```
+
+{{service cache_invalidate}}
+
+### GET /health
+
+No request is made to the provider. `window.remaining` is how many more sends fit in the 60 s window right now,
+`breaker.<class>.state` is `closed`, `open` or `half_open` (with `retry_in_s` until the next probe), and `queue.depth` is how
+many requests wait for a slot. With `--fake` the numbers are canned by mode and `fake` is true.
+
+```bash
+curl -s -H "X-Engine-Token: $ENGINE_SERVICE_TOKEN" http://127.0.0.1:8765/health
+```
+
+{{service health}}
+
+### From Node (18 or later; `npm i ws`)
+
+```js
+import WebSocket from "ws";
+const BASE = "127.0.0.1:8765", H = { "X-Engine-Token": process.env.ENGINE_SERVICE_TOKEN };
+
+// one request, one answer
+const run = (task, inputs, context = {}, priority = "INTERACTIVE") =>
+  fetch(`http://${BASE}/run`, { method: "POST", headers: { ...H, "Content-Type": "application/json" },
+    body: JSON.stringify({ task, inputs, context, priority }) }).then((r) => r.json());
+
+// the same call with staged progress: onEvent(name, data) per event; resolves with the Result
+const stream = (body, onEvent) => new Promise((resolve, reject) => {
+  const ws = new WebSocket(`ws://${BASE}/run/stream`, { headers: H });
+  ws.on("open", () => ws.send(JSON.stringify(body)));
+  ws.on("message", (m) => {
+    const f = JSON.parse(m);
+    if (f.type === "event") onEvent(f.event.name, f.event.data);
+    else if (f.type === "result") resolve(f.result);
+    else reject(new Error(`${f.error}: ${f.detail}`));
+  });
+  ws.on("error", reject);
+});
+
+const body = { task: "explain", inputs: { question: "C'est quoi une dérivée ?" }, context: { language: "FRENCH" } };
+console.log((await stream(body, (name) => console.log("…", name))).text);
+console.log((await run("hint", { problem: "Dérive f(x) = 3x² + 5x" })).text);
+```
