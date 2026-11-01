@@ -6,13 +6,14 @@ from engine.tasks import Classification, Registry, TaskSpec, default_registry, r
 from metrics import MemorySink
 from router.policy import ROUTES, Router, escalated
 
-C, M = ModelClass.COMPACT, ModelClass.MIDSIZE
+C, M, V = ModelClass.COMPACT, ModelClass.MIDSIZE, ModelClass.VISION
 
 
 # ------------------------------------------------------------------ router
 def test_routing_table_matches_claude_md():
     assert {t: r.default for t, r in ROUTES.items()} == {
-        "classify": C, "hint": C, "grade": C, "compress": C, "summary": C, "quiz": C, "explain": M}
+        "classify": C, "hint": C, "grade": C, "compress": C, "summary": C, "quiz": C, "explain": M,
+        "ocr_transcribe": V, "check_claim": C, "check_answer": C, "prep_plan": C}
     assert [t for t, r in ROUTES.items() if r.fallback] == ["explain"]
 
 

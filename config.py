@@ -19,6 +19,11 @@ from dotenv import dotenv_values
 class ModelClass(str, Enum):
     COMPACT = "compact"
     MIDSIZE = "midsize"
+    VISION = "vision"          # reads images (OCR). Shares the chat rate window and the concurrency slots.
+
+
+# classes whose requests are slow: together they may hold at most max_concurrent - 1 slots, so compact always has one
+HEAVY_CLASSES = (ModelClass.MIDSIZE, ModelClass.VISION)
 
 
 @dataclass(frozen=True)
@@ -26,6 +31,8 @@ class SimSettings:
     """Constraint simulator knobs (only used when SIMULATE_CONSTRAINTS=true)."""
     latency_compact_s: tuple[float, float] = (2.0, 6.0)
     latency_midsize_s: tuple[float, float] = (8.0, 30.0)
+    latency_vision_s: tuple[float, float] = (8.0, 18.0)
+    vision_image_tokens: int = 800            # what the simulated provider counts for one image
     latency_scale: float = 1.0                # 0 in unit tests
     rate_per_min: float = 20.0                # the simulated provider's bucket
     burst: int = 20
@@ -61,7 +68,7 @@ class Settings:
     rate_window_slack_s: float = 0.5          # a send frees its slot this long after the window, for clock/latency skew
     max_concurrent: int = 2
     max_tokens: Mapping[ModelClass, int] = field(default_factory=lambda: {
-        ModelClass.COMPACT: 300, ModelClass.MIDSIZE: 550})
+        ModelClass.COMPACT: 300, ModelClass.MIDSIZE: 550, ModelClass.VISION: 700})
     output_cap_mode: str = "both"             # options | max_tokens | both (how the output cap is sent, see client.py)
     input_token_budget: int = 2800
     estimate_chars_per_token: float = 2.3     # token estimator; Arabizi is the worst measured case (2.31)
@@ -73,6 +80,11 @@ class Settings:
     timeout_midsize_interactive_s: float = 40.0   # explain p95 is about 23 s, the 350-token cap about 30 s
     timeout_midsize_background_s: float = 85.0
     timeout_compact_s: float = 30.0
+    timeout_vision_s: float = 40.0            # TIMEOUT_VISION_S: OCR of one image (measured p95 is set from the FelCloud probe)
+    vision_max_pixels: int = 1_000_000        # images are resized to at most this many pixels before sending
+    vision_max_bytes: int = 12_000_000        # larger uploads are refused (invalid_image) before decoding
+    image_tokens_per_megapixel: int = 1000    # ASSUMPTION(felcloud): input tokens an image costs; measured in the v1.3 slot
+    vision_max_slots: int = 1                 # vision may hold at most this many concurrency slots (ghosts included)
     background_reserve: int = 6               # BACKGROUND chat waits while fewer than this many sends remain in the window
     midsize_max_slots: int = 1                # mid-size may hold at most this many concurrency slots (ghosts included); 0 = no cap
     interactive_deadline_s: float = 25.0      # an INTERACTIVE explain without a body by then is answered in fast mode
@@ -105,7 +117,8 @@ class Settings:
     templates_path: str = "data/templates.yaml"            # openers, practice line, generic feedback
     task_frequency_penalty: Mapping[str, float] = field(default_factory=lambda: {"explain": 0.3})
     task_max_tokens: Mapping[str, int] = field(default_factory=lambda: {
-        "classify": 50, "hint": 80, "grade": 120, "compress": 30, "explain": 350, "quiz_intro": 60, "framing": 40})
+        "classify": 50, "hint": 80, "grade": 120, "compress": 30, "explain": 350, "quiz_intro": 60, "framing": 40,
+        "ocr_transcribe": 700, "check_claim": 120, "check_answer": 80})
     breaker_threshold: int = 3                # saturations within the window that open the breaker
     breaker_window_s: float = 60.0
     breaker_cooldown_s: float = 30.0          # open this long, then half-open (one probe)
@@ -164,6 +177,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     sim = SimSettings(
         latency_compact_s=get("SIM_LATENCY_COMPACT_S", _range, d.latency_compact_s),
         latency_midsize_s=get("SIM_LATENCY_MIDSIZE_S", _range, d.latency_midsize_s),
+        latency_vision_s=get("SIM_LATENCY_VISION_S", _range, d.latency_vision_s),
+        vision_image_tokens=get("SIM_VISION_IMAGE_TOKENS", int, d.vision_image_tokens),
         latency_scale=get("SIM_LATENCY_SCALE", float, d.latency_scale),
         rate_per_min=get("SIM_RATE_PER_MIN", float, get("RATE_LIMIT_PER_MIN", float, d.rate_per_min)),
         burst=get("SIM_BURST", int, get("RATE_BURST", int, d.burst)),
@@ -194,7 +209,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     server_s = get("SERVER_TIMEOUT_S", float, defaults.server_timeout_s)
     for var, dflt in (("TIMEOUT_MIDSIZE_INTERACTIVE_S", defaults.timeout_midsize_interactive_s),
                       ("TIMEOUT_MIDSIZE_BACKGROUND_S", defaults.timeout_midsize_background_s),
-                      ("TIMEOUT_COMPACT_S", defaults.timeout_compact_s), ("REQUEST_TIMEOUT_S", defaults.request_timeout_s),
+                      ("TIMEOUT_COMPACT_S", defaults.timeout_compact_s),
+                      ("TIMEOUT_VISION_S", defaults.timeout_vision_s), ("REQUEST_TIMEOUT_S", defaults.request_timeout_s),
                       ("BREAKER_PROBE_TIMEOUT_S", defaults.breaker_probe_timeout_s)):
         if get(var, float, dflt) >= server_s:
             raise ConfigError(f"{var} must stay under SERVER_TIMEOUT_S ({server_s:g} s): a client that waits as long "
@@ -202,12 +218,15 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     task_caps = {name: get(var, int, defaults.task_max_tokens[name]) for name, var in (
         ("classify", "CLASSIFY_MAX_TOKENS"), ("hint", "HINT_MAX_TOKENS"), ("grade", "GRADE_MAX_TOKENS"),
         ("compress", "COMPRESS_MAX_TOKENS"), ("explain", "EXPLAIN_MAX_TOKENS"),
-        ("quiz_intro", "QUIZ_INTRO_MAX_TOKENS"), ("framing", "FRAMING_MAX_TOKENS"))}
+        ("quiz_intro", "QUIZ_INTRO_MAX_TOKENS"), ("framing", "FRAMING_MAX_TOKENS"),
+        ("ocr_transcribe", "OCR_MAX_TOKENS"), ("check_claim", "CHECK_CLAIM_MAX_TOKENS"),
+        ("check_answer", "CHECK_ANSWER_MAX_TOKENS"))}
     return Settings(
         base_url=req("LLM_BASE_URL").rstrip("/"),
         api_key=req("LLM_API_KEY"),
         models={ModelClass.COMPACT: _names(req("MODEL_COMPACT")),
-                ModelClass.MIDSIZE: _names(req("MODEL_MIDSIZE"))},
+                ModelClass.MIDSIZE: _names(req("MODEL_MIDSIZE")),
+                ModelClass.VISION: _names(e.get("MODEL_VISION") or "deepseek-ocr")},
         embed_model=e.get("MODEL_EMBED", ""),
         rate_per_min=get("RATE_LIMIT_PER_MIN", float, defaults.rate_per_min),
         rate_burst=get("RATE_BURST", int, defaults.rate_burst),
@@ -218,7 +237,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         embed_rate_window_s=get("EMBED_RATE_WINDOW_S", float, defaults.embed_rate_window_s),
         max_concurrent=get("MAX_CONCURRENT", int, defaults.max_concurrent),
         max_tokens={ModelClass.COMPACT: get("MAX_TOKENS_COMPACT", int, 300),
-                    ModelClass.MIDSIZE: get("MAX_TOKENS_MIDSIZE", int, 550)},
+                    ModelClass.MIDSIZE: get("MAX_TOKENS_MIDSIZE", int, 550),
+                    ModelClass.VISION: get("MAX_TOKENS_VISION", int, 700)},
         output_cap_mode=get("OUTPUT_CAP_MODE", lambda v: v.strip().lower(), defaults.output_cap_mode),
         input_token_budget=get("INPUT_TOKEN_BUDGET", int, defaults.input_token_budget),
         estimate_chars_per_token=get("ESTIMATE_CHARS_PER_TOKEN", float, defaults.estimate_chars_per_token),
@@ -230,6 +250,11 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         timeout_midsize_interactive_s=get("TIMEOUT_MIDSIZE_INTERACTIVE_S", float, defaults.timeout_midsize_interactive_s),
         timeout_midsize_background_s=get("TIMEOUT_MIDSIZE_BACKGROUND_S", float, defaults.timeout_midsize_background_s),
         timeout_compact_s=get("TIMEOUT_COMPACT_S", float, defaults.timeout_compact_s),
+        timeout_vision_s=get("TIMEOUT_VISION_S", float, defaults.timeout_vision_s),
+        vision_max_pixels=get("VISION_MAX_PIXELS", int, defaults.vision_max_pixels),
+        vision_max_bytes=get("VISION_MAX_BYTES", int, defaults.vision_max_bytes),
+        image_tokens_per_megapixel=get("IMAGE_TOKENS_PER_MEGAPIXEL", int, defaults.image_tokens_per_megapixel),
+        vision_max_slots=get("VISION_MAX_SLOTS", int, defaults.vision_max_slots),
         midsize_max_slots=get("MIDSIZE_MAX_SLOTS", int, defaults.midsize_max_slots),
         background_reserve=get("BACKGROUND_RESERVE", int, defaults.background_reserve),
         interactive_deadline_s=get("INTERACTIVE_DEADLINE_S", float, defaults.interactive_deadline_s),

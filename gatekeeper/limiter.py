@@ -23,7 +23,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Literal
 
-from config import ModelClass, Settings
+from config import HEAVY_CLASSES, ModelClass, Settings
 from gatekeeper.errors import QuotaInfo
 
 Clock = Callable[[], float]
@@ -226,7 +226,15 @@ class Limiter:
     def __init__(self, settings: Settings, clock: Clock = time.monotonic, sleep: Sleep = asyncio.sleep):
         self._clock, self._sleep = clock, sleep
         # at most this many concurrency slots per model class, ghosts included (so the other class always has one)
-        self.class_caps: dict = {ModelClass.MIDSIZE: settings.midsize_max_slots} if settings.midsize_max_slots > 0 else {}
+        self.class_caps: dict = {}
+        if settings.midsize_max_slots > 0:
+            self.class_caps[ModelClass.MIDSIZE] = settings.midsize_max_slots
+        if settings.vision_max_slots > 0:
+            self.class_caps[ModelClass.VISION] = settings.vision_max_slots
+        # the slow classes share max_concurrent - 1 slots (compact keeps one): the v1.2 reserved compact slot, which
+        # MIDSIZE_MAX_SLOTS=0 switches off
+        self.heavy_budget: int | None = max(1, settings.max_concurrent - 1) \
+            if settings.midsize_max_slots > 0 and settings.max_concurrent >= 2 else None
         self.class_in_use: dict = {}
         self.ghosts: list[Ghost] = []
         self.on_change: Callable[[], None] | None = None     # the queue's dispatcher listens
@@ -315,10 +323,17 @@ class Limiter:
         return max(0.0, min(g.until for g in self.ghosts) - self._clock()) if self.ghosts else None
 
     def class_free(self, cls) -> bool:
-        """May one more request of this model class take a slot now? (its cap, ghosts included)"""
+        """May one more request of this model class take a slot now? (its cap, ghosts included). The slow classes
+        (mid-size, vision) also share one budget of max_concurrent - 1 slots: a mid-size and a vision request in
+        flight together must not take the slot compact work needs."""
         self.reap()
         cap = self.class_caps.get(cls)
-        return cap is None or self.class_in_use.get(cls, 0) < cap
+        if cap is not None and self.class_in_use.get(cls, 0) >= cap:
+            return False
+        if cls in HEAVY_CLASSES and self.heavy_budget is not None:
+            if sum(self.class_in_use.get(c, 0) for c in HEAVY_CLASSES) >= self.heavy_budget:
+                return False
+        return True
 
     def _changed(self) -> None:
         if self.on_change:
