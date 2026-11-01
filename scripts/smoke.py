@@ -20,7 +20,29 @@ CALLS = [   # synthetic inputs only
      {"level": "lycée"}),
     ("explain", {"question": "C'est quoi le nombre dérivé, et comment on l'obtient avec le taux d'accroissement ?"},
      {"level": "lycée", "topic": "derivative"}),
+    ("check_claim", {"claim": "(x³)' = x²"}, {"language": "FRENCH"}),                              # sympy: 0 requests
+    ("check_claim", {"claim": "La dérivée d'un produit est le produit des dérivées."}, {"language": "FRENCH"}),
+    ("check_answer", {"problem": "Dérive f(x) = x⁴", "exercise_id": "d01", "steps": ["f(x) = x⁴", "f'(x) = x³"]},
+     {"language": "FRENCH"}),
+    ("check_answer", {"problem": "Dérive f(x) = x⁴", "steps": ["f(x) = x⁴", "f'(x) = 7x"]}, {"language": "FRENCH"}),
+    ("prep_plan", {"scope": {"unit_ids": ["derivees"]}, "deadline": "2099-01-01", "pace_min_per_day": 45,
+                   "mastery": {"nombre dérivé": 0.9}, "language": "FRENCH"}, {"course_id": "analyse"}),
+    ("ocr_transcribe", {"image": "@sample"}, {"language": "FRENCH"}),      # "@sample": an image drawn with Pillow
 ]
+
+
+def sample_image(lines=("Dériver f(x) = 3x² + 5x", "f'(x) = 6x + 5")) -> str:
+    """A synthetic 'notebook photo' (1600x1200, resized by the engine to 1 megapixel) as a data URL."""
+    import base64
+    import io
+    from PIL import Image, ImageDraw
+    img = Image.new("RGB", (1600, 1200), (250, 250, 247))
+    d = ImageDraw.Draw(img)
+    for i, line in enumerate(lines):
+        d.text((80, 100 + i * 120), line, fill=(20, 20, 20))
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
 def show(r) -> None:
@@ -41,6 +63,7 @@ async def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--task", action="append", help="only these tasks (repeatable)")
     ap.add_argument("--no-cache", action="store_true", help="fresh in-memory cache (e.g. to show a fallback)")
+    ap.add_argument("--image", help="a photo of work to transcribe with ocr_transcribe (data URL or base64; default: drawn)")
     a = ap.parse_args()
     s = load_settings()
     models = {c.value: n for c, n in s.models.items()}
@@ -50,7 +73,14 @@ async def main() -> None:
     async with Engine.create(s, cache=cache) as engine:
         for task, inputs, context in CALLS:
             if not a.task or task in a.task:
+                if inputs.get("image") == "@sample":
+                    inputs = {**inputs, "image": a.image or sample_image()}
                 show(await engine.run(task, inputs, context, Priority.INTERACTIVE))
+        if not a.task or "generate_page" in a.task:     # a helper, not a task: one prep page (explain at BACKGROUND)
+            page = await engine.generate_page({}, {"concept_id": "puissance", "page_kind": "learn", "mastery": 0.2},
+                                              {"language": "FRENCH", "course_id": "analyse"})
+            print(f"\n[generate_page] concept={page['concept_id']} degraded={page['degraded']} from_cache={page['from_cache']} "
+                  f"quiz={len(page['quiz'])} worked_example={bool(page['worked_example'])}")
 
 
 if __name__ == "__main__":

@@ -1,20 +1,21 @@
 # CLAUDE.md — EdNova LLM Engine
 
-## Current status (2026-10-26, engine v1.1 on branch `engine-v1.1`, not merged; v1 frozen 2026-10-24)
+## Current status (2026-11-01, engine v1.3 on branch `engine-v1.3`, NOT merged, waiting for review; v1.2 merged into `main` 2026-11-01)
 
-> Resume point for new sessions. Update this at the end of every round; evidence lives in `DECISIONS.md` ("Engine v1 summary").
+> Resume point for new sessions. Update this at the end of every round; evidence lives in `DECISIONS.md` ("Engine v1 summary", "Engine v1.1", "Engine v1.2", "Engine v1.3").
 
+00. **v1.3 (2026-11-01, `engine-v1.3`, from the team's contracts document; evidence in `DECISIONS.md` "Engine v1.3", report `reports/engine-v1.3.md`):** the integration contract is `docs/ENGINE_API.md` (generated from real engine output by `python -m scripts.gen_api_examples --doc`; tests fail on drift) and `engine.fake.FakeEngine` (same `run` signature, every state, no LLM). New: ids `learner_id/room_id/course_id/class_id` in every metrics record; fairness (`superseded`, `room_busy`); BACKGROUND reserve (`waiting_reserve`); `cache.invalidate(request_id)`; vision class (`MODEL_VISION`, images <= 1 MP, `TIMEOUT_VISION_S`); tasks `ocr_transcribe`, `check_claim`, `check_answer`, `prep_plan` and `Engine.generate_page`; explain `passage` / `board_text`; course graph `data/courses/analyse.yaml`; dynamic retrieval with visibility and professor boost; `rag/ingest.py` + `Engine.ingest_file` (OCR of scanned pages, 20 per file). **Not verified (no FelCloud slot on a Sunday):** live smoke incl. one OCR call, the check_claim accuracy (30-claim set), the mixed load on the real API, whether vision counts in the 20/min window; PyMuPDF not installable offline (PDF reader tested through a stand-in). Simulated mixed load passes (`reports/load-mixed-virtual*-v13.md`).
 0. **v1.1 (2026-10-26, from the FelCloud probes; evidence in `DECISIONS.md` "Engine v1.1"):** sliding-window rate limiter (20 sends in any 60 s, own window for embeddings, phantom entries from the quota header), quota 429 delay = `retry-after` header only (BACKGROUND waits up to 65 s, INTERACTIVE up to 30 s, else degraded `quota_exhausted` with eta), concurrency 429 waits 2 s, output cap sent as `options.num_predict` + `max_tokens` (`OUTPUT_CAP_MODE`) with per-task caps and sentence-trim on cut output, estimator 2.3 chars/token, `CONTEXT_WINDOW` 4096 (prompt + cap <= 85%), `INPUT_TOKEN_BUDGET` 2800, silent input-truncation detector (degraded `input_truncated`, not cached). Both 429 shapes are CONFIRMED and have real fixtures. Verified on FelCloud 2026-10-26 (`reports/engine-v1.1-felcloud.md`): smoke within every cap, load n=60 at 40/min: 0 server 429s, 0 exceptions, 0 repeats, 0 input_truncated, densest 60 s window = 20 sends. Not exercised live: the output-cut path and a server 429. Review before merging into `main`.
-1. **v1 frozen:** Build steps 1–9 are done and the engine is frozen after the "last engine round": no engine changes without an explicit go-ahead. Next work belongs to the feature layer, which calls `engine.run`. Integration + technical guide: `docs/engine_guide/ednova_engine_guide.pdf` (LaTeX source alongside; `pdflatex` twice).
+1. **v1 frozen, then reopened:** Build steps 1–9 are done and the engine was frozen after the "last engine round"; v1.1, v1.2 and v1.3 were each started on an explicit go-ahead. No engine change without one. Next work belongs to the feature layer, which calls `engine.run`. Integration + technical guide: `docs/engine_guide/ednova_engine_guide.pdf` (LaTeX source alongside; `pdflatex` twice).
 2. **Built:** config + env profiles, gatekeeper (client, limiter, retry, errors, priority queue, exact SQLite cache + coalescing + **negative cache**), simulator + profiles, router + mid-size breaker, `engine.run` with events, BM25 RAG + glossary, tasks classify/hint/explain/compress/grade/quiz, deterministic scaffolding (templates, bank exercises, sympy grading, formula correctness check, loop salvage, fast mode).
-3. **Tests:** `pytest -q` → 444 passed (v1.1); `-m integration` → 5 passed (Ollama). Git repo initialised 2026-10-25 (branch `main`, one initial commit, no remote yet). Real keys live only in git-ignored `.env.real`; `recon_log.jsonl` (real platform data) is also unpublished, and `tests/test_errors.py` skips its replay when absent.
+3. **Tests:** `pytest -q` → 768 passed (v1.3); `-m integration` → 5 passed (Ollama; not rerun for v1.2/v1.3, Ollama stays off on this laptop). Git repo initialised 2026-10-25 (branch `main`, one initial commit, no remote yet). Real keys live only in git-ignored `.env.real`; `recon_log.jsonl` (real platform data) is also unpublished, and `tests/test_errors.py` skips its replay when absent.
 4. **Classify (llama3.2:3b, v4):** intent 87%, language 93%, manual set 4/4. **Retrieval:** hit@1 13/15, hit@3 14/15, off-topic 4/4, cross-language 6/8.
 5. **Explain eval (91 answers):** 10 with new examples, wrong_math 1, ungrounded_formula 2; loop rate 2/50 (4%), salvage 1/2.
 6. **Load v1 (`reports/load-engine-v1.md`, normal/saturated/quota_low/capacity):** 0 exceptions; compact 90/100/86/75%; cache 44/28/40/61%; quota refusals 7/7 waited the stated delay; 2.00 requests per cold turn; locally the binding limit is concurrency (~10.4 req/min).
 7. **Negative cache:** an explain answer that failed a check (ungrounded/wrong_math/loop_truncated/degenerate) marks its key for `NEGATIVE_CACHE_TTL_S` (600 s); a repeat gets fast mode with 0 requests. The t011/t016 repeat is fixed in a replay test. The live rerun showed 0 repeats but didn't recreate the case (`reports/load-capacity-negcache.md`).
 8. **Open, platform:** the quota-exhausted shape is CONFIRMED (v1.1); FelCloud has no embedding model, so there is no semantic cache; latency and capacity need a FelCloud-slot rerun (local mid-size is 8B on CPU).
 9. **Open, quality:** Darija generation is weak (the answer body is in French); azi-1 is still labeled DIAGNOSTIC (the router override handles it); quotient and x(x+1) retrieval misses; the saturated-profile priority inversion is unexplained.
-10. **Pending review:** drafts `derivee-definition.en.md` and `limite.fr.md` (`limite` needs bank exercises first); the exercise bank is French-only. Legacy root `cache.sqlite` and `metrics*.jsonl` moved to `_legacy/`; the research PDF moved to `docs/research/`.
+10. **Pending review:** drafts `derivee-definition.en.md`, `limite.fr.md` (`limite` needs bank exercises first) and `derivee-quotient-inverse-racine.fr.md` (new in v1.3: course text for the bank's quotient / inverse / racine carrée); the exercise bank is French-only. Legacy root `cache.sqlite` and `metrics*.jsonl` moved to `_legacy/`; the research PDF moved to `docs/research/`.
 
 ## What this repo is
 
@@ -137,6 +138,10 @@ since there is no token streaming.
 | compress retrieved context | compact | none |
 | explain (deep concept explanation) | mid-size | fallback to compact if mid-size saturated / quota low |
 | summary of targeted text | compact | none |
+| ocr_transcribe (photo of work → text, LaTeX) | vision | none (compact cannot read an image); shares the chat window |
+| check_claim (is this true in the course) | compact, after sympy and the retrieval gate | none |
+| check_answer (a worked solution, line by line) | none; compact only for a guiding question | none |
+| prep_plan | none (rules) | none |
 
 Escalation input comes from the caller (e.g. `context["escalate"]=True`) or from
 classify's `complexity >= 4`. Keep the rule in one place: `router/policy.py`.
@@ -171,7 +176,7 @@ provider supports it, keep prompts short, give one example.
 
 Wraps the client when `SIMULATE_CONSTRAINTS=true`. Configurable via env:
 - extra latency per class (compact ~2–6 s, mid-size ~8–30 s)
-- token bucket quota (the provider's own; the engine's limiter is a sliding window) → quota-exhausted error with a delay
+- token bucket quota (the provider's own; the engine's limiter is a sliding window) → quota-exhausted error with a delay (superseded in v1.1: the engine's own limiter is a sliding window, 20 sends in any 60 s; the bucket exists only in the simulator, see `DECISIONS.md` "Engine v1.1")
 - random 503 + Retry-After on mid-size (e.g. 15%)
 - 400 when `max_tokens` or prompt length exceeds a configured ceiling
 - quota headers on success

@@ -90,3 +90,59 @@ def test_events_of_the_generation_reach_the_learner_until_the_deadline():
             names = [n for _, n in tl.calls["e"]["events"]]
             assert names.index("queued") < names.index("generating") < names.index("deadline") < names.index("fast_extractive")
     run_virtual(main)
+
+
+def test_an_identical_request_waiting_for_a_slow_leader_has_the_same_deadline():
+    """The leader is a BACKGROUND generation (a prep page) that takes 60 s. A learner who asks the same thing at t=5 must
+    not wait for it: fast mode at 5 + 25 s, and the leader's answer still lands in the cache."""
+    async def main(loop):
+        eng, sim, provider, sink = build(loop, SIM_HANG_S=60, TIMEOUT_MIDSIZE_BACKGROUND_S=85)
+        async with eng:
+            tl = Timeline(eng, loop)
+            tl.at("leader", 0, "explain", {"question": EXPLAINS[0]}, {"language": "FRENCH"}, Priority.BACKGROUND)
+            tl.explain("follower", 5, EXPLAINS[0])
+            await asyncio.gather(*tl.tasks)
+            lead, fol = tl.calls["leader"]["result"], tl.calls["follower"]["result"]
+            assert not lead.degraded and tl.took("leader") == pytest.approx(60, abs=0.5)
+            assert fol.degraded and fol.degrade_reason == "deadline" and fol.mode == "fast_extractive"
+            assert tl.took("follower") == pytest.approx(25, abs=0.5)                      # not 55 s
+            assert "waiting_identical_request" in fol.event_names and "deadline" in fol.event_names
+            again = Timeline(eng, loop)
+            await again.explain("later", 0, EXPLAINS[0])
+            assert again.calls["later"]["result"].from_cache                                 # the leader filled the cache
+    run_virtual(main)
+
+
+def test_a_follower_of_a_quick_leader_is_unchanged_and_a_background_follower_waits_for_it():
+    async def main(loop):
+        eng, *_ = build(loop, SIM_HANG_S=12)
+        async with eng:
+            tl = Timeline(eng, loop)
+            tl.explain("leader", 0, EXPLAINS[0])
+            tl.explain("follower", 3, EXPLAINS[0])
+            tl.at("bg", 4, "explain", {"question": EXPLAINS[0]}, {"language": "FRENCH"}, Priority.BACKGROUND)
+            await asyncio.gather(*tl.tasks)
+            for k in ("follower", "bg"):
+                r = tl.calls[k]["result"]
+                assert r.from_cache and not r.degraded and "waiting_identical_request" in r.event_names
+            assert tl.calls["follower"]["end"] == pytest.approx(12, abs=0.5)
+    run_virtual(main)
+
+
+def test_a_follower_whose_leader_left_nothing_in_the_cache_becomes_a_leader_with_the_same_deadline():
+    """With nothing cached (the leader's answer was degraded / not stored), the follower used to start its own generation
+    after waiting, with no deadline at all (found by the mixed load: 41 s). It now counts the time it already waited."""
+    async def main(loop):
+        eng, sim, provider, sink = build(loop, SIM_HANG_S=18, CACHE_TTL_DAYS=0)        # an answer is never cached
+        async with eng:
+            tl = Timeline(eng, loop)
+            tl.explain("leader", 0, EXPLAINS[0])
+            tl.explain("follower", 4, EXPLAINS[0])
+            await asyncio.gather(*tl.tasks)
+            lead, fol = tl.calls["leader"]["result"], tl.calls["follower"]["result"]
+            assert not lead.degraded and tl.took("leader") == pytest.approx(18, abs=0.5)
+            # the follower woke at 18 s, found nothing, and had 25 - 14 = 11 s left for its own 18 s generation
+            assert fol.degrade_reason == "deadline" and fol.mode == "fast_extractive"
+            assert tl.took("follower") == pytest.approx(25, abs=0.5)
+            assert "waiting_identical_request" in fol.event_names and fol.event_names.count("waiting_identical_request") == 1
+    run_virtual(main)

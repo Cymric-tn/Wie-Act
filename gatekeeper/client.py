@@ -23,7 +23,9 @@ from config import ModelClass, Settings
 @dataclass(frozen=True)
 class ChatRequest:
     model_class: ModelClass
-    messages: tuple[dict[str, str], ...]
+    # content is a string, or for the vision class a list of OpenAI content parts: {"type": "text", "text": ...}
+    # and {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}, "x_est_tokens": N}
+    messages: tuple[dict[str, Any], ...]
     max_tokens: int | None = None          # None -> class default from config
     temperature: float = 0.2
     json_mode: bool = False
@@ -61,9 +63,39 @@ def estimate_text_tokens(text: str, per_token: float | None = None) -> int:
     return math.ceil(len(text) / (per_token or CHARS_PER_TOKEN))
 
 
+DEFAULT_IMAGE_TOKENS = 1000     # an image whose part carries no estimate: the cost of a 1-megapixel image
+
+
+def image_part(data_url: str, est_tokens: int, sha: str = "") -> dict[str, Any]:
+    """An image content part. x_est_tokens is what the budget guard counts and x_sha the image's identity for the
+    cache key; chat_body strips both before sending."""
+    return {"type": "image_url", "image_url": {"url": data_url}, "x_est_tokens": int(est_tokens), "x_sha": sha}
+
+
+def content_text(content: Any) -> str:
+    """The text of a message content (string, or the text parts of a part list)."""
+    if isinstance(content, str):
+        return content
+    return "\n".join(str(p.get("text") or "") for p in (content or []) if isinstance(p, dict) and p.get("type") == "text")
+
+
+def content_tokens(content: Any) -> int:
+    if isinstance(content, str) or content is None:
+        return estimate_text_tokens(content or "")
+    return sum(estimate_text_tokens(p.get("text") or "") if p.get("type") == "text"
+               else int(p.get("x_est_tokens") or DEFAULT_IMAGE_TOKENS) for p in content if isinstance(p, dict))
+
+
 def estimate_tokens(messages) -> int:
-    """Conservative (over-)estimate used by the input budget guard and rag/budget.py."""
-    return sum(estimate_text_tokens(m.get("content") or "") for m in messages) + TOKENS_PER_MESSAGE * len(messages)
+    """Conservative (over-)estimate used by the input budget guard and rag/budget.py. Images count their estimate."""
+    return sum(content_tokens(m.get("content")) for m in messages) + TOKENS_PER_MESSAGE * len(messages)
+
+
+def _wire(content: Any) -> Any:
+    """What goes on the wire: our x_* bookkeeping keys are dropped from content parts."""
+    if isinstance(content, list):
+        return [{k: v for k, v in p.items() if not k.startswith("x_")} if isinstance(p, dict) else p for p in content]
+    return content
 
 
 def request_hash(body: dict[str, Any]) -> str:
@@ -95,7 +127,7 @@ class LLMClient:
         req = self.resolve(req)
         body: dict[str, Any] = {
             "model": req.model,
-            "messages": list(req.messages),
+            "messages": [{**m, "content": _wire(m.get("content"))} for m in req.messages],
             "temperature": req.temperature,
             "stream": False,                    # hard rule: FelCloud returns whole responses
         }

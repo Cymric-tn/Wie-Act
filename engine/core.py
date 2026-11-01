@@ -17,6 +17,7 @@ missing required input, bad priority) — as ValueError, before any request is m
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -30,8 +31,12 @@ from pydantic import ValidationError
 from config import ModelClass, Settings, load_settings
 from engine.prompts import PromptTemplate, load_prompt
 from engine.result import Event, Result
-from engine.exercises import ExerciseBank
+from engine.course import load_courses
+from engine.exercises import ExerciseBank, phrase_language
 from engine.grounding import check_formulas
+from engine import answers
+from engine.vision import ImageError, prepare_image
+from engine import language as L
 from engine.language import ARABIC_SCRIPT, arabic_ratio, contamination, latin_words
 from engine.tasks import (Messages, Registry, TaskContext, TaskSpec, best_sentence, default_registry,
                           fast_excerpts, load_templates, load_terms_ar, trim_to_last_sentence)
@@ -45,15 +50,15 @@ TEMPLATE_ONLY_LANGUAGES = {"DARIJA", "ARABIZI"}     # one-liners in these come f
 from gatekeeper.cache import ExactCache, cache_key
 from gatekeeper.client import ChatRequest, EmbedRequest, LLMClient, create_client
 from gatekeeper.errors import (DEFAULT_RETRY_AFTER_S, CeilingExceeded, ClassUnavailable, ConcurrencyLimited, FatalError, LLMError,
-                               ModelSaturated, QuotaExhausted, TransientError)
+                               ModelSaturated, QuotaExhausted, Superseded, TransientError)
 from gatekeeper.limiter import Limiter
 from gatekeeper.queue import Priority, PriorityQueue
 from gatekeeper.retry import CallContext, ChatResult, RetryingCaller, RetryPolicy
-from metrics import CallRecord, JsonlSink, MetricsSink
+from metrics import IDENTITY_KEYS, CallRecord, JsonlSink, MetricsSink, identity
 from rag.budget import BudgetError, assemble, limit_for
 from rag.glossary import Glossary
-from rag.retriever import Hit, Retriever, language_plan, make_retriever
-from rag.store import load_chunks
+from rag.retriever import VIEWER, Hit, Retriever, language_plan, make_retriever
+from rag.store import CourseStore, load_chunks
 from router.policy import Decision, Router
 
 EventCallback = Callable[[Event], None]
@@ -65,6 +70,7 @@ _UNAVAILABLE: list[tuple[type[LLMError], str, bool]] = [
     (QuotaExhausted, "quota_exhausted", True),
     (TransientError, "service_unavailable", True),
     (ClassUnavailable, "service_unavailable", True),
+    (Superseded, "superseded", False),
     (CeilingExceeded, "request_too_large", False),
     (FatalError, "provider_error", False),
 ]
@@ -83,6 +89,8 @@ class _Run:
         self.decision: Decision | None = None
         self.glossary: list[str] = []
         self.negative_hit = False
+        self.retrieval_on: str | None = None      # which input found the course chunks: passage | question | board_text
+        self.eta: float | None = None             # when a helper run (grade) was refused with a delay
         self.silent = False                      # a run that finishes after its caller left: no "run" metrics record
         self.started = asyncio.get_running_loop().time()    # the deadline is measured on the event loop's clock
 
@@ -121,6 +129,22 @@ class _FastMode(Exception):
         self.eta = eta                       # when the unavailable class is probed again
 
 
+def trim_to_tokens(text: str, max_tokens: int) -> str:
+    """Keep the head of `text` within about max_tokens (the estimator's own chars-per-token), ending on a line or
+    sentence boundary when one is near, marked with an ellipsis. Text that fits is returned as it is."""
+    from gatekeeper.client import chars_per_token
+    limit = max(40, int(max_tokens * chars_per_token()))
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    best = max(cut.rfind("\n"), *(cut.rfind(m) for m in (". ", "? ", "! ", "。", "؟ ")))
+    if best >= limit * 0.6:
+        cut = cut[:best + 1]
+    else:
+        cut = cut[:max(cut.rfind(" "), int(limit * 0.8))]
+    return cut.rstrip() + " […]"
+
+
 def _extract_json(text: str) -> str:
     """Tolerate ```json fences and chatter around one object (not a repair: no extra request)."""
     t = re.sub(r"^```(?:json)?|```$", "", text.strip(), flags=re.M).strip()
@@ -139,10 +163,13 @@ class Engine:
         caller.availability = self.router.unavailable_for
         self._clock = clock
         # prompt assembly must also leave room for the longest answer inside the context window
-        window_room = int(settings.context_window * settings.context_fill) - max(settings.task_max_tokens.values())
+        # (the OCR cap is not an answer the text prompts have to leave room for: its prompt is an image, sized separately)
+        window_room = int(settings.context_window * settings.context_fill) - max(
+            v for k, v in settings.task_max_tokens.items() if k != "ocr_transcribe")
         self.limit = min(limit_for(settings.input_token_budget, settings.budget_safety_margin), window_room)
         self.retriever = retriever or make_retriever(settings.retriever, settings.rag_min_coverage, self._embed,
-                                                     settings.glossary_weight)
+                                                     settings.glossary_weight, settings.source_boost_professor)
+        self.course_store = CourseStore(settings.rag_course_index_dir) if settings.rag_course_index_dir else None
         self.glossary = Glossary.load(settings.glossary_path) \
             if settings.glossary_path and os.path.exists(settings.glossary_path) else None
         self.terms_ar = load_terms_ar(settings.terms_ar_path)
@@ -156,10 +183,14 @@ class Engine:
         self._indexed = retriever is not None and bool(getattr(retriever, "chunks", None))
         self._index_lock = asyncio.Lock()
         self._inflight: dict[str, asyncio.Event] = {}     # cache key -> done, for identical concurrent requests
+        self._rooms: dict[str, float] = {}                # room_id -> loop time its in-flight run started
+        self._room_ewma_s = 8.0                           # typical duration of a room's run (for room_busy eta)
         self._probes: set[asyncio.Task] = set()           # half-open breaker probes in flight
         self._background: set[asyncio.Task] = set()       # generations that outlived the interactive deadline
+        self.courses = load_courses(settings.courses_dir) \
+            if settings.courses_dir and os.path.isdir(settings.courses_dir) else {}
         self.prompts: dict[str, PromptTemplate] = {
-            s.name: load_prompt(settings.prompts_dir, s.prompt) for s in self.registry}   # fail fast
+            s.name: load_prompt(settings.prompts_dir, s.prompt) for s in self.registry if s.prompt}   # fail fast
 
     @classmethod
     def create(cls, settings: Settings | None = None, *, transport=None, client: LLMClient | None = None,
@@ -170,7 +201,8 @@ class Engine:
         client = client or create_client(settings, transport)
         limiter = Limiter(settings, clock, sleep)
         caller = RetryingCaller(client, limiter, sink, RetryPolicy.from_settings(settings),
-                                settings.input_token_budget, clock, sleep, rng, PriorityQueue(limiter, clock))
+                                settings.input_token_budget, clock, sleep, rng,
+                                PriorityQueue(limiter, clock, background_reserve=settings.background_reserve))
         cache = cache or ExactCache(settings.cache_path, settings.cache_ttl_s)
         return cls(settings, caller, cache, sink, registry, clock, retriever)
 
@@ -199,17 +231,55 @@ class Engine:
         if missing:
             raise ValueError(f"task {task!r} needs inputs {missing}")
         prio = Priority(priority)
+        ids = {k: str(context[k]) for k in IDENTITY_KEYS if context and context.get(k) is not None}
+        token = identity.set(ids)
+        try:
+            return await self._run(spec, inputs, context, prio, on_event)
+        finally:
+            identity.reset(token)
+
+    async def _run(self, spec: TaskSpec, inputs: dict, context: Mapping[str, Any] | None, prio: Priority,
+                   on_event: EventCallback | None) -> Result:
+        task = spec.name
+        if spec.query_input != "question":          # grounded tasks search with their own input ("claim")
+            inputs = {**inputs, "question": inputs[spec.query_input]}
         tctx = TaskContext.from_mapping(context or {})
         tctx = replace(tctx, extra={**tctx.extra, "terms_ar": self.terms_ar, "course_words": self.course_words,
-                                    "exercise_bank": self.exercises, "templates": self.templates})
+                                    "exercise_bank": self.exercises, "templates": self.templates,
+                                    "courses": self.courses, "settings": self.settings,
+                                    "chunks_fn": lambda: getattr(self.retriever, "chunks", [])})
         if spec.prepare:
             tctx = spec.prepare(inputs, tctx)
         run = _Run(self._clock, on_event)
         ctx = CallContext(task=task, priority=prio.value, on_event=run.emit, turn_id=tctx.extra.get("turn_id"))
         self._maybe_probe()
+        key_extra: list[str] = []
+        for name, share in spec.budgeted_inputs.items():      # passage, board_text: a share of the prompt budget
+            raw = str(inputs.get(name) or "").strip()
+            if not raw:
+                continue
+            key_extra.append(f"{name}:{hashlib.sha256(raw.encode()).hexdigest()[:12]}")   # the FULL original is the identity
+            kept = trim_to_tokens(raw, int(self.limit * getattr(self.settings, share)))
+            if kept != raw:
+                run.emit("trimming_input", {"input": name, "from_chars": len(raw), "to_chars": len(kept)})
+            inputs = {**inputs, name: kept}
+        if key_extra:
+            tctx = replace(tctx, extra={**tctx.extra, "key_extra": key_extra})
+        room = str(context["room_id"]) if context and context.get("room_id") is not None else None
+        if room is not None:
+            now = asyncio.get_running_loop().time()
+            if room in self._rooms:       # one AI request in flight per room: say so, with when to come back
+                eta = round(max(1.0, self._room_ewma_s - (now - self._rooms[room])), 1)
+                run.degrade("room_busy", terminal=True)
+                run.emit("room_busy", {"room_id": room, "eta_s": eta})
+                return self._finish(run, ctx, eta=eta, route_reason="room_busy", notes={"room_id": room})
+            self._rooms[room] = now
         try:
             return await self._execute(spec, inputs, tctx, prio, run, ctx)
         finally:
+            if room is not None:
+                took = asyncio.get_running_loop().time() - self._rooms.pop(room)
+                self._room_ewma_s = 0.7 * self._room_ewma_s + 0.3 * took
             if run.decision is not None:     # a half-open probe that never reached mid-size frees its slot
                 self.router.release_probe(run.decision)
 
@@ -224,6 +294,7 @@ class Engine:
             t.add_done_callback(self._probes.discard)
 
     async def _probe(self, cls: ModelClass) -> None:
+        identity.set({})                           # the task copied the triggering learner's ids: a probe has none
         ctx = CallContext(task="probe", priority=Priority.BACKGROUND.value, purpose="probe", saturation_retries=0)
         req = ChatRequest(cls, ({"role": "user", "content": "Reply with the single word: ok"},), max_tokens=8,
                           temperature=0.0)
@@ -234,13 +305,31 @@ class Engine:
 
     async def _execute(self, spec: TaskSpec, inputs: dict, tctx: TaskContext, prio: Priority, run: "_Run",
                        ctx: CallContext) -> Result:
-        task, prompt = spec.name, self.prompts[spec.name]
+        task, prompt = spec.name, self.prompts.get(spec.name)
+        if spec.vision:
+            try:
+                img = prepare_image(inputs["image"], self.settings.vision_max_pixels,
+                                    self.settings.image_tokens_per_megapixel, self.settings.vision_max_bytes)
+            except ImageError as e:     # the learner's photo, not a caller bug: answered, degraded, nothing sent
+                run.degrade("invalid_image", terminal=True)
+                run.emit("unavailable", {"reason": "invalid_image", "eta_s": None, "error": "image"})
+                return self._finish(run, ctx, route_reason="invalid image", notes={"error": str(e)})
+            if img.resized:
+                run.emit("resizing_image", {"from": f"{img.from_size[0]}x{img.from_size[1]}",
+                                            "to": f"{img.width}x{img.height}"})
+            tctx = replace(tctx, extra={**tctx.extra, "image": img})
+        if spec.needs_index:
+            await self._ensure_index()
         if spec.shortcut and (data := spec.shortcut(inputs, tctx)) is not None:
             run.emit("answered_by_rules")
             text = data.pop("_text", None)
-            return self._finish(run, ctx, text=text, data=data, notes={"source": data.get("source", "rules")})
+            notes = {"source": data.get("source", "rules"), **data.pop("_notes", {})}
+            return self._finish(run, ctx, text=text, data=data, notes=notes,
+                                mode="rules" if spec.name == "prep_plan" else None)
         if spec.local is not None:
             return await self._local(spec, prompt, inputs, tctx, ctx, run)
+        if spec.name == "check_answer":
+            return await self._check_answer(prompt, inputs, tctx, prio, run, ctx)
 
         decision = run.decision = self.router.decide(task, tctx.as_mapping(),
                                                      self.caller.limiter.buckets["chat"].tokens, ctx)
@@ -249,9 +338,13 @@ class Engine:
             hits = await self._retrieve(inputs, tctx, run)
             if not hits:      # say so instead of letting the model invent an answer; no request spent
                 run.emit("no_relevant_context")
-                return self._finish(run, ctx, text=spec.not_found_text(prompt, inputs, tctx),
+                nf = spec.not_found_data(prompt, inputs, tctx) if spec.not_found_data else None
+                return self._finish(run, ctx, text=None if nf else spec.not_found_text(prompt, inputs, tctx), data=nf,
                                     route_reason=decision.reason, notes={"retrieval": "no_relevant_chunks"})
-            tctx = replace(tctx, extra={**tctx.extra, "concept": hits[0].chunk.concept})
+            if spec.max_chunks:
+                hits = hits[:spec.max_chunks]
+            tctx = replace(tctx, extra={**tctx.extra, "concept": hits[0].chunk.concept,
+                                        "top_chunk": hits[0].chunk.chunk_id})
             # cache identity = question (+ history) + WHICH chunks were retrieved, not the compressed text
             key_messages = spec.render_grounded(prompt, inputs, tctx, [], inputs.get("history") or [])
             messages: Messages = []
@@ -259,23 +352,41 @@ class Engine:
             key_messages = messages = spec.build(prompt, inputs, tctx, self.limit)
         run.emit("checking_cache")
         key = cache_key(task, decision.preferred.value, key_messages, tctx.language, tctx.level, tctx.style,
-                        prompt.version, extra=[h.chunk.chunk_id for h in hits])
+                        prompt.version, extra=[h.chunk.chunk_id for h in hits] + list(tctx.extra.get("key_extra", ())))
         if (hit := self.cache.get(key)) is not None:
             return self._cache_hit(run, ctx, key, hit, decision, spec, inputs, tctx, hits)
         if spec.grounded and (reasons := self.cache.get_negative(key)):
             return await self._negative_hit(prompt, inputs, tctx, hits, key, reasons, ctx, run, decision)
-        if (leader := self._inflight.get(key)) is not None:
+        announced = False
+        while (leader := self._inflight.get(key)) is not None:
             # the same request is already being generated: wait for it instead of sending a duplicate
-            run.emit("waiting_identical_request")
-            await leader.wait()
+            if not announced:
+                run.emit("waiting_identical_request")
+                announced = True
+            if self._has_deadline(spec, prio, decision):
+                # a learner waiting for someone else's identical request has the same deadline as any learner: the leader
+                # may be a slow generation (or a BACKGROUND page) that takes far longer than INTERACTIVE_DEADLINE_S
+                left = max(0.0, self.settings.interactive_deadline_s - (asyncio.get_running_loop().time() - run.started))
+                try:
+                    await asyncio.wait_for(leader.wait(), timeout=left)
+                except asyncio.TimeoutError:
+                    run.degrade("deadline")
+                    run.emit("deadline", {"deadline_s": self.settings.interactive_deadline_s, "generation_continues": True})
+                    log.warning("%s %s: the identical request in flight has no body after %.0f s, serving extracts",
+                                ctx.request_id, ctx.task, self.settings.interactive_deadline_s)
+                    return await self._fast_extractive(prompt, inputs, tctx, [h.chunk for h in hits], {}, ctx, run,
+                                                       replace(decision, reason=decision.reason + "; interactive deadline"),
+                                                       llm_framing=False)
+            else:
+                await leader.wait()
             if (hit := self.cache.get(key)) is not None:
                 return self._cache_hit(run, ctx, key, hit, decision, spec, inputs, tctx, hits)
             if spec.grounded and (reasons := self.cache.get_negative(key)):
                 return await self._negative_hit(prompt, inputs, tctx, hits, key, reasons, ctx, run, decision)
-            # the leader's result was degraded for another reason (never cached): produce our own
-            return await self._produce(spec, prompt, inputs, tctx, prio, run, ctx, decision, hits, key, messages)
-        if hits:      # the course itself, verbatim, while the full answer is generated (no extra request)
-            run.emit("partial_result", {"excerpts": fast_excerpts(str(inputs["question"]),
+            # the leader's result was degraded (never cached): nobody has it. Whoever wakes first becomes the leader
+            # (below, with the same deadline as any request); the others wait for that one in this loop.
+        if hits and spec.partial_result:    # the course itself, verbatim, while the full answer is generated
+            run.emit("partial_result", {"excerpts": fast_excerpts(self._query_text(inputs),
                                                                   [h.chunk for h in hits], PARTIAL_SENTENCES)})
         done = self._inflight[key] = asyncio.Event()
         if self._has_deadline(spec, prio, decision):
@@ -306,8 +417,10 @@ class Engine:
         bg = _Run(self._clock, forward)
         bg.t0, bg.started = run.t0, run.started
         bg.glossary = list(run.glossary)         # state the retrieval already put on the learner's run
+        bg.retrieval_on = run.retrieval_on
         bg_ctx = CallContext(request_id=ctx.request_id, task=ctx.task, priority=ctx.priority, purpose=ctx.purpose,
-                             on_event=bg.emit, queue_seq=ctx.queue_seq, turn_id=ctx.turn_id)
+                             on_event=bg.emit, queue_seq=ctx.queue_seq, turn_id=ctx.turn_id,
+                             owner=None)       # the learner was answered: a newer question must not kill this fill
         d = replace(decision, reason=decision.reason + "; completes after the learner's deadline")
         bg.decision = d
         task = loop.create_task(self._produce(spec, prompt, inputs, tctx, prio, bg, bg_ctx, d, hits, key, messages))
@@ -370,6 +483,8 @@ class Engine:
         status, notes = "ok", {}
         if spec.output_schema is not None:      # a cut JSON reply is invalid: the repair ladder handles it
             data, status, notes = await self._json_output(spec, prompt, chat, messages, inputs, tctx, ctx, run)
+            if status == "safe_default" and spec.safe_default_reason:
+                run.degrade(spec.safe_default_reason)
         else:
             reply = chat.text
             if chat.truncated:                   # hit the output cap: keep whole sentences only
@@ -396,6 +511,9 @@ class Engine:
                 notes = {**notes, **(detail or {})}
 
         notes = {**ground_notes, **notes}
+        if spec.vision and (img := tctx.extra.get("image")) is not None:
+            notes["image"] = {"sha": img.sha[:12], "size": f"{img.width}x{img.height}", "resized": img.resized,
+                              "est_tokens": img.est_tokens}
         body, raw_data = text, data                      # what the model wrote: the only thing cached
         if spec.decorate and text is not None:
             text, data = spec.decorate(body, inputs, tctx, True)
@@ -407,6 +525,7 @@ class Engine:
         if not run.degraded and status != "safe_default":
             self.cache.put(key, task, {"text": body, "data": raw_data, "model_class": run.model_class,
                                        "model": run.model, "notes": notes})
+            self.cache.link(ctx.request_id, key)
         elif spec.grounded and NEGATIVE & set(run.reasons):
             self.cache.mark_negative(key, task, run.reasons, self.settings.negative_cache_ttl_s)
         return self._finish(run, ctx, text=text, data=data, route_reason=decision.reason, status=status,
@@ -454,7 +573,7 @@ class Engine:
         course sentences verbatim (formulas intact), introduced by one line. Never cached.
         llm_framing=False: the framing line comes from the cache or the template, never from a request."""
         run.emit("fast_extractive", {"reason": run.reason})
-        excerpts = fast_excerpts(str(inputs["question"]), chunks)
+        excerpts = fast_excerpts(self._query_text(inputs), chunks)
         framing = await self._fast_framing(prompt, str(inputs["question"]), tctx, ctx, run, llm_framing)
         text = framing + "\n\n" + "\n".join(f"- {e['text']}" for e in excerpts)
         extra: dict = {}
@@ -499,7 +618,7 @@ class Engine:
         fctx = CallContext(request_id=ctx.request_id, turn_id=ctx.turn_id, task=ctx.task, priority=ctx.priority,
                            purpose=purpose, on_event=run.emit, queue_seq=ctx.queue_seq, saturation_retries=0)
         try:
-            cap = self.settings.task_max_tokens["quiz_intro" if kind == "intro" else "framing"]
+            cap = self.settings.task_max_tokens[{"intro": "quiz_intro", "guide": "check_answer"}.get(kind, "framing")]
             chat = await self.caller.chat(ChatRequest(ModelClass.COMPACT, tuple(msgs), max_tokens=cap,
                                                       temperature=0.2), fctx)
         except LLMError:
@@ -514,6 +633,168 @@ class Engine:
             return template
         self.cache.put(key, cache_task, {"text": line, "model": chat.model})
         return line
+
+    # ================================================================== ingestion
+    async def ingest_file(self, file: str, course_id: str, unit_id: str = "", owner: str = "",
+                          visibility: str = "public", source: str = "professor", *, class_id: str = "",
+                          ocr: bool = True, add: bool = False, **kw):
+        """rag.ingest.ingest + OCR of the scanned pages: each is read by the `ocr_transcribe` task at BACKGROUND, one at
+        a time, at most INGEST_MAX_OCR_PAGES per file. The result is an IngestResult (see rag/ingest.py); add=True also
+        puts its chunks in the live index (add_material). Each OCR run carries course_id and class_id, and the
+        learner_id of a learner's own upload, never a room."""
+        from rag import ingest as I
+        ids = {"course_id": course_id, **({"class_id": class_id} if class_id else {}),
+               **({"learner_id": owner} if source == "learner" and owner else {})}
+
+        async def read(page: int, png: bytes) -> I.OcrPage:
+            r = await self.run("ocr_transcribe", {"image": png}, {"language": kw.get("language"), **ids},
+                               Priority.BACKGROUND)
+            if r.degraded and r.degrade_reason != "low_confidence":
+                return I.OcrPage(ok=False, reason=r.degrade_reason)
+            return I.OcrPage((r.data or {}).get("text", ""), True, r.degrade_reason == "low_confidence")
+
+        res = await I.ingest_with_ocr(file, course_id, unit_id, owner, visibility, source, class_id=class_id,
+                                      ocr=read if ocr else None, max_ocr_pages=self.settings.ingest_max_ocr_pages,
+                                      course=self.courses.get(course_id), glossary=self.glossary,
+                                      max_tokens=self.settings.chunk_max_tokens, **kw)
+        if add and res.chunks:
+            await self.add_material(res.chunks)
+        return res
+
+    # ================================================================== prep pages
+    async def generate_page(self, plan, focus_point: Mapping[str, Any], context: Mapping[str, Any] | None = None,
+                            on_event: EventCallback | None = None) -> dict:
+        """One prep page for a focus point of a prep_plan: the explanation (the `explain` task at BACKGROUND, through
+        the same cache as the tutor's: an identical question is a hit), a worked example from the bank and three
+        mini-quiz items (bank exercises of the concept, then of its prerequisites, then deterministic variants).
+        `plan` is the prep_plan Result or its data; only focus_point is read from it, so it may be {}.
+        Never raises a provider error: a degraded explanation comes back marked, the exercises are still there."""
+        from engine import prep
+        context = dict(context or {})
+        courses = self.courses
+        cid = context.get("course_id") or (next(iter(courses)) if len(courses) == 1 else None)
+        course = courses.get(cid)
+        concept = str(focus_point["concept_id"])
+        kind = focus_point.get("page_kind", "learn")
+        lang = L.normalize_label(context.get("language")) or "FRENCH"
+        pl = phrase_language(lang)
+        p = focus_point.get("mastery")
+        if p is None:
+            p = 0.9 if kind == "review" else 0.2 if focus_point.get("reason_code") == "low_mastery" else 0.5
+        title = course.title(concept, pl) if course and concept in course.concepts else concept
+        worked, quiz = prep.page_exercises(self.exercises, course, concept, float(p), lang)
+        taken = [x["exercise_id"] for x in [worked] if x] + [q["id"] for q in quiz if q["source"] == "bank"]
+        question = {"fr": f"C'est quoi : {title} ?", "en": f"What is: {title}?", "ar": f"ما هو: {title}؟"}[pl]
+        ex = await self.run("explain", {"question": question, "exclude_exercises": taken},
+                            {**context, "language": lang}, Priority.BACKGROUND, on_event)
+        return {"concept_id": concept, "page_kind": kind, "title": title, "language": lang,
+                "explanation": ex.text, "explanation_sections": ex.data, "explain_request_id": ex.request_id,
+                "from_cache": ex.from_cache, "degraded": ex.degraded, "degrade_reason": ex.degrade_reason,
+                "eta_seconds": ex.eta_seconds, "worked_example": worked, "quiz": quiz}
+
+    # ================================================================== check_answer
+    @staticmethod
+    def _sub_context(tctx: TaskContext) -> dict:
+        """The context of a run this engine starts for itself (compress, grade): language, turn and the learner's
+        ids, but never room_id: the room is held by the run that is calling, it must not refuse its own helper."""
+        keep = ("turn_id", "learner_id", "course_id", "class_id")
+        return {"language": tctx.language, **{k: tctx.extra[k] for k in keep if tctx.extra.get(k) is not None}}
+
+    async def _check_answer(self, prompt: PromptTemplate, inputs: dict, tctx: TaskContext, prio: Priority,
+                            run: "_Run", ctx: CallContext) -> Result:
+        """Line by line (engine.answers): safe parse -> OK / WRONG / UNCHECKED; the first WRONG line is explained by
+        the exercise's stored mistakes, then by the buggy rules, else by one compact guiding question that is never
+        allowed to state the answer; the last line goes through grade."""
+        steps = inputs["steps"]
+        steps = steps.splitlines() if isinstance(steps, str) else steps
+        if not isinstance(steps, (list, tuple)):
+            raise ValueError("task 'check_answer': steps must be a list of lines")
+        lines = [str(s).strip() for s in steps if str(s).strip()][:answers.MAX_LINES]
+        if not lines:
+            raise ValueError("task 'check_answer' needs at least one non-empty step")
+        exercise = None
+        if inputs.get("exercise_id"):
+            exercise = self.exercises.get(str(inputs["exercise_id"])) if self.exercises else None
+            if exercise is None:
+                raise ValueError(f"unknown exercise_id {inputs['exercise_id']!r}")
+        run.decision = self.router.decide("check_answer", tctx.as_mapping(),
+                                          self.caller.limiter.buckets["chat"].tokens, ctx)
+        lang, problem = tctx.language or "FRENCH", str(inputs["problem"])
+        run.emit("parsing_steps", {"steps": len(lines)})
+        target = answers.target_for(problem, exercise)
+        results = answers.check_steps(lines, target)
+        run.emit("checking_steps")
+        notes: dict[str, Any] = {"target": target.kind if target else None}
+        solution = str(inputs.get("solution") or (exercise.solution if exercise else "") or
+                       (target.solution_text() if target else "") or "").strip() or None
+        used_llm = used_rules = False
+
+        first = next((r.index for r in results if r.verdict == "WRONG"), None)
+        feedback = ""
+        if first is not None:
+            w = results[first]
+            diag = answers.diagnose(w.value, target, exercise, lang) if w.value is not None and w.note == "wrong" else None
+            if diag is not None:
+                feedback, notes["diagnosis"] = diag
+                used_rules = True
+            else:
+                feedback, asked = await self._guiding_question(prompt, problem, w, target, solution, tctx, ctx, run)
+                used_llm = asked
+                notes["diagnosis"] = "llm" if asked else "template"
+
+        final, final_fb, graded_llm = await self._final_verdict(lines, results, exercise, problem, solution, tctx, prio,
+                                                                run)
+        used_llm = used_llm or graded_llm
+        if not feedback and final == "INCORRECT" and final_fb:
+            feedback = final_fb
+            used_rules = used_rules or not graded_llm
+        data = {"steps": [{"index": r.index, "verdict": r.verdict, "note": answers.note(r.note, lang)} for r in results],
+                "first_wrong": first, "final_verdict": final, "feedback": feedback,
+                "graded_by": "llm" if used_llm else "rules" if used_rules else "sympy"}
+        return self._finish(run, ctx, data=data, route_reason=run.decision.reason, notes=notes,
+                            mode=None if used_llm else "rules", eta=getattr(run, "eta", None))
+
+    async def _guiding_question(self, prompt, problem, wrong, target, solution, tctx, ctx, run) -> tuple[str, bool]:
+        """One compact line asking the learner to look at their first wrong line. Never the answer: a line that
+        leaks (the hint guard + the derivative written out) is replaced by the fixed question."""
+        lang = tctx.language or "FRENCH"
+        template = prompt.sections[f"guide_template.{lang}"]
+        line = await self._one_liner(prompt, "guide", {"problem": problem, "n": wrong.index + 1, "step": wrong.line},
+                                     "guide_template", tctx, ctx, run)
+        if answers.leaks(line, target, solution):
+            run.emit("guarded", {"reason": "hint_guard:answer_leak"})
+            return template, False
+        return line, line != template
+
+    async def _final_verdict(self, lines, results, exercise, problem, solution, tctx, prio, run) -> tuple[str, str, bool]:
+        """(verdict, feedback, used_llm): the last line against the solution. The exercise's stored answers are
+        compared first (text included: variations, extrema); everything else goes through the grade task, which
+        is sympy first and the compact grader only for text it cannot compare."""
+        if not solution:
+            return "UNKNOWN", "", False
+        last = results[-1].line
+        if answers.normalize_answer(last) and answers.normalize_answer(last) == answers.normalize_answer(solution):
+            return "CORRECT", "", False                       # the stated solution, written the same way: no request
+        if exercise is not None:
+            for expr, fb in exercise.common_mistakes:
+                if answers.normalize_answer(last) == answers.normalize_answer(expr):
+                    return "INCORRECT", fb, False
+        attempt = last.split("=")[-1].strip() if results[-1].value is not None and "=" in last else last
+        mistakes = [{"expr": e, "feedback": f} for e, f in (exercise.common_mistakes if exercise else ())]
+        res = await self.run("grade", {"problem": problem, "solution": solution, "attempt": attempt,
+                                       "common_mistakes": mistakes}, self._sub_context(tctx), prio,
+                             on_event=lambda ev: run.emit(ev.name, ev.data))
+        run.tokens_in += res.tokens_in
+        run.tokens_out += res.tokens_out
+        if res.model_class_used and not res.from_cache:
+            run.model_class, run.model = res.model_class_used, res.model
+        for reason in ([res.degrade_reason] if res.degraded else []):
+            run.degrade(reason)
+        if res.degraded and res.eta_seconds is not None:
+            run.eta = res.eta_seconds
+        d = res.data or {}
+        verdict = d.get("verdict") if d.get("verdict") in ("CORRECT", "INCORRECT", "PARTIAL") else "UNKNOWN"
+        return verdict, d.get("feedback") or "", d.get("graded_by") == "llm" and not res.from_cache
 
     # ================================================================== local tasks (exercise bank)
     async def _local(self, spec: TaskSpec, prompt: PromptTemplate, inputs: dict, tctx: TaskContext,
@@ -549,23 +830,75 @@ class Engine:
     async def _ensure_index(self) -> None:
         async with self._index_lock:
             if not self._indexed:
-                await self.retriever.index(load_chunks(self.settings.rag_index_path))
+                base = load_chunks(self.settings.rag_index_path)
+                extra = self.course_store.load_all() if self.course_store else []   # runtime material of every course
+                await self.retriever.index(base + extra)
                 self._indexed = True
 
+    # ================================================================== runtime material
+    async def add_material(self, chunks: list) -> int:
+        """Add chunks to the live index (professor documents, learner uploads) and persist them per course, so they
+        survive a restart. A chunk with an existing id replaces the old one. Returns the number added."""
+        if not hasattr(self.retriever, "add"):
+            raise NotImplementedError(f"{type(self.retriever).__name__} cannot add chunks at runtime")
+        await self._ensure_index()
+        async with self._index_lock:
+            n = self.retriever.add(chunks)
+            self._persist({c.course_id for c in chunks})
+        return n
+
+    async def remove_material(self, chunk_ids=(), *, source: str | None = None, course_id: str | None = None,
+                              owner: str | None = None) -> int:
+        """Remove chunks by id, and/or all chunks of one uploaded `source` file (optionally within a course /
+        of an owner). Course docs of the base index can be removed too, but they come back at the next restart
+        unless the index is rebuilt. Returns how many were removed."""
+        await self._ensure_index()
+
+        def where(c) -> bool:
+            return (source is not None and c.source == source and (course_id is None or c.course_id == course_id)
+                    and (owner is None or c.owner == owner))
+        async with self._index_lock:
+            gone = self.retriever.remove(list(chunk_ids), where=where)
+            self._persist({c.course_id for c in gone})
+        return len(gone)
+
+    def _persist(self, course_ids) -> None:
+        if not self.course_store:
+            return
+        base = {c.chunk_id for c in load_chunks(self.settings.rag_index_path)}
+        for cid in course_ids:
+            if cid:
+                self.course_store.save(cid, [c for c in self.retriever.chunks
+                                             if c.course_id == cid and c.chunk_id not in base])
+
+    @staticmethod
+    def _query_text(inputs: Mapping) -> str:
+        """What the lexical parts (fast-mode extracts) match against: the question and the selected passage."""
+        return " ".join(x for x in (str(inputs.get("question") or ""), str(inputs.get("passage") or "")) if x.strip())
+
     async def _retrieve(self, inputs: Mapping, tctx: TaskContext, run: _Run) -> list[Hit]:
+        """The searches, in order, until one passes the coverage gate: the selected passage (it IS the topic, when the
+        learner selected one), the question, and the whiteboard text (when the question alone names no topic)."""
         run.emit("retrieving")
         await self._ensure_index()
         filters = {"topic": tctx.extra.get("topic")} if tctx.extra.get("topic") else None
-        question = str(inputs["question"])
-        expansion = self.glossary.expand(question) if self.glossary else None   # deterministic, no LLM
-        if expansion:
-            run.emit("expanding_query", {"glossary": list(expansion.terms)})
-            run.glossary = list(expansion.terms)
-        for lang_filter in language_plan(tctx.language):
-            hits = await self.retriever.search(question, self.settings.rag_top_k,
-                                               {**(filters or {}), **(lang_filter or {})} or None, expansion)
-            if hits:
-                return hits
+        viewer = {k: tctx.extra.get(k) for k in ("course_id", "class_id", "learner_id")}
+        filters = {**(filters or {}), VIEWER: viewer}      # public course docs, this class's material, own uploads
+        limit = self.settings.retrieval_query_chars
+        passage, board = str(inputs.get("passage") or "").strip(), str(inputs.get("board_text") or "").strip()
+        queries = [(n, q) for n, q in (("passage", passage[:limit]), ("question", str(inputs["question"])),
+                                       ("board_text", board[:limit])) if q.strip()]
+        for source, query in queries:
+            expansion = self.glossary.expand(query) if self.glossary else None   # deterministic, no LLM
+            if expansion:
+                run.emit("expanding_query", {"glossary": list(expansion.terms)})
+                run.glossary = list(expansion.terms)
+            for lang_filter in language_plan(tctx.language):
+                hits = await self.retriever.search(query, self.settings.rag_top_k,
+                                                   {**(filters or {}), **(lang_filter or {})} or None, expansion)
+                if hits:
+                    run.retrieval_on = source
+                    return hits
         return []
 
     async def _ground(self, spec: TaskSpec, prompt, inputs, tctx, hits: list[Hit], prio: Priority,
@@ -580,12 +913,14 @@ class Engine:
                                                for h in hits]}
         if run.glossary:
             notes["glossary"] = run.glossary
+        if run.retrieval_on and run.retrieval_on != "question" and ("passage" in inputs or "board_text" in inputs):
+            notes["retrieval_on"] = run.retrieval_on
         if not asm.all_chunks_fit:
             over = [d["id"] for d in asm.dropped if d["kind"] == "chunk"]
             run.emit("compressing", {"chunks": len(chunks), "over_budget": over})
             comp = await self.run("compress",
                                   {"question": inputs["question"], "chunks": [c.to_dict() for c in chunks]},
-                                  {"language": tctx.language, "turn_id": tctx.extra.get("turn_id")}, prio)
+                                  self._sub_context(tctx), prio)
             run.tokens_in += comp.tokens_in
             run.tokens_out += comp.tokens_out
             kept: dict[str, list[str]] = {}
@@ -723,6 +1058,7 @@ class Engine:
     def _cache_hit(self, run: _Run, ctx: CallContext, key: str, hit: dict, d: Decision, spec: TaskSpec,
                    inputs: Mapping, tctx: TaskContext, hits: list | None = None) -> Result:
         run.emit("cache_hit")
+        self.cache.link(ctx.request_id, key)
         self.sink.write(CallRecord(request_id=ctx.request_id, turn_id=ctx.turn_id, kind="chat", task=ctx.task,
                                        priority=ctx.priority,
                                    model_class=hit.get("model_class"), model=hit.get("model"),

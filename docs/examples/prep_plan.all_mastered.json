@@ -1,0 +1,143 @@
+{
+  "_source": "canned",
+  "task": "prep_plan",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": {
+    "focus_points": [
+      {
+        "concept_id": "nombre dérivé",
+        "day_index": 0,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "tangente",
+        "day_index": 1,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "constante",
+        "day_index": 2,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "puissance",
+        "day_index": 3,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "polynôme",
+        "day_index": 4,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "produit",
+        "day_index": 5,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "inverse",
+        "day_index": 6,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "quotient",
+        "day_index": 7,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "racine carrée",
+        "day_index": 8,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "variations",
+        "day_index": 9,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      },
+      {
+        "concept_id": "extremum",
+        "day_index": 10,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
+      }
+    ],
+    "assessment_exercise_ids": [
+      "d11",
+      "d13",
+      "d03",
+      "d01",
+      "d04",
+      "d06",
+      "d08",
+      "d07",
+      "d09",
+      "d14"
+    ]
+  },
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "answered_by_rules",
+      "t_ms": 0.0,
+      "data": {}
+    }
+  ],
+  "latency_ms": 20.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": null,
+  "repaired": false,
+  "safe_default": false,
+  "mode": "rules",
+  "followup_available": false,
+  "notes": {
+    "source": "rules",
+    "skipped_draft": [
+      "limite"
+    ],
+    "days": 19,
+    "minutes_needed": 88,
+    "minutes_available": 570,
+    "pace_min_per_day": 30,
+    "start": "2026-11-01",
+    "deadline": "2026-11-20"
+  }
+}

@@ -19,6 +19,11 @@ from dotenv import dotenv_values
 class ModelClass(str, Enum):
     COMPACT = "compact"
     MIDSIZE = "midsize"
+    VISION = "vision"          # reads images (OCR). Shares the chat rate window and the concurrency slots.
+
+
+# classes whose requests are slow: together they may hold at most max_concurrent - 1 slots, so compact always has one
+HEAVY_CLASSES = (ModelClass.MIDSIZE, ModelClass.VISION)
 
 
 @dataclass(frozen=True)
@@ -26,6 +31,8 @@ class SimSettings:
     """Constraint simulator knobs (only used when SIMULATE_CONSTRAINTS=true)."""
     latency_compact_s: tuple[float, float] = (2.0, 6.0)
     latency_midsize_s: tuple[float, float] = (8.0, 30.0)
+    latency_vision_s: tuple[float, float] = (8.0, 18.0)
+    vision_image_tokens: int = 800            # what the simulated provider counts for one image
     latency_scale: float = 1.0                # 0 in unit tests
     rate_per_min: float = 20.0                # the simulated provider's bucket
     burst: int = 20
@@ -61,7 +68,7 @@ class Settings:
     rate_window_slack_s: float = 0.5          # a send frees its slot this long after the window, for clock/latency skew
     max_concurrent: int = 2
     max_tokens: Mapping[ModelClass, int] = field(default_factory=lambda: {
-        ModelClass.COMPACT: 300, ModelClass.MIDSIZE: 550})
+        ModelClass.COMPACT: 300, ModelClass.MIDSIZE: 550, ModelClass.VISION: 700})
     output_cap_mode: str = "both"             # options | max_tokens | both (how the output cap is sent, see client.py)
     input_token_budget: int = 2800
     estimate_chars_per_token: float = 2.3     # token estimator; Arabizi is the worst measured case (2.31)
@@ -73,6 +80,12 @@ class Settings:
     timeout_midsize_interactive_s: float = 40.0   # explain p95 is about 23 s, the 350-token cap about 30 s
     timeout_midsize_background_s: float = 85.0
     timeout_compact_s: float = 30.0
+    timeout_vision_s: float = 40.0            # TIMEOUT_VISION_S: OCR of one image (measured p95 is set from the FelCloud probe)
+    vision_max_pixels: int = 1_000_000        # images are resized to at most this many pixels before sending
+    vision_max_bytes: int = 12_000_000        # larger uploads are refused (invalid_image) before decoding
+    image_tokens_per_megapixel: int = 1000    # ASSUMPTION(felcloud): input tokens an image costs; measured in the v1.3 slot
+    vision_max_slots: int = 1                 # vision may hold at most this many concurrency slots (ghosts included)
+    background_reserve: int = 6               # BACKGROUND chat waits while fewer than this many sends remain in the window
     midsize_max_slots: int = 1                # mid-size may hold at most this many concurrency slots (ghosts included); 0 = no cap
     interactive_deadline_s: float = 25.0      # an INTERACTIVE explain without a body by then is answered in fast mode
     max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
@@ -93,15 +106,26 @@ class Settings:
     rag_top_k: int = 2                        # explain uses the 2 most relevant chunks after the gate
     rag_min_coverage: float = 0.4             # share of query terms (idf-weighted) a chunk must contain
     chunk_max_tokens: int = 300
+    rag_course_index_dir: str = "data/index/courses"   # runtime material (uploads, professor documents), one file per course
+    source_boost_professor: float = 1.3       # BM25 score factor of professor material (applied before the coverage gate)
+    ingest_max_ocr_pages: int = 20            # scanned pages sent through ocr_transcribe per file
+    retrieval_query_chars: int = 400          # a selected passage / whiteboard text is cut to this many characters as a search query
+    passage_budget_share: float = 0.25        # explain `passage`: at most this share of the prompt budget (rest is trimmed)
+    board_budget_share: float = 0.25          # explain `board_text`: same
     budget_safety_margin: float = 0.1         # assemble prompts within INPUT_TOKEN_BUDGET * (1 - margin)
     glossary_path: str = "data/glossary.yaml"  # learner terms -> course terms; empty = no expansion
     glossary_weight: float = 0.5              # glossary course terms count this much vs question terms
     terms_ar_path: str = "data/terms_ar.yaml"  # Arabic math terms injected into MSA answers
     exercises_path: str = "data/exercises/derivees.yaml"   # exercise bank for quiz / grade / stored hints
     templates_path: str = "data/templates.yaml"            # openers, practice line, generic feedback
+    courses_dir: str = "data/courses"                      # course graphs (units, concepts, prerequisites), one YAML per course
+    prep_learn_minutes: int = 20              # study time a prep LEARN page is planned for
+    prep_review_minutes: int = 8              # ... and a REVIEW page (mastered concept)
+    prep_assessment_max: int = 10             # at most this many exercises in a plan's assessment
     task_frequency_penalty: Mapping[str, float] = field(default_factory=lambda: {"explain": 0.3})
     task_max_tokens: Mapping[str, int] = field(default_factory=lambda: {
-        "classify": 50, "hint": 80, "grade": 120, "compress": 30, "explain": 350, "quiz_intro": 60, "framing": 40})
+        "classify": 50, "hint": 80, "grade": 120, "compress": 30, "explain": 350, "quiz_intro": 60, "framing": 40,
+        "ocr_transcribe": 700, "check_claim": 120, "check_answer": 80})
     breaker_threshold: int = 3                # saturations within the window that open the breaker
     breaker_window_s: float = 60.0
     breaker_cooldown_s: float = 30.0          # open this long, then half-open (one probe)
@@ -160,6 +184,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     sim = SimSettings(
         latency_compact_s=get("SIM_LATENCY_COMPACT_S", _range, d.latency_compact_s),
         latency_midsize_s=get("SIM_LATENCY_MIDSIZE_S", _range, d.latency_midsize_s),
+        latency_vision_s=get("SIM_LATENCY_VISION_S", _range, d.latency_vision_s),
+        vision_image_tokens=get("SIM_VISION_IMAGE_TOKENS", int, d.vision_image_tokens),
         latency_scale=get("SIM_LATENCY_SCALE", float, d.latency_scale),
         rate_per_min=get("SIM_RATE_PER_MIN", float, get("RATE_LIMIT_PER_MIN", float, d.rate_per_min)),
         burst=get("SIM_BURST", int, get("RATE_BURST", int, d.burst)),
@@ -190,7 +216,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     server_s = get("SERVER_TIMEOUT_S", float, defaults.server_timeout_s)
     for var, dflt in (("TIMEOUT_MIDSIZE_INTERACTIVE_S", defaults.timeout_midsize_interactive_s),
                       ("TIMEOUT_MIDSIZE_BACKGROUND_S", defaults.timeout_midsize_background_s),
-                      ("TIMEOUT_COMPACT_S", defaults.timeout_compact_s), ("REQUEST_TIMEOUT_S", defaults.request_timeout_s),
+                      ("TIMEOUT_COMPACT_S", defaults.timeout_compact_s),
+                      ("TIMEOUT_VISION_S", defaults.timeout_vision_s), ("REQUEST_TIMEOUT_S", defaults.request_timeout_s),
                       ("BREAKER_PROBE_TIMEOUT_S", defaults.breaker_probe_timeout_s)):
         if get(var, float, dflt) >= server_s:
             raise ConfigError(f"{var} must stay under SERVER_TIMEOUT_S ({server_s:g} s): a client that waits as long "
@@ -198,12 +225,15 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     task_caps = {name: get(var, int, defaults.task_max_tokens[name]) for name, var in (
         ("classify", "CLASSIFY_MAX_TOKENS"), ("hint", "HINT_MAX_TOKENS"), ("grade", "GRADE_MAX_TOKENS"),
         ("compress", "COMPRESS_MAX_TOKENS"), ("explain", "EXPLAIN_MAX_TOKENS"),
-        ("quiz_intro", "QUIZ_INTRO_MAX_TOKENS"), ("framing", "FRAMING_MAX_TOKENS"))}
+        ("quiz_intro", "QUIZ_INTRO_MAX_TOKENS"), ("framing", "FRAMING_MAX_TOKENS"),
+        ("ocr_transcribe", "OCR_MAX_TOKENS"), ("check_claim", "CHECK_CLAIM_MAX_TOKENS"),
+        ("check_answer", "CHECK_ANSWER_MAX_TOKENS"))}
     return Settings(
         base_url=req("LLM_BASE_URL").rstrip("/"),
         api_key=req("LLM_API_KEY"),
         models={ModelClass.COMPACT: _names(req("MODEL_COMPACT")),
-                ModelClass.MIDSIZE: _names(req("MODEL_MIDSIZE"))},
+                ModelClass.MIDSIZE: _names(req("MODEL_MIDSIZE")),
+                ModelClass.VISION: _names(e.get("MODEL_VISION") or "deepseek-ocr")},
         embed_model=e.get("MODEL_EMBED", ""),
         rate_per_min=get("RATE_LIMIT_PER_MIN", float, defaults.rate_per_min),
         rate_burst=get("RATE_BURST", int, defaults.rate_burst),
@@ -214,7 +244,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         embed_rate_window_s=get("EMBED_RATE_WINDOW_S", float, defaults.embed_rate_window_s),
         max_concurrent=get("MAX_CONCURRENT", int, defaults.max_concurrent),
         max_tokens={ModelClass.COMPACT: get("MAX_TOKENS_COMPACT", int, 300),
-                    ModelClass.MIDSIZE: get("MAX_TOKENS_MIDSIZE", int, 550)},
+                    ModelClass.MIDSIZE: get("MAX_TOKENS_MIDSIZE", int, 550),
+                    ModelClass.VISION: get("MAX_TOKENS_VISION", int, 700)},
         output_cap_mode=get("OUTPUT_CAP_MODE", lambda v: v.strip().lower(), defaults.output_cap_mode),
         input_token_budget=get("INPUT_TOKEN_BUDGET", int, defaults.input_token_budget),
         estimate_chars_per_token=get("ESTIMATE_CHARS_PER_TOKEN", float, defaults.estimate_chars_per_token),
@@ -226,7 +257,13 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         timeout_midsize_interactive_s=get("TIMEOUT_MIDSIZE_INTERACTIVE_S", float, defaults.timeout_midsize_interactive_s),
         timeout_midsize_background_s=get("TIMEOUT_MIDSIZE_BACKGROUND_S", float, defaults.timeout_midsize_background_s),
         timeout_compact_s=get("TIMEOUT_COMPACT_S", float, defaults.timeout_compact_s),
+        timeout_vision_s=get("TIMEOUT_VISION_S", float, defaults.timeout_vision_s),
+        vision_max_pixels=get("VISION_MAX_PIXELS", int, defaults.vision_max_pixels),
+        vision_max_bytes=get("VISION_MAX_BYTES", int, defaults.vision_max_bytes),
+        image_tokens_per_megapixel=get("IMAGE_TOKENS_PER_MEGAPIXEL", int, defaults.image_tokens_per_megapixel),
+        vision_max_slots=get("VISION_MAX_SLOTS", int, defaults.vision_max_slots),
         midsize_max_slots=get("MIDSIZE_MAX_SLOTS", int, defaults.midsize_max_slots),
+        background_reserve=get("BACKGROUND_RESERVE", int, defaults.background_reserve),
         interactive_deadline_s=get("INTERACTIVE_DEADLINE_S", float, defaults.interactive_deadline_s),
         max_retry_wait_s=get("MAX_RETRY_WAIT_S", float, defaults.max_retry_wait_s),
         max_retry_wait_s_background=get("MAX_RETRY_WAIT_S_BACKGROUND", float, defaults.max_retry_wait_s_background),
@@ -246,12 +283,22 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         rag_top_k=get("RAG_TOP_K", int, defaults.rag_top_k),
         rag_min_coverage=get("RAG_MIN_COVERAGE", float, defaults.rag_min_coverage),
         chunk_max_tokens=get("CHUNK_MAX_TOKENS", int, defaults.chunk_max_tokens),
+        retrieval_query_chars=get("RETRIEVAL_QUERY_CHARS", int, defaults.retrieval_query_chars),
+        passage_budget_share=get("PASSAGE_BUDGET_SHARE", float, defaults.passage_budget_share),
+        board_budget_share=get("BOARD_BUDGET_SHARE", float, defaults.board_budget_share),
+        rag_course_index_dir=e.get("RAG_COURSE_INDEX_DIR") or defaults.rag_course_index_dir,
+        source_boost_professor=get("SOURCE_BOOST_PROFESSOR", float, defaults.source_boost_professor),
+        ingest_max_ocr_pages=get("INGEST_MAX_OCR_PAGES", int, defaults.ingest_max_ocr_pages),
         budget_safety_margin=get("BUDGET_SAFETY_MARGIN", float, defaults.budget_safety_margin),
         glossary_path=e.get("GLOSSARY_PATH", defaults.glossary_path).strip(),
         glossary_weight=get("GLOSSARY_WEIGHT", float, defaults.glossary_weight),
         terms_ar_path=e.get("TERMS_AR_PATH", defaults.terms_ar_path).strip(),
         exercises_path=e.get("EXERCISES_PATH", defaults.exercises_path).strip(),
         templates_path=e.get("TEMPLATES_PATH", defaults.templates_path).strip(),
+        courses_dir=e.get("COURSES_DIR", defaults.courses_dir).strip(),
+        prep_learn_minutes=get("PREP_LEARN_MINUTES", int, defaults.prep_learn_minutes),
+        prep_review_minutes=get("PREP_REVIEW_MINUTES", int, defaults.prep_review_minutes),
+        prep_assessment_max=get("PREP_ASSESSMENT_MAX", int, defaults.prep_assessment_max),
         task_frequency_penalty={"explain": get("EXPLAIN_FREQUENCY_PENALTY", float, 0.3)},
         task_max_tokens=task_caps,
         breaker_threshold=get("BREAKER_THRESHOLD", int, defaults.breaker_threshold),

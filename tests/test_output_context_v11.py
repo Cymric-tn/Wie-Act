@@ -30,8 +30,8 @@ def caps(body):
     return body.get("max_tokens"), (body.get("options") or {}).get("num_predict")
 
 
-def test_version_is_1_1():
-    assert __version__ == "1.1"
+def test_version_is_1_3():
+    assert __version__ == "1.3"
 
 
 # ------------------------------------------------------------------------------ how the cap is sent
@@ -59,7 +59,8 @@ def test_the_class_default_cap_still_applies_when_a_request_has_none():
 def test_default_task_caps():
     s = make_settings()
     assert dict(s.task_max_tokens) == {"classify": 50, "hint": 80, "grade": 120, "compress": 30, "explain": 350,
-                                       "quiz_intro": 60, "framing": 40}
+                                       "quiz_intro": 60, "framing": 40,
+                                           "ocr_transcribe": 700, "check_claim": 120, "check_answer": 80}
 
 
 @pytest.mark.parametrize("task,inputs,context,reply,cap,var", [

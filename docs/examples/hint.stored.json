@@ -1,0 +1,35 @@
+{
+  "_source": "real",
+  "task": "hint",
+  "request_id": "a1b2c3d4e5f6",
+  "text": "(xⁿ)' = n·xⁿ⁻¹ : ici, que vaut n ?",
+  "data": {
+    "hint_level": 2,
+    "hints_total": 2,
+    "source": "bank"
+  },
+  "model_class_used": null,
+  "model": null,
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "answered_by_rules",
+      "t_ms": 0.0,
+      "data": {}
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "route_reason": null,
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "source": "bank"
+  }
+}

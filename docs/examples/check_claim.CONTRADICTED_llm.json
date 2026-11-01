@@ -1,0 +1,71 @@
+{
+  "_source": "real",
+  "task": "check_claim",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": {
+    "verdict": "CONTRADICTED",
+    "correction": "La dérivée d'un produit est (u·v)' = u'·v + u·v', pas u'·v'.",
+    "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+    "checked_by": "llm"
+  },
+  "model_class_used": "compact",
+  "model": "compact-a",
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "retrieving",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "checking_cache",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "queued",
+      "t_ms": 0.0,
+      "data": {
+        "position": 0,
+        "eta_s": 2.0
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 0.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "compact"
+      }
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 640,
+  "tokens_out": 40,
+  "route_reason": "table: check_claim -> compact",
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "retrieved": [
+      {
+        "id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+        "score": 3.596,
+        "coverage": 1.0
+      }
+    ],
+    "sources": [
+      "derivee-erreurs.fr#erreurs-avec-le-produit"
+    ],
+    "budget": {
+      "tokens": 764,
+      "limit": 2520
+    },
+    "dropped": []
+  }
+}

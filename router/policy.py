@@ -9,6 +9,13 @@ The routing policy: every compact-vs-mid-size decision lives here, with its reas
   | compress  | compact  | none                                                           |
   | summary   | compact  | none                                                           |
   | quiz      | compact  | none (exercise from the bank; compact writes a cached intro)   |
+  | ocr_      | vision   | none (compact cannot read an image); shares the chat window    |
+  | transcribe|          |                                                                |
+  | check_    | compact  | none (sympy and rules decide first)                            |
+  | claim     |          |                                                                |
+  | check_    | compact  | none (rules first, one call only for the guiding question)     |
+  | answer    |          |                                                                |
+  | prep_plan | none     | no model call                                                  |
   | explain   | mid-size | -> compact if mid-size saturated, or if quota is low           |
   |           |          |    (unless escalated: escalate=True or complexity >= 4),       |
   |           |          |    or straight to compact while the mid-size breaker is open   |
@@ -32,7 +39,7 @@ from router.breaker import HALF_OPEN, CircuitBreaker
 
 log = logging.getLogger("ednova.router")
 
-C, M = ModelClass.COMPACT, ModelClass.MIDSIZE
+C, M, V = ModelClass.COMPACT, ModelClass.MIDSIZE, ModelClass.VISION
 ESCALATION_COMPLEXITY = 4
 
 
@@ -50,6 +57,10 @@ ROUTES: dict[str, Route] = {
     "summary": Route(C),
     "quiz": Route(C),          # exercise from the bank; compact only writes the optional intro line
     "explain": Route(M, fallback=C),
+    "ocr_transcribe": Route(V),      # reads the image; no fallback (compact cannot see), no breaker
+    "check_claim": Route(C),         # sympy / rules first; one compact JSON call when they do not decide
+    "check_answer": Route(C),        # rules first; one compact call writes a guiding question when needed
+    "prep_plan": Route(C),           # no model call at all (a rules task); the row exists for the registry
 }
 
 

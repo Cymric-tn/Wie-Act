@@ -73,7 +73,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\sffamily\small\color{slate}EdNova LLM Engine — integration \& technical guide}
-\fancyhead[R]{\sffamily\small\color{slate}v1.1}
+\fancyhead[R]{\sffamily\small\color{slate}v1.3}
 \fancyfoot[C]{\sffamily\small\color{slate}\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
@@ -137,7 +137,7 @@
 {\small IEEE WIE ACT 5.0 · EdNova Technical Challenge}\\[0.9em]
 {\fontsize{30}{34}\selectfont\bfseries EdNova LLM Engine}\\[0.6em]
 {\Large Integration and technical guide}\\[0.4em]
-{\normalsize engine v1.1 (v1 frozen 2026-10-24; v1.1 2026-10-26)}\par}
+{\normalsize engine v1.3 (v1 frozen 2026-10-24; v1.1 2026-10-26; v1.2 and v1.3 2026-11-01)}\par}
 \vspace{3.4cm}
 
 \begin{minipage}{0.92\textwidth}
@@ -155,10 +155,10 @@ own project, and explains how every part works so you can customize or improve i
 \begin{tabularx}{\linewidth}{@{}lX@{}}
 Interface & one async call: \texttt{await engine.run(task, inputs, context, priority)} → \texttt{Result}\\
 Tasks & classify · hint · explain (RAG) · grade · quiz · compress (+ your own)\\
-Model classes & \textit{compact} (default for everything) and \textit{mid-size} (explain only)\\
+Model classes & \textit{compact} (default for everything) and \textit{mid-size} (explain only) (superseded in v1.3: three classes, with \textit{vision} for \texttt{ocr\_transcribe}; see section ``What is new in v1.3)\\
 Guarantee & never raises a provider error: every failure comes back as a degraded \texttt{Result} with a reason\\
 Platform & any OpenAI-compatible API (FelCloud, Ollama); switching = editing \texttt{.env}\\
-Tests & 444 unit + 5 integration, all passing\\
+Tests & 768 unit + 5 integration (the integration tests were not run for v1.2 and v1.3: Ollama stays off)\\
 Measured & 0 exceptions in 4 load profiles · 75–100\,\% of calls on compact · 28–61\,\% cache hits\\
 \end{tabularx}
 \end{tcolorbox}
@@ -250,7 +250,7 @@ Requirements: Python 3.10+ (the code avoids 3.11-only features), and the package
 pip install -r requirements.txt
 cp .env.example .env            # then fill LLM_BASE_URL, LLM_API_KEY, MODEL_* (see section 13)
 python -m scripts.index_docs    # chunk data/docs/*.md into data/index/chunks.json (no LLM call)
-pytest -q                       # 444 unit tests, no LLM needed
+pytest -q                       # 768 unit tests, no LLM needed
 python -m scripts.smoke         # one real call per task
 python -m scripts.chat          # interactive console: one line = one learner turn
 \end{lstlisting}
@@ -614,6 +614,13 @@ input\_truncated & the provider cut the start of the prompt (\texttt{prompt\_tok
 service\_unavailable & transient 5xx/network errors exhausted (\texttt{eta\_seconds} set) & same\\
 request\_too\_large & prompt cannot be trimmed under the ceiling & shorten history/input\\
 provider\_error & other 4xx (bad key, unknown model\dots) & alert; check config\\
+midsize\_unavailable & mid-size timed out or is down; \texttt{eta\_seconds} = when it is probed again (v1.2) & fast mode text is in the result\\
+deadline & explain had no body after 25 s; the generation continues into the cache (v1.2) & fast mode text now; the next ask is a hit\\
+superseded & the same learner queued a newer INTERACTIVE request (v1.3) & drop this result silently\\
+room\_busy & another AI request of the room is running; \texttt{eta\_seconds} (v1.3) & disable the button, retry after the ETA\\
+invalid\_image & \texttt{ocr\_transcribe}: not a readable image (v1.3) & ask for another photo\\
+low\_confidence & \texttt{ocr\_transcribe}: text returned with visible reading problems (v1.3) & show with \texttt{confidence\_note}\\
+json\_invalid & \texttt{check\_claim}: no valid JSON after the repair call (v1.3) & treat the verdict as unknown\\
 \midrule
 ungrounded\_formula & a formula neither verifiable nor in the sources & show; mark ``check with teacher''\\
 wrong\_math & a derivative/identity claim sympy proves false & consider hiding the body\\
@@ -767,7 +774,7 @@ FelCloud is a LiteLLM proxy behind Caddy (server timeout 90 s → client timeout
 arrived as \textbf{429 \texttt{all\_deployments\_in\_cooldown}} with \texttt{Retry-After: 5}, not the annex's
 503, so both are mapped to \texttt{ModelSaturated}. There was \textbf{no 400 for long prompts}: input was
 \textbf{silently truncated near 2048 tokens}. The client therefore enforces its own input budget
-(\texttt{INPUT\_TOKEN\_BUDGET}=1800 then) and trims \emph{before} sending.
+(\texttt{INPUT\_TOKEN\_BUDGET}=1800 then) and trims \emph{before} sending. (superseded in v1.1: truncation starts near 4096 tokens, not 2048, and the budget is now 2800; see ``Measured behaviour)
 \end{note}
 
 \begin{note}[Updated by the probes of 26 Oct (engine v1.1)]
@@ -879,7 +886,7 @@ half-open.
   \node[sbox, right=of g, minimum width=2.4cm] (b) {BM25 per\\language plan};
   \node[sbox, right=of b, minimum width=2.3cm] (c) {coverage\\gate ≥ 0.4};
   \node[tbox, right=of c, minimum width=1.6cm] (k) {top 2\\chunks};
-  \node[sbox, below=0.9cm of b, minimum width=4.6cm] (bud) {budget assembly (≤ 1620 est. tokens)\\system + question → chunks → history};
+  \node[sbox, below=0.9cm of b, minimum width=4.6cm] (bud) {budget assembly (≤ 2520 est. tokens (was 1620 in v1))\\system + question → chunks → history};
   \node[sbox, left=0.7cm of bud, minimum width=3.4cm] (cmp) {extractive compress\\only if chunks don't fit};
   \node[box, right=0.7cm of bud, minimum width=2.6cm] (m) {mid-size\\prompt};
   \draw[arr] (q) -- (t); \draw[arr] (t) -- (g); \draw[arr] (g) -- (b); \draw[arr] (b) -- (c); \draw[arr] (c) -- (k);
@@ -910,7 +917,7 @@ half-open.
   \item[Language plan] DARIJA/ARABIZI → French chunks; ARABIC → Arabic, else French; ENGLISH →
   English, else French; FRENCH → all.
   \item[Budget] prompts are assembled within \texttt{INPUT\_TOKEN\_BUDGET × (1 − 0.1)} = 1620 estimated
-  tokens; history is dropped oldest-first without gaps; everything dropped is listed in \texttt{notes.dropped}.
+  tokens; history is dropped oldest-first without gaps; everything dropped is listed in \texttt{notes.dropped}. (superseded in v1.1: \texttt{INPUT\_TOKEN\_BUDGET} is 2800, so 2520 estimated tokens; the 1620 above is the v1 figure.)
 \end{description}
 
 \begin{idea}[Swap the retriever]
@@ -968,6 +975,97 @@ python -m scripts.metrics_report metrics/load_normal.jsonl metrics/load_saturate
 The report gives, side by side: provider requests, calls per model, compact/mid-size split, tokens,
 cache hit rate, repeated identical requests, refusals and how each was handled, degradations,
 breaker trips, latency percentiles per task and priority, and a per-turn capacity estimate.
+
+
+% ================================================================== v1.3
+\section{What is new in v1.3}
+\label{sec:v13}
+
+v1.3 makes the engine ready for every Phase 1 feature of the team's contracts document. The public interface is unchanged
+(\texttt{engine.run}, \texttt{Result}, \texttt{Event}); everything below is additive. The contract the feature layer
+codes against is \texttt{docs/ENGINE\_API.md}: every task, its inputs and outputs, events, degrade reasons, request cost and a
+JSON example per outcome. It is generated from the engine's real output (\texttt{python -m scripts.gen\_api\_examples --doc}),
+and a test fails when it drifts from the code. Until the real engine is wired, \texttt{engine.fake.FakeEngine} has the same
+\texttt{run} signature and returns the same shapes, events and timings in three modes (normal, slow, degraded), with
+\texttt{context["fake\_outcome"]} to force one state, so the UIs can show every state without any LLM.
+
+\subsection{Identity, fairness and the background reserve}
+
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+\item \textbf{Ids.} \texttt{learner\_id}, \texttt{room\_id}, \texttt{course\_id} and \texttt{class\_id} in the context are copied into
+every metrics record of the run (ids only, never names), also those of helper runs and of the generation that outlives an
+interactive deadline. They are not part of any cache key.
+\item \textbf{One waiting request per learner.} A newer INTERACTIVE request of the same learner replaces the older one while it
+still waits in the queue; the older returns at once, degraded \texttt{superseded}, nothing sent. A request already running is
+never touched; BACKGROUND work is not limited.
+\item \textbf{One request per room.} A second \texttt{run} with the same \texttt{room\_id} while one is in flight returns
+\texttt{room\_busy} with an \texttt{eta\_seconds} (an average of the room's recent run times, minus the time already spent).
+Helper runs (the grade call inside \texttt{check\_answer}) keep the learner's ids but not the room.
+\item \textbf{Background reserve.} A BACKGROUND chat request is not granted while fewer than \texttt{BACKGROUND\_RESERVE} (6)
+sends remain in the 20-per-minute window; it waits for entries to expire and announces it once (event \texttt{waiting\_reserve}).
+A prep plan or an ingest can therefore never use the window a learner is about to need. Interactive requests ignore the reserve.
+\end{itemize}
+
+\subsection{The vision class}
+
+\texttt{ModelClass.VISION} (\texttt{MODEL\_VISION}, default \texttt{deepseek-ocr}) reads images. The client sends OpenAI content parts
+(an \texttt{image\_url} with a base64 data URL); the engine decodes, orients and resizes every image to at most one megapixel and
+counts its estimated tokens in the input budget (a request that cannot fit is refused locally, nothing sent). Vision has its own
+timeout (\texttt{TIMEOUT\_VISION\_S}, 40 s) and, like mid-size, is never retried after a hang. It shares the chat rate window and the
+two concurrency slots with the other classes until the organizers say otherwise; mid-size and vision together may hold at most
+\texttt{MAX\_CONCURRENT}$-1$ slots, so compact work always has one (an interactive photo can therefore wait behind a mid-size generation that is still running into the cache; its \texttt{queued} event carries an ETA). A learner's explain is bounded by the 25 s deadline in every path, also while it waits for an identical request that another learner or a prep page is generating. Whether a vision request really counts in the 20-per-minute
+window is measured by \texttt{scripts/load\_mixed --real --probe-vision} (not yet run: no slot).
+
+\subsection{New tasks}
+
+\begin{tabularx}{\linewidth}{@{}>{\ttfamily\small}p{2.9cm} >{\small}p{2.2cm} >{\small}p{2.4cm} Y@{}}
+\toprule
+\textrm{\textbf{task}} & \textbf{class} & \textbf{requests} & \textbf{what it does}\\
+\midrule
+ocr\_transcribe & vision & 1 (0 cached) & photo of work $\to$ \{text, latex, confidence\_note\}; never grades; cache by image content\\
+check\_claim & rules, compact & 0 or 1 & is this claim true in the course: sympy for formulas, retrieval gate (\texttt{NOT\_IN\_COURSE}), else one JSON call\\
+check\_answer & rules, compact & 0 to 2 & a worked solution line by line: OK, WRONG or UNCHECKED; stored mistakes, buggy rules, guarded guiding question; the last line through grade\\
+prep\_plan & none & 0 & study plan: prerequisites first, lowest mastery next, spread at the learner's pace, mastered concepts reviewed\\
+generate\_page & mid-size & 0 or 1 & a prep page: explain at BACKGROUND through the tutor's cache, a bank worked example, three quiz items (variants fill gaps)\\
+\bottomrule
+\end{tabularx}
+
+\medskip\noindent Three rules that run through them: a line or text that cannot be parsed is \texttt{UNCHECKED}, never \texttt{WRONG};
+a guiding question is checked so it never states the answer (the hint guard plus the true derivative written out); and a
+verdict that sympy can compute is never left to a model. \texttt{check\_claim} decides in this order: a refuted formula is
+\texttt{CONTRADICTED} with the correct form (half refuted, half verified: \texttt{PARTLY}); a verified formula with no other
+claim around it is \texttt{SUPPORTED}; anything else goes to retrieval, whose gate gives \texttt{NOT\_IN\_COURSE} at no cost, and
+only then to one compact JSON call with the repair ladder and a degraded \texttt{PARTLY} as the safe default.
+\texttt{explain} gains two inputs: \texttt{passage} (the text a learner selected: in the prompt, and retrieval runs on it first)
+and \texttt{board\_text} (whiteboard text, trimmed to a share of the budget); both are in the cache key by a hash of the full text.
+
+\subsection{Course content}
+
+A course is a graph (\texttt{data/courses/<course>.yaml}: units with order and prerequisites, concepts with prerequisites and related
+concepts, titles in French, English and Arabic). Concept ids are those of the exercise bank and of the \texttt{<!-- concept: id -->}
+tags of the course documents, and a test checks the three agree in both directions and that \texttt{requires} has no cycle.
+The retriever can add and remove chunks at runtime (\texttt{Engine.add\_material}, \texttt{remove\_material}), persists them per
+course, and filters by \texttt{course\_id} plus visibility: public course documents, class material for that \texttt{class\_id},
+private uploads for that \texttt{learner\_id}; a viewer without an id never sees class or private material. Professor material
+has its BM25 score multiplied by \texttt{SOURCE\_BOOST\_PROFESSOR} and wins ties; the coverage gate is untouched, so the boost reorders
+relevant chunks but never lets an off-topic one through. \texttt{rag/ingest.py} turns a PDF (PyMuPDF), a DOCX or a Markdown file into
+chunks split by headings, tags each chunk's concept by BM25 against the concept titles and the glossary with a confidence (low
+confidence is what a professor confirms), and flags pages without text as \texttt{needs\_ocr}; \texttt{Engine.ingest\_file} reads up
+to 20 of those pages per file through \texttt{ocr\_transcribe} at BACKGROUND, one at a time.
+
+\subsection{Cache administration and scrubbing}
+
+\texttt{engine.cache.invalidate(request\_id)} removes the entries behind a request's answer, whether that request generated the
+entry or was served it (a professor rejecting a flagged answer), and a request id names one generation of an entry. Provider error
+messages are scrubbed of the API-key hash the proxy echoes (\texttt{gatekeeper/errors.py}), so it never reaches a metric or a log.
+
+\subsection{Verification status}
+
+Everything above has unit tests with a fake transport and virtual time (no LLM, no Ollama). The \texttt{check\_claim} accuracy on the
+30-claim set, the one-OCR-call smoke, the measurement of vision against the rate window and the mixed load on the live API need a
+FelCloud slot and have not run; the mixed-load scenario has run in virtual time through the constraint simulator
+(\texttt{reports/load-mixed-virtual-v13.md}), which tests the engine's scheduling and not the models.
+PyMuPDF could not be installed offline, so the PDF reader is tested through a stand-in module only.
 
 % ================================================================== 13
 \section{Measured behaviour (engine v1 local, v1.1 on FelCloud)}
@@ -1120,6 +1218,21 @@ RATE\_WINDOW\_SLACK\_S & 0.5 & a send frees its slot this long after the window\
 EMBED\_RATE\_LIMIT\_PER\_MIN, EMBED\_RATE\_WINDOW\_S & 60, 60 & embeddings window (separate quota)\\
 RATE\_BURST, EMBED\_BURST & 20, 60 & deprecated (simulator bucket only)\\
 MAX\_CONCURRENT & 2 & requests in flight\\
+BACKGROUND\_RESERVE & 6 & BACKGROUND chat waits while fewer than this many sends remain in the window (v1.3)\\
+MIDSIZE\_MAX\_SLOTS, VISION\_MAX\_SLOTS & 1, 1 & slots each slow class may hold; together they leave one slot to compact (v1.2, v1.3)\\
+MODEL\_VISION & deepseek-ocr & the vision class (v1.3)\\
+TIMEOUT\_VISION\_S & 40 & vision request timeout; under the server's 90 s\\
+VISION\_MAX\_PIXELS, VISION\_MAX\_BYTES & 1000000, 12000000 & images are resized to this many pixels; larger files are refused\\
+IMAGE\_TOKENS\_PER\_MEGAPIXEL & 1000 & input tokens counted per megapixel of image (an assumption until measured)\\
+MAX\_TOKENS\_VISION, OCR\_MAX\_TOKENS & 700, 700 & output caps for the vision class and the OCR task\\
+CHECK\_CLAIM\_MAX\_TOKENS, CHECK\_ANSWER\_MAX\_TOKENS & 120, 80 & per-task output caps\\
+COURSES\_DIR & data/courses & course graphs (units, concepts, prerequisites)\\
+RAG\_COURSE\_INDEX\_DIR & data/index/courses & runtime material (uploads, professor documents), one file per course\\
+SOURCE\_BOOST\_PROFESSOR & 1.3 & BM25 score factor of professor material (before the coverage gate)\\
+INGEST\_MAX\_OCR\_PAGES & 20 & scanned pages read per file\\
+PASSAGE\_BUDGET\_SHARE, BOARD\_BUDGET\_SHARE & 0.25, 0.25 & share of the prompt budget for explain's \texttt{passage} / \texttt{board\_text}\\
+RETRIEVAL\_QUERY\_CHARS & 400 & a passage or board text is cut to this many characters as a search query\\
+PREP\_LEARN\_MINUTES, PREP\_REVIEW\_MINUTES, PREP\_ASSESSMENT\_MAX & 20, 8, 10 & prep plan: planned minutes per page, assessment size\\
 MAX\_TOKENS\_COMPACT, MAX\_TOKENS\_MIDSIZE & 300, 550 & output caps per class\\
 OUTPUT\_CAP\_MODE & both & \texttt{options} (\texttt{options.num\_predict}), \texttt{max\_tokens} or both; FelCloud honours only \texttt{num\_predict}\\
 INPUT\_TOKEN\_BUDGET & 2800 & estimated input cap enforced before sending\\
@@ -1314,15 +1427,20 @@ engine/tasks.py & \texttt{TaskSpec}, \texttt{Registry}, the six tasks, guards, l
 engine/result.py & \texttt{Result}, \texttt{Event}\\
 engine/grounding.py, mathcheck.py & formula extraction and checks; safe sympy parsing\\
 engine/exercises.py, language.py, prompts.py & bank, language rules, prompt loader\\
+engine/answers.py, claims.py, prep.py, course.py, vision.py & check\_answer logic, check\_claim formulas, prep plan and page exercises, course graph, image preparation (v1.3)\\
+engine/fake.py & \texttt{FakeEngine}: canned realistic results for the UIs, no LLM (v1.3)\\
+rag/ingest.py & PDF / DOCX / Markdown $\to$ chunks, concept tags, OCR of scanned pages (v1.3)\\
+docs/ENGINE\_API.md & the integration contract, generated from real outputs (v1.3)\\
+data/courses/ & course graphs (v1.3)\\
 router/policy.py, breaker.py & routing table, decisions, follow-up; circuit breaker\\
 gatekeeper/ & client, errors, limiter, queue, retry, cache\\
 rag/ & normalize, chunker, store, glossary, retriever (BM25, embedding), budget\\
 metrics/ & \texttt{CallRecord}, JSONL and memory sinks\\
 simulator/ & constraint transport, profiles\\
-prompts/ & classify, hint, explain, grade, compress, quiz (versioned)\\
+prompts/ & classify, hint, explain, grade, compress, quiz, ocr\_transcribe, check\_claim, check\_answer (versioned)\\
 data/ & docs, index, glossary, exercises, templates, Arabic terms\\
 scripts/ & smoke, chat, load\_test, metrics\_report, eval\_*, index\_docs, recon\\
-tests/ & 444 unit tests + 5 integration tests (\texttt{-m integration})\\
+tests/ & 768 unit tests + 5 integration tests (\texttt{-m integration})\\
 DECISIONS.md & every non-obvious design choice, with evidence\\
 \bottomrule
 \end{tabularx}

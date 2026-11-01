@@ -11,6 +11,7 @@ from typing import Any, Callable, Iterator, Literal, Mapping, Sequence
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from config import ModelClass
+from engine import grounding as G
 from engine import language as L
 from engine.prompts import PromptTemplate
 from gatekeeper.client import estimate_tokens
@@ -39,7 +40,7 @@ class TaskContext:
 @dataclass(frozen=True)
 class TaskSpec:
     name: str
-    prompt: str                                          # prompts/<prompt>.md
+    prompt: str | None                                   # prompts/<prompt>.md (None: the task never talks to a model)
     max_tokens: int
     temperature: float = 0.2
     output_schema: type[BaseModel] | None = None         # JSON task when set
@@ -62,6 +63,18 @@ class TaskSpec:
     decorate: Callable[[str, Mapping, TaskContext, bool], tuple[str, dict]] | None = None
     # every equation in the model's text must come from the retrieved chunks / appended exercise / question
     check_grounding: bool = False
+    # grounded tasks whose input is not called "question" (check_claim: "claim"): aliased to inputs["question"]
+    query_input: str = "question"
+    max_chunks: int | None = None            # keep only the best N retrieved chunks
+    partial_result: bool = True              # emit the course excerpts while generating (explain only)
+    not_found_data: Callable[[PromptTemplate, Mapping, TaskContext], dict] | None = None   # JSON "nothing in the course"
+    safe_default_reason: str | None = None   # degrade_reason when the JSON could not be obtained (safe default used)
+    # inputs that share the prompt budget: name -> Settings attribute holding the share (e.g. {"board_text": ...}).
+    # engine.run trims each to its share (events: trimming_input) and puts a hash of the FULL original in the cache key.
+    budgeted_inputs: Mapping[str, str] = field(default_factory=dict)
+    needs_index: bool = False                # the shortcut reads the retriever's chunks: load the index first
+    # the task reads an image: engine.run prepares inputs["image"] (resize, hash) into ctx.extra["image"]
+    vision: bool = False
     # re-apply finalize_data on cache hits, so rule changes (caps, floors, language checks) reach old entries;
     # only for idempotent rules
     rules_on_hit: bool = False
@@ -465,8 +478,12 @@ def _explain_render(p: PromptTemplate, inputs: Mapping, ctx: TaskContext, chunks
                                                    language_rule=p.sections[f"lang.{lang}"], terms_rule=terms)}]
     msgs += [{"role": "assistant" if t.get("role") == "assistant" else "user", "content": str(t.get("content", ""))}
              for t in history]
-    msgs.append({"role": "user", "content": p.render("user", material=_material(chunks),
-                                                     question=str(inputs["question"]).strip())})
+    question = str(inputs["question"]).strip()
+    if str(inputs.get("passage") or "").strip():
+        question += "\n\n" + p.render("passage", text=str(inputs["passage"]).strip())
+    if str(inputs.get("board_text") or "").strip():
+        question += "\n\n" + p.render("board", text=str(inputs["board_text"]).strip())
+    msgs.append({"role": "user", "content": p.render("user", material=_material(chunks), question=question)})
     return msgs
 
 
@@ -537,7 +554,7 @@ EXPLAIN = TaskSpec(
     name="explain", prompt="explain", max_tokens=350, temperature=0.3, required_inputs=("question",),
     prepare=_explain_prepare, grounded=True, render_grounded=_explain_render, finalize_text=_explain_finalize,
     fallback_text=_explain_unavailable, not_found_text=_explain_not_found, decorate=_explain_decorate,
-    check_grounding=True)
+    check_grounding=True, budgeted_inputs={"passage": "passage_budget_share", "board_text": "board_budget_share"})
 
 
 # ====================================================================== quiz (exercise bank, no LLM)
@@ -634,5 +651,229 @@ GRADE = TaskSpec(
     finalize_data=_grade_finalize, safe_default=_grade_default)
 
 
+# ====================================================================== check_claim (sympy, rules, then one compact call)
+CLAIM_VERDICTS = ("SUPPORTED", "CONTRADICTED", "PARTLY", "NOT_IN_COURSE")
+
+
+class ClaimVerdict(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    verdict: Literal["SUPPORTED", "CONTRADICTED", "PARTLY", "NOT_IN_COURSE"]
+    correction: str = ""
+
+    @field_validator("verdict", mode="before")
+    @classmethod
+    def _upper(cls, v):
+        return re.sub(r"[\s-]+", "_", v.strip().upper()) if isinstance(v, str) else v
+
+    @field_validator("correction", mode="before")
+    @classmethod
+    def _text(cls, v):
+        return " ".join(str(v or "").split())
+
+
+def _claim_prepare(inputs: Mapping, ctx: TaskContext) -> TaskContext:
+    from engine import claims
+    ctx = ctx if ctx.language else replace(ctx, language=L.detect(str(inputs.get("claim", "")))[0])
+    return replace(ctx, extra={**ctx.extra, "formula": claims.analyse(str(inputs["claim"]))})
+
+
+def _claim_shortcut(inputs: Mapping, ctx: TaskContext) -> dict | None:
+    """A claim with a formula sympy settles never reaches retrieval or a model (0 requests)."""
+    from engine import claims
+    return claims.decide(ctx.extra["formula"], ctx.language)
+
+
+def _claim_render(p: PromptTemplate, inputs: Mapping, ctx: TaskContext, chunks: Sequence, history: Sequence) -> Messages:
+    lang = ctx.language or "FRENCH"
+    material = _chunk_parts(chunks[0])[1] if chunks else "(none)"
+    verified = (ctx.extra.get("formula") and ctx.extra["formula"].verified) or []
+    claim = str(inputs["claim"]).strip()
+    if verified:       # sympy checked part of the claim: the model must not re-judge that part
+        claim += "\n(Already verified by computation: " + "; ".join(verified) + ".)"
+    return [{"role": "system", "content": p.render("system", language_rule=p.sections[f"lang.{lang}"])},
+            {"role": "user", "content": p.render("user", material=material, claim=claim)}]
+
+
+def _claim_data(verdict: str, correction: str, chunk_id: str | None, by: str) -> dict:
+    return {"verdict": verdict, "correction": correction, "source_chunk_id": chunk_id, "checked_by": by}
+
+
+def _claim_not_found(p: PromptTemplate, inputs: Mapping, ctx: TaskContext) -> dict:
+    return _claim_data("NOT_IN_COURSE", "", None, "rules")
+
+
+def _claim_finalize(data: dict, inputs: Mapping, ctx: TaskContext) -> tuple[dict, dict]:
+    """The model's verdict + correction -> the contract: at most 25 words, nothing on SUPPORTED / NOT_IN_COURSE, a
+    correction whose formula sympy refutes is dropped (it would teach a wrong thing), source and checked_by added."""
+    from engine import claims
+    verdict, correction, notes = data["verdict"], data.get("correction", ""), {}
+    if verdict in ("SUPPORTED", "NOT_IN_COURSE"):
+        correction = ""
+    elif correction:
+        correction = claims._words(correction)
+        if claims.analyse(correction).wrong:
+            correction, notes["correction_dropped"] = "", "formula refuted by sympy"
+    return _claim_data(verdict, correction, ctx.extra.get("top_chunk"), "llm"), notes
+
+
+def _claim_default(inputs: Mapping, ctx: TaskContext) -> dict:
+    return _claim_data("PARTLY", "", ctx.extra.get("top_chunk"), "llm")
+
+
+CHECK_CLAIM = TaskSpec(
+    name="check_claim", prompt="check_claim", max_tokens=120, temperature=0.0, output_schema=ClaimVerdict,
+    required_inputs=("claim",), prepare=_claim_prepare, shortcut=_claim_shortcut, grounded=True,
+    render_grounded=_claim_render, finalize_data=_claim_finalize, safe_default=_claim_default,
+    not_found_data=_claim_not_found, query_input="claim", max_chunks=1, partial_result=False,
+    safe_default_reason="json_invalid", rules_on_hit=True)
+
+
+# ====================================================================== ocr_transcribe (vision)
+_FENCE = re.compile(r"^```[a-z]*\s*|\s*```$", re.I)
+_DET_TAGS = re.compile(r"<\|[^|>]*\|>|\[\[\s*\d+(?:\s*,\s*\d+){3}\s*\]\]")      # grounding tags some OCR models emit
+_LABEL_OCR = re.compile(r"^\s*(transcription|texte|text|ocr)\s*:\s*", re.I)
+_LATEX_MARK = re.compile(r"\\(?:frac|sqrt|int|sum|lim|cdot|times|leq|geq|neq|infty|left|right)\b|\^\{|_\{|\$|\\\(")
+_MATH_LINE = re.compile(r"[=+<>≤≥≠±√∑∫^]|[²³⁴⁵⁶⁷⁸⁹⁰]|\\(?:frac|sqrt)|\bf\s*['′]?\s*\(|\blim\b|\d\s*[-−*/×·]\s*\w")
+_SUPER = str.maketrans({"²": "^{2}", "³": "^{3}", "⁴": "^{4}", "⁵": "^{5}", "⁶": "^{6}", "⁷": "^{7}", "⁸": "^{8}",
+                        "⁹": "^{9}", "⁰": "^{0}", "¹": "^{1}"})
+_SYMBOLS = (("≤", r"\leq "), ("≥", r"\geq "), ("≠", r"\neq "), ("±", r"\pm "), ("×", r"\times "), ("·", r"\cdot "),
+            ("−", "-"), ("∞", r"\infty "), ("π", r"\pi "), ("÷", r"\div "), ("→", r"\to "))
+
+
+def to_latex(line: str) -> str:
+    """Plain (unicode) maths -> LaTeX for the simple cases the OCR model leaves as text. Lines that already are
+    LaTeX are returned without their $ delimiters."""
+    s = line.strip()
+    if _LATEX_MARK.search(s):
+        return re.sub(r"\\\(|\\\)|\$", "", s).strip()
+    s = s.translate(_SUPER)
+    for a, b in _SYMBOLS:
+        s = s.replace(a, b)
+    s = re.sub(r"√\s*\(([^()]+)\)", r"\\sqrt{\1}", s)
+    s = re.sub(r"√\s*([A-Za-z0-9]+)", r"\\sqrt{\1}", s)
+    s = re.sub(r"\^(\d+)", r"^{\1}", s)
+    s = re.sub(r"(?<![\w}])(\w+)\s*/\s*(\w+)(?![\w(])", r"\\frac{\1}{\2}", s)
+    return s
+
+
+def _balanced(line: str) -> bool:
+    depth = 0
+    for c in line:
+        depth += (c in "([{") - (c in ")]}")
+        if depth < 0:
+            return False
+    return depth == 0
+
+
+_OCR_NOTES = {
+    "FRENCH": {"empty": "Aucun texte lu : refais la photo (plus de lumière, page à plat, texte bien cadré).",
+               "unreadable": "Ligne {n} : un symbole n'a pas pu être lu ; vérifie-la.",
+               "brackets": "Ligne {n} : parenthèses non fermées ; vérifie-la.", "short": "Très peu de texte lu : vérifie la photo."},
+    "ENGLISH": {"empty": "No text was read: retake the photo (more light, page flat, text in frame).",
+                "unreadable": "Line {n}: a symbol could not be read; please check it.",
+                "brackets": "Line {n}: unclosed brackets; please check it.", "short": "Very little text was read: check the photo."},
+    "ARABIC": {"empty": "لم يُقرأ أي نص: أعد التقاط الصورة (إضاءة أفضل، ورقة مسطحة).",
+               "unreadable": "السطر {n}: تعذّرت قراءة رمز، تحقّق منه.",
+               "brackets": "السطر {n}: أقواس غير مغلقة، تحقّق منه.", "short": "نص قليل جداً: تحقّق من الصورة."},
+}
+
+
+def analyze_ocr(raw: str, language: str | None = None) -> dict:
+    """Deterministic clean-up of the model's transcription -> {text, latex, confidence_note, issues}.
+    The model gives no confidence, so the note only reports what can be SEEN: a [?] / replacement character, a line
+    whose brackets do not close, no text at all, or almost none. It never grades or corrects."""
+    text = _DET_TAGS.sub("", raw or "")
+    text = _FENCE.sub("", text.strip())
+    text = _LABEL_OCR.sub("", text)
+    text = "\n".join(line.rstrip() for line in text.strip().splitlines() if line.strip())
+    msgs = _OCR_NOTES.get(language or "FRENCH", _OCR_NOTES["FRENCH"])
+    issues: list[tuple[str, int]] = []
+    lines = text.splitlines()
+    if not text:
+        issues.append(("empty", 0))
+    elif len(text) < 3:
+        issues.append(("short", 0))
+    for i, line in enumerate(lines, 1):
+        if "[?]" in line or "�" in line or "□" in line or "???" in line:
+            issues.append(("unreadable", i))
+        elif _MATH_LINE.search(line) and not _balanced(line):
+            issues.append(("brackets", i))
+    math = [to_latex(x) for x in lines if _MATH_LINE.search(x) or _LATEX_MARK.search(x)]
+    return {"text": text, "latex": " \\\\ ".join(math) if math else None,
+            "confidence_note": " ".join(msgs[k].format(n=n) for k, n in issues[:3]),
+            "issues": [{"kind": k, "line": n} for k, n in issues]}
+
+
+def _ocr_build(p: PromptTemplate, inputs: Mapping, ctx: TaskContext, limit: int = 0) -> Messages:
+    from gatekeeper.client import image_part
+    img = ctx.extra["image"]            # engine.run prepared it (resize, hash, token estimate)
+    return [{"role": "user", "content": [image_part(img.data_url, img.est_tokens, img.sha),
+                                         {"type": "text", "text": p.render("system") + "\n\n" + p.render("user")}]}]
+
+
+def _ocr_finalize(text: str, p: PromptTemplate, inputs: Mapping, ctx: TaskContext):
+    a = analyze_ocr(text, ctx.language)
+    # the cache keeps the cleaned transcription; a reading with visible problems is returned but never cached
+    return a["text"], ("low_confidence" if a["issues"] else None), {"issues": a["issues"]}
+
+
+def _ocr_decorate(body: str, inputs: Mapping, ctx: TaskContext, opener: bool = True) -> tuple[str, dict]:
+    a = analyze_ocr(body, ctx.language)
+    return a["text"], {"text": a["text"], "latex": a["latex"], "confidence_note": a["confidence_note"]}
+
+
+OCR_TRANSCRIBE = TaskSpec(
+    name="ocr_transcribe", prompt="ocr_transcribe", max_tokens=700, temperature=0.0, required_inputs=("image",),
+    build=_ocr_build, finalize_text=_ocr_finalize, decorate=_ocr_decorate, vision=True)
+
+
+# ====================================================================== check_answer (sympy + stored mistakes + rules)
+def _answer_prepare(inputs: Mapping, ctx: TaskContext) -> TaskContext:
+    if ctx.language:
+        return ctx
+    steps = inputs.get("steps") or []
+    steps = steps.splitlines() if isinstance(steps, str) else steps if isinstance(steps, (list, tuple)) else []
+    return replace(ctx, language=L.detect(f"{inputs.get('problem', '')} {' '.join(map(str, steps))}")[0])
+
+
+CHECK_ANSWER = TaskSpec(
+    name="check_answer", prompt="check_answer", max_tokens=80, temperature=0.2, required_inputs=("problem", "steps"),
+    prepare=_answer_prepare)       # the flow itself is Engine._check_answer (it needs nested runs and a bank)
+
+
+# ====================================================================== prep_plan (rules, no model)
+def _plan_prepare(inputs: Mapping, ctx: TaskContext) -> TaskContext:
+    lang = ctx.language or L.normalize_label(inputs.get("language"))
+    return replace(ctx, language=lang or "FRENCH", level=ctx.level or inputs.get("level"))
+
+
+def _plan_shortcut(inputs: Mapping, ctx: TaskContext) -> dict | None:
+    from engine import prep
+    courses = ctx.extra.get("courses") or {}
+    cid = ctx.extra.get("course_id")
+    if cid is None and len(courses) == 1:
+        cid = next(iter(courses))
+    if cid not in courses:
+        raise ValueError(f"task 'prep_plan' needs context course_id, one of {sorted(courses)}; got {cid!r}")
+    chunks = ctx.extra.get("chunks_fn")
+
+    def material(mid: str) -> set[str]:
+        return {c.concept for c in (chunks() if chunks else []) if c.concept and c.chunk_id.split("#")[0] == mid}
+    s = ctx.extra.get("settings")
+    try:
+        data, notes = prep.build_plan(
+            courses[cid], inputs["scope"], inputs["deadline"], inputs["pace_min_per_day"], inputs.get("mastery"),
+            ctx.language, ctx.extra.get("exercise_bank"), inputs.get("start"), material,
+            *( (s.prep_learn_minutes, s.prep_review_minutes, s.prep_assessment_max) if s else ()))
+    except prep.PlanError as e:
+        raise ValueError(f"task 'prep_plan': {e}") from None
+    return {**data, "_notes": notes}
+
+
+PREP_PLAN = TaskSpec(
+    name="prep_plan", prompt=None, max_tokens=0, required_inputs=("scope", "deadline", "pace_min_per_day"),
+    prepare=_plan_prepare, shortcut=_plan_shortcut, needs_index=True)
+
+
 def default_registry() -> Registry:
-    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE])
+    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE, OCR_TRANSCRIBE, CHECK_CLAIM, CHECK_ANSWER, PREP_PLAN])
