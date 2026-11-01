@@ -167,11 +167,15 @@ def summarize(rec: Recorder, spy: SpyTransport, sink: MemorySink, duration: floa
     sends = [x["t0"] for x in chat]
     refusals = Counter(f"{x['status']}:{x['rate_limit_type'] or '-'}" for x in chat if x["status"] != 200)
     events = [r for r in sink.records if r.kind == "run"]
+    explains = [r for r in inter if r["task"] == "explain"]
+    by_deadline = sum(1 for r in explains if r["degraded"] and r["degrade_reason"] == "deadline")
     return {
         "mode": mode, "duration_s": duration, **extra,
         "interactive": {"n": len(inter), "p50_s": pct(lat, .5), "p95_s": pct(lat, .95), "max_s": max(lat, default=None),
                         "degraded": sum(r["degraded"] for r in inter),
                         "degrade_reasons": dict(Counter(r["degrade_reason"] for r in inter if r["degraded"])),
+                        "explain": {"n": len(explains), "degraded_by_deadline": by_deadline,
+                                    "share_degraded_by_deadline": round(by_deadline / len(explains), 3) if explains else None},
                         "by_task": {t: {"n": len(v), "p50_s": pct(v, .5), "p95_s": pct(v, .95), "max_s": max(v)} for t, v in sorted(by_task.items())}},
         "background": {"n": len([r for r in rec.runs if r["priority"] == "BACKGROUND"]),
                        "pages": len([r for r in rec.runs if r["task"] == "generate_page"]),
@@ -198,6 +202,8 @@ def write(report: dict, prefix: str) -> None:
              f"- interactive latency: p50 {i['p50_s']} s, **p95 {i['p95_s']} s**, max {i['max_s']} s; degraded {i['degraded']} {i['degrade_reasons']}",
              f"- provider: {p['chat_requests']} chat requests {p['by_model']}; non-200 {p['non_200'] or 'none'}; "
              f"**server 429s {p['server_429']}**; densest 60 s window **{p['densest_60s_window']}** sends",
+             f"- explain: {i['explain']['n']} interactive, {i['explain']['degraded_by_deadline']} degraded by `deadline` "
+             f"(share {i['explain']['share_degraded_by_deadline']})",
              f"- exceptions out of engine.run: **{len(report['exceptions'])}**", "",
              "Interactive p95 is judged against the engine's own 25 s deadline (+0.5 s of measurement slack): an explain that "
              "is not ready by then is answered in fast mode, so a p95 AT 25 s means one learner in twenty got fast mode.", "",
@@ -277,7 +283,8 @@ def run_virtual(args) -> dict:
 
 
 # ------------------------------------------------------------------ real: FelCloud
-async def run_real(args) -> dict:
+def real_engine(args):
+    """(settings, clock, spy, sink, engine) against the live API; refuses a simulated profile."""
     from config import load_settings
     import time
     s = load_settings()
@@ -287,6 +294,39 @@ async def run_real(args) -> dict:
     spy = SpyTransport(httpx.AsyncHTTPTransport(), clock)
     sink = MemorySink()
     engine = Engine.create(s, transport=spy, sink=sink, cache=ExactCache(":memory:", 0 if args.no_cache else s.cache_ttl_s))
+    return s, clock, spy, sink, engine
+
+
+async def run_probe(args) -> dict:
+    """Only the vision-window probe (3 requests), for the start of a slot."""
+    s, clock, spy, sink, engine = real_engine(args)
+    rec = Recorder(clock)
+    probe = await vision_probe(engine, spy, rec)
+    await engine.aclose()
+    refusals = Counter(f"{x['status']}:{x['rate_limit_type'] or '-'}" for x in spy.log if x["status"] != 200)
+    return {"mode": "real (FelCloud), vision probe only", "vision_probe": probe, "exceptions": rec.exceptions,
+            "provider": {"chat_requests": len([x for x in spy.log if x["path"].endswith("/chat/completions")]),
+                         "non_200": dict(refusals), "server_429": sum(1 for x in spy.log if x["status"] == 429)},
+            "verdict": {"zero_server_429": not any(x["status"] == 429 for x in spy.log), "zero_exceptions": not rec.exceptions}}
+
+
+def write_probe(report: dict, prefix: str) -> None:
+    os.makedirs(os.path.dirname(prefix) or ".", exist_ok=True)
+    with open(f"{prefix}.json", "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=1)
+    p, vp = report["provider"], report["vision_probe"]
+    lines = [f"# Does a vision request use the chat window? ({report['mode']})", "",
+             f"- **vision request uses the 20 / min window: {vp['vision_request_uses_the_chat_window']}**",
+             f"- {p['chat_requests']} chat requests; non-200 {p['non_200'] or 'none'}; **server 429s {p['server_429']}**; "
+             f"exceptions {len(report['exceptions'])}", "", "| step | requests | model | remaining after |", "|---|---|---|---|"]
+    lines += [f"| {x['step']} | {x['requests']} | {x['model']} | {x['remaining_after']} |" for x in vp["sequence"]]
+    lines += ["", vp["reading"]]
+    with open(f"{prefix}.md", "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+async def run_real(args) -> dict:
+    s, clock, spy, sink, engine = real_engine(args)
     rec, rng = Recorder(clock), random.Random(args.seed)
     from scripts.smoke import sample_image
     probe = None
@@ -337,9 +377,18 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--saturation", type=float, default=0.05, help="--virtual: random mid-size saturation probability")
     ap.add_argument("--probe-vision", action="store_true", help="--real: first measure whether vision counts in the window")
+    ap.add_argument("--probe-only", action="store_true", help="--real: only that probe (3 requests), no load")
     ap.add_argument("--no-cache", action="store_true", help="every request reaches the provider (the harshest mix)")
     ap.add_argument("--out", help="report path prefix (default reports/load-mixed-<mode>-v13)")
     a = ap.parse_args()
+    if a.probe_only:
+        if not a.real:
+            ap.error("--probe-only needs --real")
+        prefix = a.out or "reports/vision-probe"
+        report = asyncio.run(run_probe(a))
+        write_probe(report, prefix)
+        print(open(f"{prefix}.md", encoding="utf-8").read())
+        return 0 if all(report["verdict"].values()) else 1
     report = run_virtual(a) if a.virtual else asyncio.run(run_real(a))
     prefix = a.out or f"reports/load-mixed-{'virtual' if a.virtual else 'felcloud'}-v13"
     write(report, prefix)
