@@ -819,5 +819,19 @@ OCR_TRANSCRIBE = TaskSpec(
     build=_ocr_build, finalize_text=_ocr_finalize, decorate=_ocr_decorate, vision=True)
 
 
+# ====================================================================== check_answer (sympy + stored mistakes + rules)
+def _answer_prepare(inputs: Mapping, ctx: TaskContext) -> TaskContext:
+    if ctx.language:
+        return ctx
+    steps = inputs.get("steps") or []
+    steps = steps.splitlines() if isinstance(steps, str) else steps if isinstance(steps, (list, tuple)) else []
+    return replace(ctx, language=L.detect(f"{inputs.get('problem', '')} {' '.join(map(str, steps))}")[0])
+
+
+CHECK_ANSWER = TaskSpec(
+    name="check_answer", prompt="check_answer", max_tokens=80, temperature=0.2, required_inputs=("problem", "steps"),
+    prepare=_answer_prepare)       # the flow itself is Engine._check_answer (it needs nested runs and a bank)
+
+
 def default_registry() -> Registry:
-    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE, OCR_TRANSCRIBE, CHECK_CLAIM])
+    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE, OCR_TRANSCRIBE, CHECK_CLAIM, CHECK_ANSWER])

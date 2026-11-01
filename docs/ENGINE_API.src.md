@@ -295,19 +295,51 @@ The model failed twice (real; safe default):
 
 Checks a learner's worked solution line by line.
 
-* inputs: `problem`, `steps` (a list of lines, required); `solution`; `exercise_id` (uses the bank's common mistakes).
+* inputs: `problem`, `steps` (a list of lines, or one multi-line string; required); `solution` (optional); `exercise_id`
+  (optional: a bank exercise, whose stored common mistakes give the feedback and whose answers are compared as text, so
+  variations and extrema work). An unknown `exercise_id` or no non-empty line is a caller bug (`ValueError`).
 * `data`: `{steps: [{index (0-based), verdict: OK|WRONG|UNCHECKED, note}], first_wrong (index or null),
-  final_verdict: CORRECT|INCORRECT|UNKNOWN, feedback, graded_by: sympy|rules|llm}`.
-* A line that cannot be parsed is `UNCHECKED`, never `WRONG`. For derivative problems each line must equal the true
-  derivative or be an algebraic rewrite of the previous line; the first failing line is `WRONG`. Feedback comes from
-  the exercise's common mistakes, then from buggy-rule diagnosis (`PRODUCT_AS_PRODUCT`, `POW_NO_DECREMENT`,
-  `CHAIN_NO_INNER`, `CONST_KEPT`), else one compact call writes a guiding question (never the answer). The final
-  answer goes through `grade`.
-* cost: 0 (rules) or 1 compact. events: `parsing_steps`, `checking_steps`, [`queued`, `generating`].
+  final_verdict: CORRECT|INCORRECT|PARTIAL|UNKNOWN, feedback, graded_by: sympy|rules|llm}`. `note` is in the learner's
+  language and empty for `OK`.
+* **The lines.** A line goes through the safe sympy parser (digits, `x`, `+ - * / ( ) .` and `sqrt`; nothing else ever
+  reaches sympy). A line it cannot parse (a sentence, `u = x, v = x + 3`, another variable) is `UNCHECKED`, **never
+  `WRONG`**. For a derivative problem (read from the bank exercise, or from the text: `Dérive f(x) = ...`) a line is `OK`
+  when it equals the true derivative, the function itself, or the value asked for (`f'(a)`, `f(a)`, the tangent), or is an
+  algebraic rewrite of an `OK` line before it. A line's label says what it claims to be: `f'(x) = ...` must be the
+  derivative, `f(3) = ...` the value of f at 3, `y = ...` the tangent. A chain of equalities must agree with itself. The
+  first failing line is `WRONG` (`first_wrong`). A problem that is not a derivative problem has every line `UNCHECKED`.
+* **Feedback**, for the first wrong line: (1) the exercise's stored common mistake that equals the line (`graded_by:
+  rules`); (2) buggy-rule diagnosis, precomputed per function: `PRODUCT_AS_PRODUCT`, `POW_NO_DECREMENT`, `CHAIN_NO_INNER`,
+  `CONST_KEPT` (`graded_by: rules`, `notes.diagnosis: rule:NAME`); (3) otherwise one compact call writes a guiding
+  question (`graded_by: llm`). The question is guarded so it never states the answer (the hint guard plus the true
+  derivative written out): a leaking question is replaced by a fixed one (`notes.diagnosis: template`, event `guarded`).
+  Darija and Arabizi always get the fixed question (compact does not write Tunisian reliably).
+* **The final answer** (the last line) goes through the `grade` task, after a free comparison with the stored or stated
+  solution and the exercise's stored answers: `final_verdict`. Its feedback is used when no wrong line explained
+  anything (a right derivative that is not the answer asked for). If the grading is refused, the answer is `degraded`
+  with `eta_seconds` and `final_verdict: UNKNOWN`.
+* cost: 0 (rules, stored answers, sympy grade) or 1 compact (guiding question) + 1 (a text answer graded by the model).
+  `mode: rules` when no model was used. events: `parsing_steps`, `checking_steps`, [`queued`, `generating`], [`guarded`].
+* degrade: `quota_exhausted`, `service_busy` (from the model calls), `superseded`, `room_busy`. Helper runs (grade) keep the
+  learner's ids but not the `room_id`: the room is held by this call.
+
+All lines fine (real, 0 requests):
 
 {{example check_answer.ok}}
 
+A stored common mistake, caught on the right line (real, 0 requests):
+
 {{example check_answer.wrong_step}}
+
+A buggy rule recognised (real, 0 requests):
+
+{{example check_answer.rule}}
+
+A wrong line nothing explains: one compact guiding question (real):
+
+{{example check_answer.llm_feedback}}
+
+Nothing readable (real, 0 requests):
 
 {{example check_answer.unchecked}}
 

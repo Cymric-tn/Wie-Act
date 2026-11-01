@@ -92,7 +92,7 @@ class FakeEngine:
                            "room_busy"),
         "check_claim": ("SUPPORTED", "CONTRADICTED", "PARTLY", "NOT_IN_COURSE", "CONTRADICTED_llm", "llm_failed",
                         "quota_exhausted", "superseded", "room_busy"),
-        "check_answer": ("ok", "wrong_step", "unchecked", "llm_feedback", "quota_exhausted", "room_busy"),
+        "check_answer": ("ok", "wrong_step", "rule", "llm_feedback", "unchecked", "quota_exhausted", "room_busy"),
         "prep_plan": ("ok", "all_mastered"),
     }
     DEGRADED_DEFAULT = {"classify": "safe_default", "hint": "quota_exhausted", "explain": "fast_extractive",
@@ -406,27 +406,28 @@ def _claim(outcome, inputs, lang, k, ctx) -> _Plan:
 def _answer(outcome, inputs, lang, k, ctx) -> _Plan:
     steps_in = list(inputs.get("steps") or [])
     n = max(1, len(steps_in))
-    verdicts = ["OK"] * n
-    notes = [""] * n
-    first_wrong, final, feedback, by = None, "CORRECT", "", "sympy"
-    if outcome == "wrong_step" or outcome == "llm_feedback":
+    verdicts, notes = ["OK"] * n, [""] * n
+    first_wrong, final, feedback, by, mode = None, "CORRECT", "", "sympy", "rules"
+    if outcome in ("wrong_step", "rule", "llm_feedback"):
         i = min(1, n - 1)
         verdicts[i], first_wrong, final = "WRONG", i, "INCORRECT"
-        notes[i] = "Cette ligne n'est pas la dérivée de la précédente."
-        feedback = ("Tu as baissé l'exposant mais oublié de multiplier par l'exposant."
-                    if outcome == "wrong_step" else "Que devient l'exposant quand tu dérives xⁿ ?")
-        by = "rules" if outcome == "wrong_step" else "llm"
+        notes[i] = "Cette ligne ne correspond pas à la précédente ni à la dérivée."
+        feedback, by = {"wrong_step": ("Tu as baissé l'exposant mais oublié de multiplier par l'exposant.", "rules"),
+                        "rule": ("Tu as multiplié par l'exposant mais tu n'as pas baissé l'exposant de 1.", "rules"),
+                        "llm_feedback": ("Que devient l'exposant de x quand on dérive ?", "llm")}[outcome]
+        mode = None if by == "llm" else "rules"
     elif outcome == "unchecked":
-        verdicts[-1], final, notes[-1] = "UNCHECKED", "UNKNOWN", "Ligne non reconnue : je ne peux pas la vérifier."
-        feedback, by = "Écris la dernière ligne avec des symboles mathématiques pour que je puisse la vérifier.", "sympy"
+        verdicts = ["UNCHECKED"] * n
+        notes = ["Ligne non reconnue : je ne peux pas la vérifier."] * n
+        final = "UNKNOWN"
     data = {"steps": [{"index": i, "verdict": v, "note": notes[i]} for i, v in enumerate(verdicts)],
             "first_wrong": first_wrong, "final_verdict": final, "feedback": feedback, "graded_by": by}
     ev = [(0.0, "parsing_steps", {"steps": n}), (0.03, "checking_steps", None)]
     if outcome == "llm_feedback":
         ev += [(0.04, "queued", {"position": 0, "eta_s": 2.0}), (0.05, "generating", {"attempt": 1, "model_class": "compact"})]
         return _Plan(_ev(*ev), 3.5 * k, {"data": data, "model_class_used": "compact", "model": "compact-a",
-                                          "tokens_in": 300, "tokens_out": 30})
-    return _Plan(_ev(*ev), 0.06, {"data": data, "notes": {"source": by}})
+                                          "tokens_in": 300, "tokens_out": 30, "route_reason": "table: check_answer -> compact"})
+    return _Plan(_ev(*ev), 0.06, {"data": data, "mode": mode, "route_reason": "table: check_answer -> compact"})
 
 
 def _prep(outcome, inputs, lang, k, ctx) -> _Plan:
