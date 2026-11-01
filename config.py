@@ -115,6 +115,10 @@ class Settings:
     terms_ar_path: str = "data/terms_ar.yaml"  # Arabic math terms injected into MSA answers
     exercises_path: str = "data/exercises/derivees.yaml"   # exercise bank for quiz / grade / stored hints
     templates_path: str = "data/templates.yaml"            # openers, practice line, generic feedback
+    courses_dir: str = "data/courses"                      # course graphs (units, concepts, prerequisites), one YAML per course
+    prep_learn_minutes: int = 20              # study time a prep LEARN page is planned for
+    prep_review_minutes: int = 8              # ... and a REVIEW page (mastered concept)
+    prep_assessment_max: int = 10             # at most this many exercises in a plan's assessment
     task_frequency_penalty: Mapping[str, float] = field(default_factory=lambda: {"explain": 0.3})
     task_max_tokens: Mapping[str, int] = field(default_factory=lambda: {
         "classify": 50, "hint": 80, "grade": 120, "compress": 30, "explain": 350, "quiz_intro": 60, "framing": 40,
@@ -285,6 +289,10 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         terms_ar_path=e.get("TERMS_AR_PATH", defaults.terms_ar_path).strip(),
         exercises_path=e.get("EXERCISES_PATH", defaults.exercises_path).strip(),
         templates_path=e.get("TEMPLATES_PATH", defaults.templates_path).strip(),
+        courses_dir=e.get("COURSES_DIR", defaults.courses_dir).strip(),
+        prep_learn_minutes=get("PREP_LEARN_MINUTES", int, defaults.prep_learn_minutes),
+        prep_review_minutes=get("PREP_REVIEW_MINUTES", int, defaults.prep_review_minutes),
+        prep_assessment_max=get("PREP_ASSESSMENT_MAX", int, defaults.prep_assessment_max),
         task_frequency_penalty={"explain": get("EXPLAIN_FREQUENCY_PENALTY", float, 0.3)},
         task_max_tokens=task_caps,
         breaker_threshold=get("BREAKER_THRESHOLD", int, defaults.breaker_threshold),

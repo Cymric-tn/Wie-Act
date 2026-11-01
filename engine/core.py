@@ -30,10 +30,12 @@ from pydantic import ValidationError
 from config import ModelClass, Settings, load_settings
 from engine.prompts import PromptTemplate, load_prompt
 from engine.result import Event, Result
-from engine.exercises import ExerciseBank
+from engine.course import load_courses
+from engine.exercises import ExerciseBank, phrase_language
 from engine.grounding import check_formulas
 from engine import answers
 from engine.vision import ImageError, prepare_image
+from engine import language as L
 from engine.language import ARABIC_SCRIPT, arabic_ratio, contamination, latin_words
 from engine.tasks import (Messages, Registry, TaskContext, TaskSpec, best_sentence, default_registry,
                           fast_excerpts, load_templates, load_terms_ar, trim_to_last_sentence)
@@ -167,8 +169,10 @@ class Engine:
         self._room_ewma_s = 8.0                           # typical duration of a room's run (for room_busy eta)
         self._probes: set[asyncio.Task] = set()           # half-open breaker probes in flight
         self._background: set[asyncio.Task] = set()       # generations that outlived the interactive deadline
+        self.courses = load_courses(settings.courses_dir) \
+            if settings.courses_dir and os.path.isdir(settings.courses_dir) else {}
         self.prompts: dict[str, PromptTemplate] = {
-            s.name: load_prompt(settings.prompts_dir, s.prompt) for s in self.registry}   # fail fast
+            s.name: load_prompt(settings.prompts_dir, s.prompt) for s in self.registry if s.prompt}   # fail fast
 
     @classmethod
     def create(cls, settings: Settings | None = None, *, transport=None, client: LLMClient | None = None,
@@ -223,7 +227,9 @@ class Engine:
             inputs = {**inputs, "question": inputs[spec.query_input]}
         tctx = TaskContext.from_mapping(context or {})
         tctx = replace(tctx, extra={**tctx.extra, "terms_ar": self.terms_ar, "course_words": self.course_words,
-                                    "exercise_bank": self.exercises, "templates": self.templates})
+                                    "exercise_bank": self.exercises, "templates": self.templates,
+                                    "courses": self.courses, "settings": self.settings,
+                                    "chunks_fn": lambda: getattr(self.retriever, "chunks", [])})
         if spec.prepare:
             tctx = spec.prepare(inputs, tctx)
         run = _Run(self._clock, on_event)
@@ -269,7 +275,7 @@ class Engine:
 
     async def _execute(self, spec: TaskSpec, inputs: dict, tctx: TaskContext, prio: Priority, run: "_Run",
                        ctx: CallContext) -> Result:
-        task, prompt = spec.name, self.prompts[spec.name]
+        task, prompt = spec.name, self.prompts.get(spec.name)
         if spec.vision:
             try:
                 img = prepare_image(inputs["image"], self.settings.vision_max_pixels,
@@ -282,10 +288,14 @@ class Engine:
                 run.emit("resizing_image", {"from": f"{img.from_size[0]}x{img.from_size[1]}",
                                             "to": f"{img.width}x{img.height}"})
             tctx = replace(tctx, extra={**tctx.extra, "image": img})
+        if spec.needs_index:
+            await self._ensure_index()
         if spec.shortcut and (data := spec.shortcut(inputs, tctx)) is not None:
             run.emit("answered_by_rules")
             text = data.pop("_text", None)
-            return self._finish(run, ctx, text=text, data=data, notes={"source": data.get("source", "rules")})
+            notes = {"source": data.get("source", "rules"), **data.pop("_notes", {})}
+            return self._finish(run, ctx, text=text, data=data, notes=notes,
+                                mode="rules" if spec.name == "prep_plan" else None)
         if spec.local is not None:
             return await self._local(spec, prompt, inputs, tctx, ctx, run)
         if spec.name == "check_answer":
@@ -574,6 +584,37 @@ class Engine:
             return template
         self.cache.put(key, cache_task, {"text": line, "model": chat.model})
         return line
+
+    # ================================================================== prep pages
+    async def generate_page(self, plan, focus_point: Mapping[str, Any], context: Mapping[str, Any] | None = None,
+                            on_event: EventCallback | None = None) -> dict:
+        """One prep page for a focus point of a prep_plan: the explanation (the `explain` task at BACKGROUND, through
+        the same cache as the tutor's: an identical question is a hit), a worked example from the bank and three
+        mini-quiz items (bank exercises of the concept, then of its prerequisites, then deterministic variants).
+        `plan` is the prep_plan Result or its data; only focus_point is read from it, so it may be {}.
+        Never raises a provider error: a degraded explanation comes back marked, the exercises are still there."""
+        from engine import prep
+        context = dict(context or {})
+        courses = self.courses
+        cid = context.get("course_id") or (next(iter(courses)) if len(courses) == 1 else None)
+        course = courses.get(cid)
+        concept = str(focus_point["concept_id"])
+        kind = focus_point.get("page_kind", "learn")
+        lang = L.normalize_label(context.get("language")) or "FRENCH"
+        pl = phrase_language(lang)
+        p = focus_point.get("mastery")
+        if p is None:
+            p = 0.9 if kind == "review" else 0.2 if focus_point.get("reason_code") == "low_mastery" else 0.5
+        title = course.title(concept, pl) if course and concept in course.concepts else concept
+        worked, quiz = prep.page_exercises(self.exercises, course, concept, float(p), lang)
+        taken = [x["exercise_id"] for x in [worked] if x] + [q["id"] for q in quiz if q["source"] == "bank"]
+        question = {"fr": f"C'est quoi : {title} ?", "en": f"What is: {title}?", "ar": f"ما هو: {title}؟"}[pl]
+        ex = await self.run("explain", {"question": question, "exclude_exercises": taken},
+                            {**context, "language": lang}, Priority.BACKGROUND, on_event)
+        return {"concept_id": concept, "page_kind": kind, "title": title, "language": lang,
+                "explanation": ex.text, "explanation_sections": ex.data, "explain_request_id": ex.request_id,
+                "from_cache": ex.from_cache, "degraded": ex.degraded, "degrade_reason": ex.degrade_reason,
+                "eta_seconds": ex.eta_seconds, "worked_example": worked, "quiz": quiz}
 
     # ================================================================== check_answer
     @staticmethod

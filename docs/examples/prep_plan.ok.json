@@ -1,45 +1,110 @@
 {
-  "_source": "canned",
+  "_source": "real",
   "task": "prep_plan",
   "request_id": "a1b2c3d4e5f6",
   "text": null,
   "data": {
     "focus_points": [
       {
-        "concept_id": "limite",
+        "concept_id": "puissance",
         "day_index": 0,
-        "reason": "prerequisite of the next concept",
-        "page_kind": "learn"
+        "reason": "Prérequis de « Dérivée de l'inverse, Dérivée de la racine carrée » ; Maîtrise faible (15%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
       },
       {
-        "concept_id": "taux-accroissement",
-        "day_index": 0,
-        "reason": "lowest mastery",
-        "page_kind": "learn"
-      },
-      {
-        "concept_id": "nombre-derive",
+        "concept_id": "inverse",
         "day_index": 1,
-        "reason": "lowest mastery",
-        "page_kind": "learn"
+        "reason": "Prérequis de « Dérivée d'un quotient » ; Maîtrise faible (0%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "racine carrée",
+        "day_index": 2,
+        "reason": "Maîtrise faible (0%)",
+        "reason_code": "low_mastery",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "constante",
+        "day_index": 3,
+        "reason": "Prérequis de « Dérivée d'un polynôme, Dérivée d'un produit » ; Maîtrise faible (40%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "polynôme",
+        "day_index": 4,
+        "reason": "Prérequis de « Dérivée d'un produit, Dérivée d'un quotient » ; Maîtrise faible (0%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "produit",
+        "day_index": 5,
+        "reason": "Prérequis de « Dérivée d'un quotient » ; Maîtrise faible (0%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "quotient",
+        "day_index": 6,
+        "reason": "Maîtrise faible (0%)",
+        "reason_code": "low_mastery",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "variations",
+        "day_index": 6,
+        "reason": "Prérequis de « Extremum » ; Maîtrise faible (0%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "extremum",
+        "day_index": 6,
+        "reason": "Maîtrise faible (0%)",
+        "reason_code": "low_mastery",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "nombre dérivé",
+        "day_index": 6,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
       },
       {
         "concept_id": "tangente",
-        "day_index": 1,
-        "reason": "lowest mastery",
-        "page_kind": "learn"
-      },
-      {
-        "concept_id": "puissance",
-        "day_index": 2,
-        "reason": "lowest mastery",
-        "page_kind": "learn"
+        "day_index": 6,
+        "reason": "Déjà maîtrisé (88%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
       }
     ],
     "assessment_exercise_ids": [
       "d01",
+      "d08",
+      "d09",
+      "d03",
+      "d02",
       "d05",
-      "d09"
+      "d07",
+      "d14",
+      "d15",
+      "d11"
     ]
   },
   "model_class_used": null,
@@ -50,14 +115,12 @@
   "eta_seconds": null,
   "events": [
     {
-      "name": "planning",
+      "name": "answered_by_rules",
       "t_ms": 0.0,
-      "data": {
-        "concepts": 5
-      }
+      "data": {}
     }
   ],
-  "latency_ms": 20.0,
+  "latency_ms": 0.0,
   "tokens_in": 0,
   "tokens_out": 0,
   "route_reason": null,
@@ -67,6 +130,14 @@
   "followup_available": false,
   "notes": {
     "source": "rules",
-    "days": 3
+    "skipped_draft": [
+      "limite"
+    ],
+    "days": 7,
+    "minutes_needed": 196,
+    "minutes_available": 315,
+    "pace_min_per_day": 45,
+    "start": "2026-11-05",
+    "deadline": "2026-11-12"
   }
 }

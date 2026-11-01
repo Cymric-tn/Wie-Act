@@ -2401,16 +2401,30 @@ Nothing readable (real, 0 requests):
 
 ### 3.10 `prep_plan` (v1.3)
 
-A study plan for an assessment. No model.
+A study plan for an assessment. No model, no request.
 
-* inputs: `scope` (`{unit_ids, concept_ids, material_ids}`), `deadline` (`YYYY-MM-DD`), `pace_min_per_day`,
-  `mastery` (`{concept_id: p}`), `language`, `level`.
-* `data`: `{focus_points: [{concept_id, day_index, reason, page_kind: learn|review}], assessment_exercise_ids}`.
-  Prerequisites first, then lowest mastery; spread over the days until the deadline at the given pace; a concept
-  with `p >= 0.85` gets a `review` page only.
-* cost: 0. `mode="rules"`.
+* inputs: `scope` (`{unit_ids, concept_ids, material_ids}`, at least one), `deadline` (`YYYY-MM-DD`),
+  `pace_min_per_day`, and optionally `mastery` (`{concept_id: p}`, missing = 0), `language`, `level` (also read from the
+  context), `start` (`YYYY-MM-DD`, default today). The course is `context.course_id` (the only course when there is one).
+  A bad date, a pace under 1, an empty scope or an unknown course is a caller bug (`ValueError`).
+* `data`: `{focus_points: [{concept_id, day_index, reason, reason_code, page_kind: learn|review, minutes}],
+  assessment_exercise_ids}`. `reason` is a sentence in the learner's language, `reason_code` is `prerequisite`,
+  `low_mastery`, `learn` or `review`, `minutes` the planned study time. `notes` has `days`, `minutes_needed`,
+  `minutes_available` and what could not be resolved (`unknown_concepts`, `unknown_units`, `unknown_materials`,
+  `skipped_draft`).
+* Rules. **Prerequisites first**, then **lowest mastery**, then the course's order: a prerequisite that is in the scope and
+  still to be learned always comes before what needs it; a mastered one does not block. A concept with `p >= 0.85` gets a
+  **review page only**, after the pages to learn. Pages are **spread evenly** over the study days (`start` to the day
+  before `deadline`), never over `pace_min_per_day` in a day (a learn page is planned at 20 minutes, a review page at 8:
+  `PREP_LEARN_MINUTES`, `PREP_REVIEW_MINUTES`). If the days cannot hold the work, the last day takes the rest and
+  `notes.over_capacity` / `notes.overflow_minutes` say so; a deadline that is today or past puts everything on day 0 with
+  `notes.deadline_not_in_future`. Draft concepts (no course text or no exercise yet) are left out.
+  `assessment_exercise_ids`: one bank exercise per concept in plan order, harder when mastery is higher (at most 10).
+* `material_ids` are uploaded files: a chunk id up to the `#` (`professor/prof-7/polycopie`); their concepts are the
+  tags of their chunks.
+* cost: 0. `mode: rules`, event `answered_by_rules`. Priority does not matter (nothing is queued).
 
-*prep_plan.ok: canned (FakeEngine)*
+*prep_plan.ok: real engine output*
 
 ```json
 {
@@ -2420,40 +2434,105 @@ A study plan for an assessment. No model.
   "data": {
     "focus_points": [
       {
-        "concept_id": "limite",
+        "concept_id": "puissance",
         "day_index": 0,
-        "reason": "prerequisite of the next concept",
-        "page_kind": "learn"
+        "reason": "Prérequis de « Dérivée de l'inverse, Dérivée de la racine carrée » ; Maîtrise faible (15%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
       },
       {
-        "concept_id": "taux-accroissement",
-        "day_index": 0,
-        "reason": "lowest mastery",
-        "page_kind": "learn"
-      },
-      {
-        "concept_id": "nombre-derive",
+        "concept_id": "inverse",
         "day_index": 1,
-        "reason": "lowest mastery",
-        "page_kind": "learn"
+        "reason": "Prérequis de « Dérivée d'un quotient » ; Maîtrise faible (0%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "racine carrée",
+        "day_index": 2,
+        "reason": "Maîtrise faible (0%)",
+        "reason_code": "low_mastery",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "constante",
+        "day_index": 3,
+        "reason": "Prérequis de « Dérivée d'un polynôme, Dérivée d'un produit » ; Maîtrise faible (40%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "polynôme",
+        "day_index": 4,
+        "reason": "Prérequis de « Dérivée d'un produit, Dérivée d'un quotient » ; Maîtrise faible (0%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "produit",
+        "day_index": 5,
+        "reason": "Prérequis de « Dérivée d'un quotient » ; Maîtrise faible (0%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "quotient",
+        "day_index": 6,
+        "reason": "Maîtrise faible (0%)",
+        "reason_code": "low_mastery",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "variations",
+        "day_index": 6,
+        "reason": "Prérequis de « Extremum » ; Maîtrise faible (0%)",
+        "reason_code": "prerequisite",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "extremum",
+        "day_index": 6,
+        "reason": "Maîtrise faible (0%)",
+        "reason_code": "low_mastery",
+        "page_kind": "learn",
+        "minutes": 20
+      },
+      {
+        "concept_id": "nombre dérivé",
+        "day_index": 6,
+        "reason": "Déjà maîtrisé (90%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
       },
       {
         "concept_id": "tangente",
-        "day_index": 1,
-        "reason": "lowest mastery",
-        "page_kind": "learn"
-      },
-      {
-        "concept_id": "puissance",
-        "day_index": 2,
-        "reason": "lowest mastery",
-        "page_kind": "learn"
+        "day_index": 6,
+        "reason": "Déjà maîtrisé (88%) : révision rapide",
+        "reason_code": "review",
+        "page_kind": "review",
+        "minutes": 8
       }
     ],
     "assessment_exercise_ids": [
       "d01",
+      "d08",
+      "d09",
+      "d03",
+      "d02",
       "d05",
-      "d09"
+      "d07",
+      "d14",
+      "d15",
+      "d11"
     ]
   },
   "model_class_used": null,
@@ -2464,14 +2543,12 @@ A study plan for an assessment. No model.
   "eta_seconds": null,
   "events": [
     {
-      "name": "planning",
+      "name": "answered_by_rules",
       "t_ms": 0.0,
-      "data": {
-        "concepts": 5
-      }
+      "data": {}
     }
   ],
-  "latency_ms": 20.0,
+  "latency_ms": 0.0,
   "tokens_in": 0,
   "tokens_out": 0,
   "route_reason": null,
@@ -2481,18 +2558,98 @@ A study plan for an assessment. No model.
   "followup_available": false,
   "notes": {
     "source": "rules",
-    "days": 3
+    "skipped_draft": [
+      "limite"
+    ],
+    "days": 7,
+    "minutes_needed": 196,
+    "minutes_available": 315,
+    "pace_min_per_day": 45,
+    "start": "2026-11-05",
+    "deadline": "2026-11-12"
   }
 }
 ```
 
 ### 3.11 `engine.generate_page(plan, focus_point, context)` (v1.3)
 
-Builds one prep page for a focus point: `explain` at BACKGROUND (shares the tutor's cache), a worked example from
-the bank (or a generated variant) and 3 mini-quiz items from the bank. Returns
-`{concept_id, page_kind, explanation, from_cache, degraded, degrade_reason, worked_example, quiz}`. Cost: 1 mid-size
-request on a miss. Because it is BACKGROUND it waits for the reserve and for free slots; generate pages one at a
-time, ahead of when they are read.
+Builds one prep page for a focus point. `plan` is the `prep_plan` Result (or its data, or `{}`): only `focus_point` is read.
+Put the learner's `mastery` for that concept on the focus point to pick the exercise level (default: 0.9 for a review
+page, 0.2 for `low_mastery`, else 0.5).
+
+* The explanation is the `explain` task at **BACKGROUND** for the question `C'est quoi : <concept title> ?` (in the
+  context's language). It goes through the **same cache as the tutor**: if the tutor already explained that question, the
+  page costs no request, and a professor can reject it with `cache.invalidate(page["explain_request_id"])`.
+* A **worked example** from the bank: the concept's easiest exercise, its graded hints as the steps, and the solution.
+* **Three mini-quiz items**: other bank exercises of the concept, then of its prerequisites, then deterministic variants
+  (the function times 2, 3, ...; the solution computed with sympy; `source: "variant"` with a `solution`). A text-only
+  concept (variations) has no variants, so it may have fewer than three items rather than made-up ones. The
+  explanation's own practice exercise is never one of the page's.
+* Returns a dict (not a `Result`): `{concept_id, page_kind, title, language, explanation, explanation_sections
+  ({body, opener, exercise}), explain_request_id, from_cache, degraded, degrade_reason, eta_seconds, worked_example, quiz}`.
+  A refused or degraded explanation comes back marked (`degraded`, `degrade_reason`, `eta_seconds`) and the exercises are
+  still there; it never raises a provider error.
+* cost: 1 mid-size request on a cache miss, 0 on a hit. It is BACKGROUND: it waits for the reserve and for free slots, and
+  mid-size holds one slot, so generate pages **one at a time**, ahead of when they are read.
+
+*generate_page.ok: real engine output*
+
+```json
+{
+  "concept_id": "puissance",
+  "page_kind": "learn",
+  "title": "Dérivée d'une puissance",
+  "language": "FRENCH",
+  "explanation": "Voici l'essentiel du cours sur ce point.\n\nLa dérivée d'une puissance s'obtient en multipliant par l'exposant puis en baissant l'exposant de 1.",
+  "explanation_sections": {
+    "body": "La dérivée d'une puissance s'obtient en multipliant par l'exposant puis en baissant l'exposant de 1.",
+    "opener": "Voici l'essentiel du cours sur ce point."
+  },
+  "explain_request_id": "a1b2c3d4e5f6",
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "worked_example": {
+    "source": "bank",
+    "exercise_id": "d01",
+    "statement": "Calculer la dérivée de f(x) = x⁴.",
+    "steps": [
+      "Quelle règle donne la dérivée de xⁿ ?",
+      "(xⁿ)' = n·xⁿ⁻¹ : ici, que vaut n ?",
+      "Multiplie par l'exposant, puis baisse l'exposant de 1."
+    ],
+    "solution": "f'(x) = 4x³"
+  },
+  "quiz": [
+    {
+      "id": "d10",
+      "concept": "nombre dérivé",
+      "level": 1,
+      "statement": "Soit f(x) = x². Calculer f'(3).",
+      "expression": "x²",
+      "source": "bank"
+    },
+    {
+      "id": "d11",
+      "concept": "nombre dérivé",
+      "level": 2,
+      "statement": "Soit f(x) = x³ − 2x. Calculer f'(1).",
+      "expression": "x³ − 2x",
+      "source": "bank"
+    },
+    {
+      "id": "d01~v1",
+      "concept": "puissance",
+      "level": 1,
+      "statement": "Dérive f(x) = 2x⁴.",
+      "expression": "2x⁴",
+      "source": "variant",
+      "solution": "f'(x) = 8x³"
+    }
+  ]
+}
+```
 
 ## 4. Cache administration
 
@@ -2552,7 +2709,7 @@ Each `Event` is `{name, t_ms, data}`; `t_ms` is since `run` started. Names and w
 | `no_relevant_context` | | the course does not cover it |
 | `unavailable` | `reason`, `eta_s`, `error` | final event of a non-retryable degrade (`superseded`, `request_too_large`) |
 | `room_busy` | `room_id`, `eta_s` | refused: the room already has a request running |
-| `resizing_image`, `parsing_steps`, `checking_steps`, `planning` | | v1.3 tasks |
+| `resizing_image`, `parsing_steps`, `checking_steps` | | v1.3 tasks |
 
 New event names may be added; ignore names you do not know.
 

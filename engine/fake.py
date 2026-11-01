@@ -431,22 +431,39 @@ def _answer(outcome, inputs, lang, k, ctx) -> _Plan:
 
 
 def _prep(outcome, inputs, lang, k, ctx) -> _Plan:
+    """The real planner (engine.prep) over the real course graph, so a UI gets plans that follow its inputs; a canned
+    plan only if the course files are not there."""
     mastered = outcome == "all_mastered"
-    pts = [{"concept_id": c, "day_index": i // 2, "reason": "mastered: review" if mastered else
-            ("prerequisite of the next concept" if i == 0 else "lowest mastery"),
-            "page_kind": "review" if mastered else "learn"} for i, c in enumerate(CONCEPTS[:5])]
-    return _Plan(_ev((0.0, "planning", {"concepts": len(pts)})), 0.02,
-                 {"data": {"focus_points": pts, "assessment_exercise_ids": ["d01", "d05", "d09"]},
-                  "mode": "rules", "notes": {"source": "rules", "days": 3}})
+    try:
+        from engine import prep
+        from engine.course import load_courses
+        from engine.exercises import ExerciseBank
+        courses = load_courses("data/courses")
+        course = courses.get(ctx.get("course_id")) or next(iter(courses.values()))
+        scope = inputs.get("scope") or {"unit_ids": [u.id for u in course.units]}
+        mastery = {c: 0.9 for c in course.concepts} if mastered else dict(inputs.get("mastery") or {})
+        bank = ExerciseBank.load("data/exercises/derivees.yaml")
+        data, notes = prep.build_plan(course, scope, inputs.get("deadline") or "2099-01-01",
+                                      inputs.get("pace_min_per_day") or 30, mastery, lang, bank, inputs.get("start"))
+    except Exception:
+        pts = [{"concept_id": c, "day_index": i // 2, "reason": "Maîtrise faible (0%)", "reason_code": "low_mastery",
+                "page_kind": "review" if mastered else "learn", "minutes": 20} for i, c in enumerate(CONCEPTS[:5])]
+        data, notes = {"focus_points": pts, "assessment_exercise_ids": ["d01", "d05", "d09"]}, {"source": "canned"}
+    return _Plan(_ev((0.0, "answered_by_rules", None)), 0.02, {"data": data, "mode": "rules", "notes": {"source": "rules", **notes}})
 
 
 def _page(fp: Mapping, explain: Result) -> dict:
-    return {"concept_id": fp["concept_id"], "page_kind": fp.get("page_kind", "learn"),
-            "explanation": explain.text, "from_cache": explain.from_cache, "degraded": explain.degraded,
-            "degrade_reason": explain.degrade_reason,
+    from engine.exercises import ExerciseBank
+    return {"concept_id": fp["concept_id"], "page_kind": fp.get("page_kind", "learn"), "title": fp["concept_id"],
+            "language": "FRENCH", "explanation": explain.text, "explanation_sections": explain.data,
+            "explain_request_id": explain.request_id, "from_cache": explain.from_cache, "degraded": explain.degraded,
+            "degrade_reason": explain.degrade_reason, "eta_seconds": explain.eta_seconds,
             "worked_example": {"source": "bank", "exercise_id": "d01", "statement": "Dérive f(x) = x⁴.",
+                               "steps": ["Quelle règle donne la dérivée de xⁿ ?", "(xⁿ)' = n·xⁿ⁻¹ : ici, que vaut n ?",
+                                         "Multiplie par l'exposant, puis baisse l'exposant de 1."],
                                "solution": "f'(x) = 4x³"},
-            "quiz": [dict(EXERCISE, id=i) for i in ("d01", "d02", "d03")]}
+            "quiz": [{"id": i, "concept": fp["concept_id"], "level": 1, "statement": f"Dérive l'exemple {i}.",
+                      "expression": "x²", "source": "bank"} for i in ("d02", "d03", "d04")]}
 
 
 _PLANS = {"classify": _classify, "hint": _hint, "explain": _explain, "quiz": _quiz, "grade": _grade,

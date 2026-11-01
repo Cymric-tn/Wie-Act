@@ -48,7 +48,8 @@ def test_unknown_task_has_no_route():
 def test_registry_model_class_comes_from_the_routing_table():
     reg = default_registry()
     assert {s.name: s.model_class for s in reg} == {"classify": C, "hint": C, "compress": C, "explain": M,
-                                                    "quiz": C, "grade": C}
+                                                    "quiz": C, "grade": C, "ocr_transcribe": V, "check_claim": C,
+                                                        "check_answer": C, "prep_plan": C}
     assert reg.get("classify").output_schema is Classification and reg.get("classify").max_tokens == 80
     with pytest.raises(ValueError):
         Registry([TaskSpec(name="translate", prompt="x", max_tokens=10)])

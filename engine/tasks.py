@@ -40,7 +40,7 @@ class TaskContext:
 @dataclass(frozen=True)
 class TaskSpec:
     name: str
-    prompt: str                                          # prompts/<prompt>.md
+    prompt: str | None                                   # prompts/<prompt>.md (None: the task never talks to a model)
     max_tokens: int
     temperature: float = 0.2
     output_schema: type[BaseModel] | None = None         # JSON task when set
@@ -69,6 +69,7 @@ class TaskSpec:
     partial_result: bool = True              # emit the course excerpts while generating (explain only)
     not_found_data: Callable[[PromptTemplate, Mapping, TaskContext], dict] | None = None   # JSON "nothing in the course"
     safe_default_reason: str | None = None   # degrade_reason when the JSON could not be obtained (safe default used)
+    needs_index: bool = False                # the shortcut reads the retriever's chunks: load the index first
     # the task reads an image: engine.run prepares inputs["image"] (resize, hash) into ctx.extra["image"]
     vision: bool = False
     # re-apply finalize_data on cache hits, so rule changes (caps, floors, language checks) reach old entries;
@@ -833,5 +834,39 @@ CHECK_ANSWER = TaskSpec(
     prepare=_answer_prepare)       # the flow itself is Engine._check_answer (it needs nested runs and a bank)
 
 
+# ====================================================================== prep_plan (rules, no model)
+def _plan_prepare(inputs: Mapping, ctx: TaskContext) -> TaskContext:
+    lang = ctx.language or L.normalize_label(inputs.get("language"))
+    return replace(ctx, language=lang or "FRENCH", level=ctx.level or inputs.get("level"))
+
+
+def _plan_shortcut(inputs: Mapping, ctx: TaskContext) -> dict | None:
+    from engine import prep
+    courses = ctx.extra.get("courses") or {}
+    cid = ctx.extra.get("course_id")
+    if cid is None and len(courses) == 1:
+        cid = next(iter(courses))
+    if cid not in courses:
+        raise ValueError(f"task 'prep_plan' needs context course_id, one of {sorted(courses)}; got {cid!r}")
+    chunks = ctx.extra.get("chunks_fn")
+
+    def material(mid: str) -> set[str]:
+        return {c.concept for c in (chunks() if chunks else []) if c.concept and c.chunk_id.split("#")[0] == mid}
+    s = ctx.extra.get("settings")
+    try:
+        data, notes = prep.build_plan(
+            courses[cid], inputs["scope"], inputs["deadline"], inputs["pace_min_per_day"], inputs.get("mastery"),
+            ctx.language, ctx.extra.get("exercise_bank"), inputs.get("start"), material,
+            *( (s.prep_learn_minutes, s.prep_review_minutes, s.prep_assessment_max) if s else ()))
+    except prep.PlanError as e:
+        raise ValueError(f"task 'prep_plan': {e}") from None
+    return {**data, "_notes": notes}
+
+
+PREP_PLAN = TaskSpec(
+    name="prep_plan", prompt=None, max_tokens=0, required_inputs=("scope", "deadline", "pace_min_per_day"),
+    prepare=_plan_prepare, shortcut=_plan_shortcut, needs_index=True)
+
+
 def default_registry() -> Registry:
-    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE, OCR_TRANSCRIBE, CHECK_CLAIM, CHECK_ANSWER])
+    return Registry([CLASSIFY, HINT, COMPRESS, EXPLAIN, QUIZ, GRADE, OCR_TRANSCRIBE, CHECK_CLAIM, CHECK_ANSWER, PREP_PLAN])
