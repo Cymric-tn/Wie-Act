@@ -82,7 +82,9 @@
   "by_outcome": {
    "ok": 64,
    "degraded": 7
-  }
+  },
+  "file": "load-mixed-virtual-nocache-v14.records.jsonl",
+  "lines": 330
  },
  "verdict": {
   "interactive_p95_within_25s": true,
