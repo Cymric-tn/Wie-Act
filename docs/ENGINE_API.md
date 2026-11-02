@@ -1790,7 +1790,23 @@ Half right, half refuted by computation (real):
     "verdict": "PARTLY",
     "correction": "Rather: (x³)' = 3x²",
     "source_chunk_id": null,
-    "checked_by": "sympy"
+    "checked_by": "sympy",
+    "parts": [
+      {
+        "claim": "(x²)' = 2x",
+        "verdict": "SUPPORTED",
+        "correction": "",
+        "source_chunk_id": null,
+        "checked_by": "sympy"
+      },
+      {
+        "claim": "(x³)' = 2x²",
+        "verdict": "CONTRADICTED",
+        "correction": "Rather: (x³)' = 3x²",
+        "source_chunk_id": null,
+        "checked_by": "sympy"
+      }
+    ]
   },
   "model_class_used": null,
   "model": null,
@@ -1800,6 +1816,29 @@ Half right, half refuted by computation (real):
   "eta_seconds": null,
   "events": [
     {
+      "name": "claim_part",
+      "t_ms": 0.0,
+      "data": {
+        "index": 0,
+        "of": 2,
+        "claim": "(x²)' = 2x"
+      }
+    },
+    {
+      "name": "answered_by_rules",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "claim_part",
+      "t_ms": 0.0,
+      "data": {
+        "index": 1,
+        "of": 2,
+        "claim": "(x³)' = 2x²"
+      }
+    },
+    {
       "name": "answered_by_rules",
       "t_ms": 0.0,
       "data": {}
@@ -1808,13 +1847,13 @@ Half right, half refuted by computation (real):
   "latency_ms": 0.0,
   "tokens_in": 0,
   "tokens_out": 0,
-  "route_reason": null,
+  "route_reason": "2 parts",
   "repaired": false,
   "safe_default": false,
   "mode": null,
   "followup_available": false,
   "notes": {
-    "source": "rules"
+    "compound_parts": 2
   }
 }
 ```
@@ -1888,7 +1927,7 @@ Judged by the model against the course (real):
       "derivee-erreurs.fr#erreurs-avec-le-produit"
     ],
     "budget": {
-      "tokens": 764,
+      "tokens": 730,
       "limit": 2520
     },
     "dropped": []
@@ -2042,7 +2081,7 @@ The model failed twice (real; safe default):
       "derivee-erreurs.fr#erreurs-avec-le-produit"
     ],
     "budget": {
-      "tokens": 764,
+      "tokens": 730,
       "limit": 2520
     },
     "dropped": [],
