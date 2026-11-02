@@ -1,0 +1,12 @@
+# Does a vision request use the chat window? (real (FelCloud), vision probe only)
+
+- **vision request uses the 20 / min window: True**
+- 3 chat requests; non-200 none; **server 429s 0**; exceptions 0
+
+| step | requests | model | remaining after |
+|---|---|---|---|
+| compact-1 | 1 | llama3.2-3b | 19 |
+| vision | 1 | deepseek-ocr | 18 |
+| compact-2 | 1 | llama3.2-3b | 17 |
+
+remaining must fall by 1 after the vision request exactly as after a compact one
