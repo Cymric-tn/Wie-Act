@@ -14,6 +14,7 @@ def verdict(v="CONTRADICTED", c="La dérivée de x³ est 3x²."):
     return lambda body: chat_ok(json.dumps({"verdict": v, "correction": c}), 400, 30)
 
 
+ORIGINAL_SET_SHA = "97eda85605d30cbc"      # tests/eval/claims_set.jsonl as of v1.3: the 30 original claims never change
 PRODUCT = "La dérivée d'un produit est le produit des dérivées."
 
 
@@ -26,9 +27,9 @@ async def test_formula_claims_are_settled_by_sympy_with_no_request(vt, claim, ve
     eng, fake, sink = make_engine(vt, verdict())
     r = await eng.run("check_claim", {"claim": claim}, {"language": lang})
     assert isinstance(r, Result) and not r.degraded and r.data["verdict"] == verdict_ and r.data["checked_by"] == by
-    assert set(r.data) == {"verdict", "correction", "source_chunk_id", "checked_by"}
+    assert set(r.data) == {"verdict", "correction", "source_chunk_id", "checked_by"} | ({"parts"} if " and " in claim else set())
     assert fake.requests == [] and r.model_class_used is None and (r.tokens_in, r.tokens_out) == (0, 0)
-    assert r.event_names == ["answered_by_rules"]
+    assert [n for n in r.event_names if n != "claim_part"] == ["answered_by_rules"] * (2 if " and " in claim else 1)
     assert (verdict_ == "SUPPORTED") == (r.data["correction"] == "") and len(r.data["correction"].split()) <= 25
 
 
@@ -102,8 +103,8 @@ def test_connectives_do_not_stop_sympy_from_deciding(claim):
 
 
 async def test_a_claim_sympy_only_half_checks_goes_to_the_model_with_what_was_verified(vt):
-    eng, fake, _ = make_engine(vt, verdict("PARTLY", "La dérivée n'est pas toujours positive."))
-    claim = "(x²)' = 2x et la dérivée d'une constante est 1"          # one true formula, one false claim sympy cannot see
+    eng, fake, _ = make_engine(vt, verdict("CONTRADICTED", "La dérivée n'est pas toujours positive."))
+    claim = "(x²)' = 2x, donc la dérivée est toujours positive"      # one true formula, one false claim sympy cannot see (one part)
     r = await eng.run("check_claim", {"claim": claim}, {"language": "FRENCH"})
     assert r.data["checked_by"] == "llm" and len(fake.requests) == 1
     assert "Already verified by computation: (x²)' = 2x" in fake.requests[0]["body"]["messages"][-1]["content"]
@@ -179,3 +180,192 @@ async def test_the_claims_routed_to_sympy_or_rules_are_decided_offline_with_no_r
         got = await eng.run("check_claim", {"claim": r["claim"]}, {"language": r["language"]})
         assert got.data["verdict"] == r["expected"], (r["id"], got.data)
         assert got.data["checked_by"] == r["route"], r["id"]
+
+
+# ------------------------------------------------------------------ v1.4: compound claims
+from engine import claims as C  # noqa: E402
+
+SPLITS = [
+    ("La dérivée d'une somme est la somme des dérivées, et celle d'un produit est le produit des dérivées.",
+     ["La dérivée d'une somme est la somme des dérivées", "celle d'un produit est le produit des dérivées."]),
+    ("The derivative of a sum is the sum of the derivatives, and the derivative of a product is the product of the derivatives.",
+     ["The derivative of a sum is the sum of the derivatives",
+      "the derivative of a product is the product of the derivatives."]),
+    ("مشتقة x هي 1 ومشتقة x² هي x.", ["مشتقة x هي 1", "مشتقة x² هي x."]),
+    ("(x²)' = 2x et la dérivée d'une constante est 1", ["(x²)' = 2x", "la dérivée d'une constante est 1"]),
+    ("(x²)' = 2x, (x³)' = 3x²", ["(x²)' = 2x", "(x³)' = 3x²"]),                                   # a comma before a formula
+    ("La tangente est une droite ; la normale lui est perpendiculaire.",
+     ["La tangente est une droite", "la normale lui est perpendiculaire."]),
+    ("La dérivée est la pente de la tangente ainsi que le taux limite est un nombre.",
+     ["La dérivée est la pente de la tangente", "le taux limite est un nombre."]),
+    # one part, returned unchanged
+    ("f(x) = x², f'(x) = 2x", ["f(x) = x², f'(x) = 2x"]),                                         # a definition, then its claim
+    ("Pour f(x) = x² + 7, on a f'(x) = 2x + 7.", ["Pour f(x) = x² + 7, on a f'(x) = 2x + 7."]),
+    ("Si f'(a) = 0, alors f a forcément un extremum en a.", ["Si f'(a) = 0, alors f a forcément un extremum en a."]),
+    ("Si la dérivée est nulle, la fonction est constante.", ["Si la dérivée est nulle, la fonction est constante."]),
+    ("La dérivée de x² et de x³ est une fonction polynôme.", ["La dérivée de x² et de x³ est une fonction polynôme."]),
+    ("La dérivée est la pente (la pente et le coefficient sont égaux).", ["La dérivée est la pente (la pente et le coefficient sont égaux)."]),
+    ("Pour tout x, f'(x) = 2x", ["Pour tout x, f'(x) = 2x"]),
+    ("(x²)' = 2x", ["(x²)' = 2x"]),
+]
+
+
+@pytest.mark.parametrize("claim,parts", SPLITS)
+def test_split_claim(claim, parts):
+    assert C.split_claim(claim) == parts
+
+
+def test_never_inside_brackets_and_at_most_four_parts():
+    inside = "La dérivée est la pente (la tangente est une droite et la normale est une droite) ici."
+    assert C.split_claim(inside) == [inside]
+    many = "A est une droite ; B est une droite ; C est une droite ; D est une droite ; E est une droite ; F est une droite"
+    got = C.split_claim(many)
+    assert len(got) == C.MAX_PARTS and got[-1] == "D est une droite ; E est une droite ; F est une droite"
+
+
+def part(v, by="llm", corr=""):
+    return {"claim": "c", "verdict": v, "correction": corr, "source_chunk_id": None, "checked_by": by}
+
+
+@pytest.mark.parametrize("verdicts,expected", [
+    (["SUPPORTED", "SUPPORTED"], "SUPPORTED"), (["CONTRADICTED", "CONTRADICTED"], "CONTRADICTED"),
+    (["NOT_IN_COURSE", "NOT_IN_COURSE"], "NOT_IN_COURSE"), (["SUPPORTED", "CONTRADICTED"], "PARTLY"),
+    (["NOT_IN_COURSE", "SUPPORTED"], "PARTLY"), (["NOT_IN_COURSE", "CONTRADICTED"], "PARTLY"),
+    (["PARTLY", "PARTLY"], "PARTLY"), (["SUPPORTED", "SUPPORTED", "CONTRADICTED"], "PARTLY")])
+def test_aggregate(verdicts, expected):
+    assert C.aggregate([part(v) for v in verdicts])["verdict"] == expected
+
+
+def test_aggregate_joins_corrections_per_part_and_keeps_the_breakdown():
+    d = C.aggregate([part("CONTRADICTED", "sympy", "Plutôt : (x³)' = 3x²"), part("SUPPORTED"),
+                     part("CONTRADICTED", "llm", "La dérivée d'un produit est u'v + uv'.")])
+    assert d["correction"] == "Plutôt : (x³)' = 3x² La dérivée d'un produit est u'v + uv'."
+    assert d["checked_by"] == "mixed" and [p["verdict"] for p in d["parts"]] == ["CONTRADICTED", "SUPPORTED", "CONTRADICTED"]
+    assert C.aggregate([part("SUPPORTED", "sympy"), part("SUPPORTED", "sympy")])["checked_by"] == "sympy"
+
+
+def by_fact(**replies):
+    """A model that judges each part by a key word of its prompt."""
+    def fn(body):
+        text = body["messages"][-1]["content"]
+        for key, (v, c) in replies.items():
+            if key in text.split("Fact:")[-1]:
+                return chat_ok(json.dumps({"verdict": v, "correction": c}), 400, 30)
+        return chat_ok(json.dumps({"verdict": "NOT_IN_COURSE", "correction": ""}), 400, 30)
+    return fn
+
+
+async def test_a_compound_claim_is_checked_part_by_part_and_aggregated(vt):
+    eng, fake, sink = make_engine(vt, by_fact(constante=("CONTRADICTED", "La dérivée d'une constante est 0.")))
+    claim = "(x²)' = 2x et la dérivée d'une constante est 1"
+    r = await eng.run("check_claim", {"claim": claim}, {"language": "FRENCH", "learner_id": "L1"})
+    assert not r.degraded and r.data["verdict"] == "PARTLY" and r.data["checked_by"] == "mixed"
+    assert [(p["claim"], p["verdict"], p["checked_by"]) for p in r.data["parts"]] == [
+        ("(x²)' = 2x", "SUPPORTED", "sympy"), ("la dérivée d'une constante est 1", "CONTRADICTED", "llm")]
+    assert r.data["correction"] == "La dérivée d'une constante est 0." and len(fake.requests) == 1   # sympy part: no request
+    assert "Fact: la dérivée d'une constante est 1" in fake.requests[0]["body"]["messages"][-1]["content"]
+    assert [e.name for e in r.events if e.name == "claim_part"] == ["claim_part", "claim_part"]
+    assert len(runs(sink)) == 1 and runs(sink)[0].request_id == r.request_id and runs(sink)[0].learner_id == "L1"
+    assert r.notes["compound_parts"] == 2 and r.tokens_in > 0
+    assert {x.request_id for x in sink.records if x.kind == "chat"} == {r.request_id}      # every part shares the id
+
+
+async def test_a_one_part_claim_is_unchanged_and_has_no_parts(vt):
+    eng, fake, sink = make_engine(vt, by_fact(constante=("SUPPORTED", "")))
+    r = await eng.run("check_claim", {"claim": "La dérivée d'une constante est 0."}, {"language": "FRENCH"})
+    assert r.data["verdict"] == "SUPPORTED" and "parts" not in r.data and "claim_part" not in r.event_names
+
+
+async def test_each_part_is_cached_and_invalidate_removes_them_all(vt):
+    eng, fake, _ = make_engine(vt, by_fact(constante=("CONTRADICTED", "Elle vaut 0."), produit=("SUPPORTED", "")))
+    claim = "La dérivée d'une constante est 1 ; la dérivée d'un produit est u'v + uv'."
+    first = await eng.run("check_claim", {"claim": claim}, {"language": "FRENCH"})
+    assert len(fake.requests) == 2 and first.data["verdict"] == "PARTLY"
+    again = await eng.run("check_claim", {"claim": claim}, {"language": "FRENCH"})
+    assert again.from_cache and len(fake.requests) == 2 and again.data["parts"] == first.data["parts"]
+    # a different claim sharing one part reuses that part's entry
+    third = await eng.run("check_claim", {"claim": "La dérivée d'une constante est 1 ; la tangente est une droite."},
+                          {"language": "FRENCH"})
+    assert len(fake.requests) == 3 and third.data["parts"][0]["verdict"] == "CONTRADICTED"
+    assert eng.cache.invalidate(first.request_id) == 2
+    await eng.run("check_claim", {"claim": claim}, {"language": "FRENCH"})
+    assert len(fake.requests) == 5
+
+
+async def test_not_in_course_beside_a_judged_part_is_partly_and_marked(vt):
+    eng, fake, _ = make_engine(vt, by_fact(constante=("SUPPORTED", "")))
+    r = await eng.run("check_claim", {"claim": "La dérivée d'une constante est 0 ; la banquise est de l'eau gelée."},
+                      {"language": "FRENCH"})
+    assert r.data["verdict"] == "PARTLY"
+    assert [p["verdict"] for p in r.data["parts"]] == ["SUPPORTED", "NOT_IN_COURSE"]
+
+
+def test_the_verdict_prompt_allows_three_verdicts_and_is_version_2():
+    from engine.prompts import load_prompt
+    p = load_prompt("prompts", "check_claim")
+    assert p.version == "2" and "PARTLY" not in p.sections["system"].replace('never answer "partly"', "")
+
+
+async def test_claim_verdict_class_midsize_is_a_setting_not_a_code_change(vt):
+    eng, fake, sink = make_engine(vt, by_fact(constante=("SUPPORTED", "")), CLAIM_VERDICT_CLASS="midsize")
+    r = await eng.run("check_claim", {"claim": "La dérivée d'une constante est 0."}, {"language": "FRENCH"})
+    assert r.model_class_used == "midsize" and fake.requests[0]["body"]["model"] == "mid-a"
+    from tests.conftest import make_settings
+    assert make_settings().claim_verdict_class.value == "compact"
+    with pytest.raises(Exception, match="CLAIM_VERDICT_CLASS"):
+        make_settings(CLAIM_VERDICT_CLASS="huge")
+
+
+# ------------------------------------------------------------------ v1.4: the 60-claim eval
+def added_rows():
+    return [json.loads(line) for line in open("tests/eval/claims_set_v14.jsonl", encoding="utf-8") if line.strip()]
+
+
+def test_the_added_eval_set_has_30_new_claims_20_compound_12_of_them_mixed_in_three_languages():
+    rows, old = added_rows(), eval_rows()
+    assert len(rows) == 30 and len({r["id"] for r in rows} | {r["id"] for r in old}) == 60
+    assert {l: sum(r["language"] == l for r in rows) for l in ("FRENCH", "ENGLISH", "ARABIC")} == \
+        {"FRENCH": 10, "ENGLISH": 10, "ARABIC": 10}
+    compound = [r for r in rows if r.get("parts_expected")]
+    mixed = [r for r in compound if len(set(r["parts_expected"])) > 1]
+    assert len(compound) == 20 and len(mixed) >= 12
+    assert {l for r in mixed for l in [r["language"]]} == {"FRENCH", "ENGLISH", "ARABIC"}
+    for r in compound:                                     # the expected verdict is the aggregate of the expected parts
+        want = C.aggregate([part(v) for v in r["parts_expected"]])["verdict"]
+        assert r["expected"] == want, r["id"]
+        assert len(C.split_claim(r["claim"])) == len(r["parts_expected"]), r["id"]
+    assert all(len(C.split_claim(r["claim"])) == 1 for r in rows if not r.get("parts_expected"))
+
+
+def test_the_original_30_claims_are_unchanged():
+    import hashlib
+    raw = open("tests/eval/claims_set.jsonl", "rb").read()
+    assert len(raw.splitlines()) == 30
+    assert hashlib.sha256(raw).hexdigest()[:16] == ORIGINAL_SET_SHA
+
+
+async def test_the_added_claims_routed_to_sympy_are_decided_offline_with_no_request(vt):
+    eng, fake, _ = make_engine(vt, lambda b: pytest.fail("a request was sent for a claim sympy decides"))
+    decided = [r for r in added_rows() if r["route"] == "sympy"]
+    assert len(decided) >= 4
+    for r in decided:
+        got = await eng.run("check_claim", {"claim": r["claim"]}, {"language": r["language"]})
+        assert got.data["verdict"] == r["expected"] and got.data["checked_by"] == "sympy", (r["id"], got.data)
+
+
+def test_the_eval_summary_reports_each_set_and_the_compound_claims_separately():
+    from scripts.eval_check_claim import summarize_sets
+    mk = lambda i, st, exp, got, by, parts=None, pe=None, req=1: {
+        "id": i, "set": st, "language": "FRENCH", "expected": exp, "got": got, "ok": exp == got, "checked_by": by,
+        "requests": req, "degraded": False, "latency_ms": 1000.0 * (req + 1), "parts": parts, "parts_expected": pe}
+    parts = [{"claim": "a", "verdict": "SUPPORTED", "checked_by": "llm"}, {"claim": "b", "verdict": "SUPPORTED", "checked_by": "llm"}]
+    rows = [mk("a", "original", "SUPPORTED", "SUPPORTED", "llm"), mk("b", "original", "CONTRADICTED", "SUPPORTED", "llm"),
+            mk("c", "added", "PARTLY", "SUPPORTED", "mixed", parts, ["SUPPORTED", "CONTRADICTED"], 2),
+            mk("d", "added", "SUPPORTED", "SUPPORTED", "sympy", req=0)]
+    s = summarize_sets(rows)
+    assert s["original"]["overall"] == {"n": 2, "correct": 1, "accuracy": 0.5}
+    assert s["added"]["overall"] == {"n": 2, "correct": 1, "accuracy": 0.5}
+    assert s["compound"]["overall"]["n"] == 1 and s["single"]["overall"]["n"] == 3
+    assert s["model_decided"]["overall"]["n"] == 3
+    assert s["per_part"] == {"n": 2, "correct": 1, "accuracy": 0.5}
+    assert s["latency_ms_requests"]["n"] == 3

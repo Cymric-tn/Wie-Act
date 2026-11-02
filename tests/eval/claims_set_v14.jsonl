@@ -1,0 +1,30 @@
+{"id": "fr-11", "language": "FRENCH", "claim": "La dérivée de x² est 2x et la dérivée d'une constante est 1.", "expected": "PARTLY", "route": "llm", "parts_expected": ["SUPPORTED", "CONTRADICTED"]}
+{"id": "fr-12", "language": "FRENCH", "claim": "(x²)' = 2x et (x³)' = 3x².", "expected": "SUPPORTED", "route": "sympy", "parts_expected": ["SUPPORTED", "SUPPORTED"]}
+{"id": "fr-13", "language": "FRENCH", "claim": "Une constante a une dérivée nulle, et la dérivée de 7x est 7.", "expected": "SUPPORTED", "route": "llm", "parts_expected": ["SUPPORTED", "SUPPORTED"]}
+{"id": "fr-14", "language": "FRENCH", "claim": "La dérivée de 1/x est −1/x², et (√x)' = 1/(2√x).", "expected": "SUPPORTED", "route": "llm", "parts_expected": ["SUPPORTED", "SUPPORTED"]}
+{"id": "fr-15", "language": "FRENCH", "claim": "La dérivée d'un quotient est (u'v + uv')/v² ; la racine carrée n'est pas dérivable en 0.", "expected": "PARTLY", "route": "llm", "parts_expected": ["CONTRADICTED", "SUPPORTED"]}
+{"id": "fr-16", "language": "FRENCH", "claim": "La dérivée d'une constante est 1 et la dérivée d'un produit est le produit des dérivées.", "expected": "CONTRADICTED", "route": "llm", "parts_expected": ["CONTRADICTED", "CONTRADICTED"]}
+{"id": "fr-17", "language": "FRENCH", "claim": "La dérivée d'une constante est 0 ; l'intégrale est l'aire sous une courbe.", "expected": "PARTLY", "route": "llm", "parts_expected": ["SUPPORTED", "NOT_IN_COURSE"]}
+{"id": "fr-18", "language": "FRENCH", "claim": "La fonction 1/x est décroissante sur chaque intervalle où elle est définie.", "expected": "SUPPORTED", "route": "llm"}
+{"id": "fr-19", "language": "FRENCH", "claim": "La dérivée de √x est 1/√x.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "fr-20", "language": "FRENCH", "claim": "Pour f(x) = x³ − 2x, on a f'(x) = 3x² − 2.", "expected": "SUPPORTED", "route": "sympy"}
+{"id": "en-11", "language": "ENGLISH", "claim": "The derivative of a constant is 0 and the derivative of x² is 2x.", "expected": "SUPPORTED", "route": "llm", "parts_expected": ["SUPPORTED", "SUPPORTED"]}
+{"id": "en-12", "language": "ENGLISH", "claim": "A zero of the derivative is always an extremum, and f'(a) is the slope of the tangent at a.", "expected": "PARTLY", "route": "llm", "parts_expected": ["CONTRADICTED", "SUPPORTED"]}
+{"id": "en-13", "language": "ENGLISH", "claim": "(x²)' = 2x and the derivative of a constant is 1.", "expected": "PARTLY", "route": "llm", "parts_expected": ["SUPPORTED", "CONTRADICTED"]}
+{"id": "en-14", "language": "ENGLISH", "claim": "The derivative of a product is u'v + uv', and the derivative of a sum is the product of the derivatives.", "expected": "PARTLY", "route": "llm", "parts_expected": ["SUPPORTED", "CONTRADICTED"]}
+{"id": "en-15", "language": "ENGLISH", "claim": "The derivative of a constant is 1, and the derivative of x is x.", "expected": "CONTRADICTED", "route": "llm", "parts_expected": ["CONTRADICTED", "CONTRADICTED"]}
+{"id": "en-16", "language": "ENGLISH", "claim": "The derivative of a sum is the sum of the derivatives, and a matrix is invertible when its determinant is not zero.", "expected": "PARTLY", "route": "llm", "parts_expected": ["SUPPORTED", "NOT_IN_COURSE"]}
+{"id": "en-17", "language": "ENGLISH", "claim": "The tangent line at a has equation y = f'(a)(x − a) + f(a).", "expected": "SUPPORTED", "route": "llm"}
+{"id": "en-18", "language": "ENGLISH", "claim": "For f(x) = x³, f'(0) = 0 and f has an extremum at 0.", "expected": "PARTLY", "route": "llm", "parts_expected": ["SUPPORTED", "CONTRADICTED"]}
+{"id": "en-19", "language": "ENGLISH", "claim": "If f'(x) < 0 on an interval then f is increasing on that interval.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "en-20", "language": "ENGLISH", "claim": "(3x² + 5x)' = 6x + 5", "expected": "SUPPORTED", "route": "sympy"}
+{"id": "ar-11", "language": "ARABIC", "claim": "مشتقة الدالة الثابتة تساوي صفراً ومشتقة x هي 1.", "expected": "SUPPORTED", "route": "llm", "parts_expected": ["SUPPORTED", "SUPPORTED"]}
+{"id": "ar-12", "language": "ARABIC", "claim": "مشتقة المجموع هي مجموع المشتقات ومشتقة الجداء هي جداء المشتقات.", "expected": "PARTLY", "route": "llm", "parts_expected": ["SUPPORTED", "CONTRADICTED"]}
+{"id": "ar-13", "language": "ARABIC", "claim": "مشتقة الدالة الثابتة تساوي 1 ومشتقة x هي 1.", "expected": "PARTLY", "route": "llm", "parts_expected": ["CONTRADICTED", "SUPPORTED"]}
+{"id": "ar-14", "language": "ARABIC", "claim": "مشتقة x هي 0 ومشتقة x² هي x.", "expected": "CONTRADICTED", "route": "llm", "parts_expected": ["CONTRADICTED", "CONTRADICTED"]}
+{"id": "ar-15", "language": "ARABIC", "claim": "مشتقة الدالة الثابتة تساوي صفراً والخلية هي الوحدة الأساسية للكائنات الحية.", "expected": "PARTLY", "route": "llm", "parts_expected": ["SUPPORTED", "NOT_IN_COURSE"]}
+{"id": "ar-16", "language": "ARABIC", "claim": "العدد المشتق هو ميل المماس، ومشتقة x² هي x.", "expected": "PARTLY", "route": "llm", "parts_expected": ["SUPPORTED", "CONTRADICTED"]}
+{"id": "ar-17", "language": "ARABIC", "claim": "مشتقة x² هي 2x.", "expected": "SUPPORTED", "route": "llm"}
+{"id": "ar-18", "language": "ARABIC", "claim": "الدالة تناقصية إذا كانت المشتقة سالبة على مجال.", "expected": "SUPPORTED", "route": "llm"}
+{"id": "ar-19", "language": "ARABIC", "claim": "إذا كانت المشتقة موجبة على مجال فإن الدالة تناقصية على هذا المجال.", "expected": "CONTRADICTED", "route": "llm"}
+{"id": "ar-20", "language": "ARABIC", "claim": "(x²)' = 2x + 1", "expected": "CONTRADICTED", "route": "sympy"}

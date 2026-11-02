@@ -23,6 +23,8 @@ import logging
 import os
 import re
 import time
+import uuid
+from contextvars import ContextVar
 from dataclasses import replace
 from typing import Any, Callable, Mapping
 
@@ -35,6 +37,7 @@ from engine.course import load_courses
 from engine.exercises import ExerciseBank, phrase_language
 from engine.grounding import check_formulas
 from engine import answers
+from engine import claims as claims_mod
 from engine.vision import ImageError, prepare_image
 from engine import language as L
 from engine.language import ARABIC_SCRIPT, arabic_ratio, contamination, latin_words
@@ -61,7 +64,7 @@ from rag.budget import BudgetError, assemble, limit_for
 from rag.glossary import Glossary
 from rag.retriever import VIEWER, Hit, Retriever, language_plan, make_retriever
 from rag.store import CourseStore, load_chunks
-from router.policy import Decision, Router
+from router.policy import Decision, Router, escalated
 
 EventCallback = Callable[[Event], None]
 
@@ -91,6 +94,7 @@ class _Run:
         self.decision: Decision | None = None
         self.glossary: list[str] = []
         self.negative_hit = False
+        self.quota_wait = 0.0                      # seconds an interactive explain waits for the window (set by _quota_wait)
         self.nearest = ""                          # concept of the best chunk (check_claim: for the content-gap report)
         self.retrieval_on: str | None = None      # which input found the course chunks: passage | question | board_text
         self.eta: float | None = None             # when a helper run (grade) was refused with a delay
@@ -155,11 +159,17 @@ def _extract_json(text: str) -> str:
     return t[i:j + 1] if 0 <= i < j else t
 
 
+# Set while the parts of a compound check_claim run: they share the claim's request id (one cache.invalidate removes
+# every part) and write no "run" record of their own; the claim writes one for the whole.
+part_of: ContextVar[str | None] = ContextVar("ednova_claim_part_of", default=None)
+
+
 class Engine:
     def __init__(self, settings: Settings, caller: RetryingCaller, cache: ExactCache, sink: MetricsSink,
                  registry: Registry | None = None, clock: Callable[[], float] = time.monotonic,
-                 retriever: Retriever | None = None):
+                 retriever: Retriever | None = None, sleep: Callable = asyncio.sleep):
         self.settings, self.caller, self.cache, self.sink = settings, caller, cache, sink
+        self._sleep = sleep
         self.review = ReviewStore(getattr(cache, 'path', ':memory:'))     # flagged answers + content gaps (the dashboard)
         self.registry = registry or default_registry()
         self.router = Router.from_settings(sink, settings, clock)
@@ -208,7 +218,7 @@ class Engine:
                                 settings.input_token_budget, clock, sleep, rng,
                                 PriorityQueue(limiter, clock, background_reserve=settings.background_reserve))
         cache = cache or ExactCache(settings.cache_path, settings.cache_ttl_s)
-        return cls(settings, caller, cache, sink, registry, clock, retriever)
+        return cls(settings, caller, cache, sink, registry, clock, retriever, sleep)
 
     async def aclose(self) -> None:
         for t in list(self._probes) + list(self._background):
@@ -252,11 +262,73 @@ class Engine:
         ids = {k: str(context[k]) for k in IDENTITY_KEYS if context and context.get(k) is not None}
         token = identity.set(ids)
         try:
-            result = await self._run(spec, inputs, context, prio, on_event)
+            parts = claims_mod.split_claim(str(inputs["claim"])) if task == "check_claim" else []
+            if len(parts) > 1:
+                result = await self._check_compound(spec, parts, inputs, context, prio, on_event)
+            else:
+                result = await self._run(spec, inputs, context, prio, on_event)
             self.review.observe(task, inputs, ids, result)
             return result
         finally:
             identity.reset(token)
+
+    async def _check_compound(self, spec: TaskSpec, parts: list[str], inputs: dict, context: Mapping[str, Any] | None,
+                              prio: Priority, on_event: EventCallback | None) -> Result:
+        """check_claim on a claim of several facts: each part runs the whole single-claim pipeline (sympy, the retrieval
+        gate, the model; one cache entry per part), one after the other (a room has one run in flight), and the
+        verdicts are combined in code (claims.aggregate). One "run" record, one request id for the whole."""
+        t0 = self._clock()
+        request_id = uuid.uuid4().hex[:12]
+        events: list[Event] = []
+
+        def emit(name: str, data: Mapping[str, Any] | None = None, t_ms: float | None = None) -> None:
+            ev = Event(name=name, t_ms=round((self._clock() - t0) * 1000, 1) if t_ms is None else t_ms, data=dict(data or {}))
+            events.append(ev)
+            if on_event:
+                on_event(ev)
+
+        results: list[Result] = []
+        token = part_of.set(request_id)
+        try:
+            for i, part in enumerate(parts):
+                emit("claim_part", {"index": i, "of": len(parts), "claim": part})
+                base = (self._clock() - t0) * 1000
+                res = await self._run(spec, {**inputs, "claim": part}, context, prio, None)
+                results.append(res)
+                for ev in res.events:
+                    emit(ev.name, ev.data, round(base + ev.t_ms, 1))
+        finally:
+            part_of.reset(token)
+        entries = []
+        for part, r in zip(parts, results):
+            d = dict(r.data or {})
+            entries.append({"claim": part, "verdict": d.get("verdict", "PARTLY"), "correction": d.get("correction", ""),
+                            "source_chunk_id": d.get("source_chunk_id"), "checked_by": d.get("checked_by", "llm"),
+                            **({"degraded": r.degrade_reason or "degraded"} if r.degraded else {})})
+        data = claims_mod.aggregate(entries)
+        degraded = [r for r in results if r.degraded]
+        sources = [s for r in results for s in (r.notes.get("sources") or [])]
+        notes: dict[str, Any] = {"compound_parts": len(parts), **({"sources": list(dict.fromkeys(sources))} if sources else {})}
+        nearest = next((r.notes["nearest_concept"] for r in results if r.notes.get("nearest_concept")), None)
+        if nearest and data["verdict"] == "NOT_IN_COURSE":
+            notes["nearest_concept"] = nearest
+        model = next((r for r in results if r.model_class_used), None)
+        asked = [r for r in results if r.model_class_used]
+        res = Result(task=spec.name, request_id=request_id, data=data, events=events,
+                     model_class_used=model.model_class_used if model else None, model=model.model if model else None,
+                     from_cache=bool(asked) and all(r.from_cache for r in asked),
+                     degraded=bool(degraded), degrade_reason=degraded[0].degrade_reason if degraded else None,
+                     eta_seconds=next((r.eta_seconds for r in degraded if r.eta_seconds), None),
+                     latency_ms=round((self._clock() - t0) * 1000, 1), tokens_in=sum(r.tokens_in for r in results),
+                     tokens_out=sum(r.tokens_out for r in results), route_reason=f"{len(parts)} parts",
+                     notes=notes)
+        self.sink.write(CallRecord(
+            request_id=request_id, kind="run", task=spec.name, priority=prio.value, model_class=res.model_class_used,
+            model=res.model, outcome="degraded" if res.degraded else "cache_hit" if res.from_cache else "ok",
+            from_cache=res.from_cache, degraded=res.degraded, degrade_reason=res.degrade_reason,
+            latency_ms=res.latency_ms, tokens_in=res.tokens_in, tokens_out=res.tokens_out, eta_s=res.eta_seconds,
+            detail=res.route_reason))
+        return res
 
     def metrics_records(self) -> list[dict]:
         """Every metrics record so far, as dicts: from the sink itself when it keeps them, else from the JSONL file."""
@@ -278,6 +350,8 @@ class Engine:
             tctx = spec.prepare(inputs, tctx)
         run = _Run(self._clock, on_event)
         ctx = CallContext(task=task, priority=prio.value, on_event=run.emit, turn_id=tctx.extra.get("turn_id"))
+        if part_of.get():
+            ctx.request_id = part_of.get()
         self._maybe_probe()
         key_extra: list[str] = []
         for name, share in spec.budgeted_inputs.items():      # passage, board_text: a share of the prompt budget
@@ -374,8 +448,11 @@ class Engine:
         if spec.name == "check_answer":
             return await self._check_answer(prompt, inputs, tctx, prio, run, ctx)
 
+        quota = self.caller.limiter.buckets["chat"].tokens
+        run.quota_wait = self._quota_wait(spec, prio, tctx, quota)
+        # a wait that fits the deadline replaces quota_low: the router is told the window is not short
         decision = run.decision = self.router.decide(task, tctx.as_mapping(),
-                                                     self.caller.limiter.buckets["chat"].tokens, ctx)
+                                                     self.settings.quota_low_threshold if run.quota_wait else quota, ctx)
         hits: list[Hit] = []
         if spec.grounded:
             hits = await self._retrieve(inputs, tctx, run)
@@ -462,6 +539,7 @@ class Engine:
                 run.emit(ev.name, ev.data)
         bg = _Run(self._clock, forward)
         bg.t0, bg.started = run.t0, run.started
+        bg.quota_wait = run.quota_wait
         bg.glossary = list(run.glossary)         # state the retrieval already put on the learner's run
         bg.retrieval_on = run.retrieval_on
         bg_ctx = CallContext(request_id=ctx.request_id, task=ctx.task, priority=ctx.priority, purpose=ctx.purpose,
@@ -495,6 +573,25 @@ class Engine:
                                            replace(decision, reason=decision.reason + "; interactive deadline"),
                                            llm_framing=False)
 
+    def _quota_wait(self, spec: TaskSpec, prio: Priority, tctx: TaskContext, quota: float) -> float:
+        """An INTERACTIVE explain that finds the window nearly full (fewer than QUOTA_LOW_THRESHOLD free sends) does not
+        have to give up mid-size: the sliding log knows when enough sends expire. If that is within
+        INTERACTIVE_DEADLINE_S - EXPLAIN_EXPECTED_S it waits for it (event `queued` with the ETA, just before the
+        generation, so a cache hit never waits); otherwise the router degrades it with quota_low as before."""
+        s = self.settings
+        if spec.name != "explain" or prio is not Priority.INTERACTIVE or s.interactive_deadline_s <= 0:
+            return 0.0
+        if quota >= s.quota_low_threshold or escalated(tctx.as_mapping()):
+            return 0.0
+        wait = self.caller.limiter.buckets["chat"].wait_time(s.quota_low_threshold)
+        return wait if 0 < wait <= s.interactive_deadline_s - s.explain_expected_s else 0.0
+
+    async def _wait_for_window(self, run: "_Run") -> None:
+        wait = self.caller.limiter.buckets["chat"].wait_time(self.settings.quota_low_threshold)
+        if wait > 0:
+            run.emit("queued", {"position": 0, "eta_s": round(wait, 1), "reason": "quota_window"})
+            await self._sleep(wait)
+
     async def _produce(self, spec: TaskSpec, prompt: PromptTemplate, inputs: dict, tctx: TaskContext,
                        prio: Priority, run: "_Run", ctx: CallContext, decision: Decision, hits: list[Hit],
                        key: str, messages: Messages) -> Result:
@@ -506,7 +603,7 @@ class Engine:
         ground_notes: dict = {}
         pieces: list = []
         if spec.grounded:
-            if decision.model_class is not decision.preferred:     # quota_low / breaker_open: no mid-size
+            if decision.model_class is not decision.preferred and task != "check_claim":   # quota_low / breaker_open: no mid-size
                 # a class known to be down gets no nicety calls either: the framing line is cached or a template
                 return await self._fast_extractive(prompt, inputs, tctx, [h.chunk for h in hits], {}, ctx, run,
                                                    decision, llm_framing=decision.degrade_reason != "breaker_open")
@@ -518,6 +615,8 @@ class Engine:
                                          CeilingExceeded(message=str(e), ceiling="prompt_tokens", limit=self.limit))
 
         try:
+            if run.quota_wait:
+                await self._wait_for_window(run)
             chat = await self._generate(spec, decision, messages, ctx, run)
         except _FastMode as fm:
             return await self._fast_extractive(prompt, inputs, tctx, pieces, ground_notes, ctx, run, fm.decision,
@@ -582,6 +681,8 @@ class Engine:
         verifiable nor in the sources. Correct new examples (verified with sympy) pass."""
         c = check_formulas(body, sources)
         notes = {"formulas_verified": len(c["verified"])}
+        if c["unchecked"]:
+            notes["unchecked_spans"] = c["unchecked"]        # cut at a symbol the parser does not know: not judged
         if c["new_examples"]:
             notes["new_examples"] = c["new_examples"]
         if c["wrong"]:
@@ -1036,7 +1137,7 @@ class Engine:
                 raise
             run.degrade(fb.degrade_reason)
             run.emit("falling_back_to_compact", {"reason": fb.degrade_reason})
-            if spec.grounded:
+            if spec.grounded and spec.name != "check_claim":     # a claim has no extracts to serve: compact judges it
                 raise _FastMode(fb) from None
             run.model_class = fb.model_class.value
             chat = await self._chat(spec, fb.model_class, messages, ctx)
@@ -1053,7 +1154,7 @@ class Engine:
             run.emit("falling_back_to_compact", {"reason": fb.degrade_reason})
             if not self.router.breakers[d.model_class].closed:
                 run.emit("breaker_open", {"model_class": d.model_class.value, "retry_in_s": round(eta, 1)})
-            if spec.grounded:
+            if spec.grounded and spec.name != "check_claim":
                 raise _FastMode(fb, round(eta, 1)) from None
             run.model_class = fb.model_class.value
             chat = await self._chat(spec, fb.model_class, messages, ctx)
@@ -1161,7 +1262,7 @@ class Engine:
                      safe_default=status == "safe_default", notes=notes, mode=mode,
                      followup_available=followup_available)
         outcome = "degraded" if res.degraded else "cache_hit" if from_cache else status
-        if run.silent:
+        if run.silent or part_of.get():
             return res
         self.sink.write(CallRecord(
             request_id=ctx.request_id, turn_id=ctx.turn_id, kind="run", task=ctx.task, priority=ctx.priority,

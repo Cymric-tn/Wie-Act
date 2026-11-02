@@ -110,7 +110,10 @@ class Router:
 
     @classmethod
     def from_settings(cls, sink: MetricsSink, s: Settings, clock=time.monotonic) -> "Router":
-        return cls(sink, s.quota_low_threshold, ROUTES, s.breaker_threshold, s.breaker_window_s,
+        routes = dict(ROUTES)
+        if s.claim_verdict_class is M:           # CLAIM_VERDICT_CLASS=midsize: mid-size judges a claim part, compact backs it up
+            routes["check_claim"] = Route(M, fallback=C)
+        return cls(sink, s.quota_low_threshold, routes, s.breaker_threshold, s.breaker_window_s,
                    s.breaker_cooldown_s, clock, s.breaker_timeout_threshold)
 
     def route_for(self, task: str) -> Route:
