@@ -78,6 +78,8 @@ PARTLY class is the systematic weakness, not model size. Two of the 8B's wrong a
 
 ## 3c. The 10 `quota_low` results
 
+> **Erratum (v1.4):** a `quota_low` explain is answered in fast mode (course extracts, at most one compact framing line), not by the 3B: where this section and 3d say they were "sent to the 3B" or that the fallback "moves explains to the 3B", read "served extracts".
+
 What the code and the report prove:
 - `quota_low` is raised only in `Router.decide`, for a task whose default class is mid-size and has a fallback: of the
   tasks, only **explain**. So all 10 are interactive explains, 10 of the 17 (59%) sent to the 3B instead of the 8B. The
