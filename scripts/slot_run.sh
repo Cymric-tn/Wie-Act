@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# The weekday FelCloud slot, in order. Every step writes to reports/felcloud-<date>-*; the sequence stops at the first
-# step that shows a server 429 or an exception (or that died without writing its report).
+# The FelCloud slot, in order (Tuesday 2026-11-03, 12:00-24:00). Every step writes to reports/felcloud-<date>-*; the
+# sequence stops at the first step that shows a server 429 or an exception (or that died without writing its report).
 #
-#   scripts/slot_run.sh                       # date 2026-11-02, ENV_FILE=.env.real
-#   SLOT_DATE=2026-11-03 scripts/slot_run.sh  # another day: the file names follow
+#   scripts/slot_run.sh                       # date 2026-11-03, ENV_FILE=.env.real
+#   SLOT_DATE=2026-11-04 scripts/slot_run.sh  # another day: the file names follow
 #
 #   a. smoke of every task, including one OCR call      -> -smoke.log, -smoke.guard.json
-#   b. the vision-window probe (3 requests)             -> -vision-probe.{json,md,log}
-#   c. eval_check_claim (30 claims)                     -> -check-claim.{json,log}, -check-claim.guard.json
-#   d. load_mixed --real --no-cache (240 s)             -> -load-mixed.{json,md,log}
-#   e. share of explain results degraded by `deadline`  -> -explain-deadline.{json,md}
+#   b. the 60-claim eval, twice: the compact class judges each claim part (CLAIM_VERDICT_CLASS=compact), then mid-size
+#                                                       -> -check-claim-compact.*, -check-claim-midsize.* (json, log, guard.json)
+#   c. load_mixed --real --no-cache (240 s), every per-request record saved
+#                                                       -> -load-mixed.{json,md,log}, -load-mixed.records.jsonl
+#      then the share of interactive explain degraded by `deadline`  -> -explain-deadline.{json,md}
 #   then a scan of everything written for key-looking strings.
+# (The vision-window probe was answered on 2026-11-02: a vision request uses the 20 / min window.)
 #
 # Steps are separate processes, each with its own engine limiter, but the platform's 20-per-minute window is shared:
 # the script waits SLOT_GAP_S (default 65 s) between steps so one step's sends have left the window before the next
@@ -21,7 +23,7 @@ cd "$(dirname "$0")/.."
 
 ENV_FILE=${ENV_FILE:-.env.real}; export ENV_FILE
 if [ -n "${PYTHON:-}" ]; then PY=$PYTHON; elif [ -x myenv/bin/python ]; then PY=myenv/bin/python; else PY=python; fi
-DATE=${SLOT_DATE:-2026-11-02}
+DATE=${SLOT_DATE:-2026-11-03}
 GAP=${SLOT_GAP_S:-65}
 P=reports/felcloud-$DATE
 mkdir -p reports
@@ -65,28 +67,27 @@ begin a "smoke: every task, one OCR call" "$P-smoke.log" "$P-smoke.guard.json"
 "$PY" -m scripts.slot_guard check "$P-smoke.guard.json" || halt a "smoke: a server 429 or an exception"
 pause
 
-# ---- b. does a vision request use the 20 / min window?
-begin b "vision-window probe" "$P-vision-probe.json" "$P-vision-probe.md" "$P-vision-probe.log"
-"$PY" -m scripts.load_mixed --real --probe-only --out "$P-vision-probe" 2>&1 | tee "$P-vision-probe.log"
-"$PY" -m scripts.slot_guard check "$P-vision-probe.json" || halt b "vision probe: a server 429 or an exception"
-pause
+# ---- b. the 60-claim eval with the compact class, then again with mid-size judging each claim part
+for CLS in compact midsize; do
+  [ "$CLS" = midsize ] && STEP=b2 || STEP=b1
+  begin $STEP "eval_check_claim, CLAIM_VERDICT_CLASS=$CLS" "$P-check-claim-$CLS.json" "$P-check-claim-$CLS.guard.json" "$P-check-claim-$CLS.log"
+  CLAIM_VERDICT_CLASS=$CLS "$PY" -m scripts.eval_check_claim --out "$P-check-claim-$CLS.json" \
+      --guard-out "$P-check-claim-$CLS.guard.json" 2>&1 | tee "$P-check-claim-$CLS.log"
+  "$PY" -m scripts.slot_guard check "$P-check-claim-$CLS.guard.json" || halt $STEP "eval_check_claim ($CLS): a server 429 or an exception"
+  pause
+done
 
-# ---- c. check_claim accuracy on the 30 claims
-begin c "eval_check_claim" "$P-check-claim.json" "$P-check-claim.guard.json" "$P-check-claim.log"
-"$PY" -m scripts.eval_check_claim --out "$P-check-claim.json" --guard-out "$P-check-claim.guard.json" 2>&1 | tee "$P-check-claim.log"
-"$PY" -m scripts.slot_guard check "$P-check-claim.guard.json" || halt c "eval_check_claim: a server 429 or an exception"
-pause
-
-# ---- d. the mixed load on the real API, every request reaching the provider
-begin d "load_mixed --real --no-cache" "$P-load-mixed.json" "$P-load-mixed.md" "$P-load-mixed.log"
+# ---- c. the mixed load on the real API, every request reaching the provider, every per-request record saved
+begin c "load_mixed --real --no-cache" "$P-load-mixed.json" "$P-load-mixed.md" "$P-load-mixed.log" "$P-load-mixed.records.jsonl"
 "$PY" -m scripts.load_mixed --real --no-cache --out "$P-load-mixed" 2>&1 | tee "$P-load-mixed.log"
 # load_mixed exits 1 when ANY of its verdicts fails (a p95 over 25 s is a finding, not a reason to stop): only a server
 # 429 or an exception, or a missing report, stops the sequence.
-"$PY" -m scripts.slot_guard check "$P-load-mixed.json" || halt d "load_mixed: a server 429 or an exception"
+"$PY" -m scripts.slot_guard check "$P-load-mixed.json" || halt c "load_mixed: a server 429 or an exception"
+[ -s "$P-load-mixed.records.jsonl" ] || halt c "load_mixed wrote no per-request records"
 
 # ---- e. the share of explain results degraded by `deadline`
-begin e "explain degraded by deadline" "$P-explain-deadline.json" "$P-explain-deadline.md"
-"$PY" -m scripts.explain_deadline "$P-load-mixed.json" --out "$P-explain-deadline" || halt e "no explain share could be computed"
+begin c2 "explain degraded by deadline" "$P-explain-deadline.json" "$P-explain-deadline.md"
+"$PY" -m scripts.explain_deadline "$P-load-mixed.json" --out "$P-explain-deadline" || halt c2 "no explain share could be computed"
 
 # ---- the reports are meant to be committed: nothing key-like in them
 echo; echo "=== secret scan of $P-*"
