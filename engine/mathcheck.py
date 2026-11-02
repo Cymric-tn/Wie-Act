@@ -71,7 +71,7 @@ def equivalent(a: sympy.Expr, b: sympy.Expr) -> bool:
 
 
 # ------------------------------------------------------------------ general expressions (grounding check)
-GROUNDING_VARS = "xahtnkuvy"
+GROUNDING_VARS = "xabchkmntuvy"     # v1.4: + b c m (x² + bx + c); the character whitelist below is unchanged in kind
 _GEN_SYMBOLS = {c: sympy.Symbol(c) for c in GROUNDING_VARS}
 _GEN_FUNCS = {"sqrt": sympy.sqrt, "ln": sympy.log, "exp": sympy.exp, "sin": sympy.sin, "cos": sympy.cos,
               "tan": sympy.tan}

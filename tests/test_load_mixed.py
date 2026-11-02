@@ -85,3 +85,34 @@ def test_probe_only_says_whether_a_vision_request_uses_the_window(monkeypatch, t
     L.write_probe(rep, str(tmp_path / "probe"))
     assert f"vision request uses the 20 / min window: {counts}" in (tmp_path / "probe.md").read_text()
     assert json.load(open(tmp_path / "probe.json"))["exceptions"] == []
+
+
+# ------------------------------------------------------------------ v1.4: every per-request record is written
+def test_the_load_writes_every_per_request_record_to_a_jsonl_file(tmp_path):
+    import json
+
+    from scripts.load_mixed import write
+    rep = run_virtual(args(seed=1, duration=90.0, setting=["EXPLAIN_EXPECTED_S=10"]))
+    prefix = str(tmp_path / "load")
+    write(rep, prefix)
+    lines = [json.loads(x) for x in open(prefix + ".records.jsonl", encoding="utf-8")]
+    kinds = [x["kind"] for x in lines]
+    assert kinds[0] == "header" and lines[0]["mode"] == "virtual" and lines[0]["seed"] == 1
+    runs = [x for x in lines if x["kind"] == "run"]
+    assert len(runs) > 20
+    r = runs[0]
+    assert {"who", "task", "priority", "t", "latency_s", "degraded", "request_id", "window_remaining_at_start",
+            "events", "tokens_in", "tokens_out"} <= set(r)
+    assert 0 <= r["window_remaining_at_start"] <= 20 and r["events"] and {"name", "t_ms"} <= set(r["events"][0])
+    provider = [x for x in lines if x["kind"] == "provider"]
+    assert len(provider) == rep["provider"]["chat_requests"] + sum(
+        1 for x in provider if not x["path"].endswith("/chat/completions"))
+    assert {"t0", "t1", "model", "status"} <= set(provider[0])
+    metric = [x["record"] for x in lines if x["kind"] == "metric"]
+    assert metric and {"chat", "run"} <= {m["kind"] for m in metric} and all(m["request_id"] for m in metric)
+    saved = json.load(open(prefix + ".json"))
+    assert "_records" not in saved and saved["records"]["file"] == "load.records.jsonl"
+    assert saved["records"]["lines"] == len(lines)
+    # the quota waits and degradations are visible per request
+    waits = [e for x in runs for e in x.get("events", []) if e["name"] == "queued" and e.get("data", {}).get("reason") == "quota_window"]
+    assert all(w["data"]["eta_s"] > 0 for w in waits)

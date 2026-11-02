@@ -86,13 +86,13 @@ class FakeEngine:
         "classify": ("ok", "cache_hit", "safe_default", "quota_exhausted", "superseded", "room_busy"),
         "hint": ("ok", "stored", "quota_exhausted", "superseded", "room_busy"),
         "explain": ("ok", "cache_hit", "fast_extractive", "deadline", "quota_exhausted", "not_in_course",
-                    "wrong_math", "superseded", "room_busy"),
+                    "wrong_math", "quota_wait", "superseded", "room_busy"),
         "quiz": ("ok", "diagnostic"),
         "grade": ("correct", "incorrect", "quota_exhausted"),
         "compress": ("ok",),
         "ocr_transcribe": ("ok", "math", "low_confidence", "invalid_image", "quota_exhausted", "superseded",
                            "room_busy"),
-        "check_claim": ("SUPPORTED", "CONTRADICTED", "PARTLY", "NOT_IN_COURSE", "CONTRADICTED_llm", "llm_failed",
+        "check_claim": ("SUPPORTED", "CONTRADICTED", "PARTLY", "COMPOUND", "NOT_IN_COURSE", "CONTRADICTED_llm", "llm_failed",
                         "quota_exhausted", "superseded", "room_busy"),
         "check_answer": ("ok", "wrong_step", "rule", "llm_feedback", "unchecked", "quota_exhausted", "room_busy"),
         "prep_plan": ("ok", "all_mastered"),
@@ -359,6 +359,13 @@ def _explain(outcome, inputs, lang, k, ctx) -> _Plan:
                       "tokens_out": 214, "route_reason": "mid-size by table", "degraded": True,
                       "degrade_reason": "wrong_math",
                       "notes": {"sources": [EXCERPTS[0]["chunk_id"]], "formulas_verified": 0, "wrong_math": [bad]}})
+    if outcome == "quota_wait":       # the 20/min window was nearly full: the explain waited 6 s for a slot (v1.4)
+        t = 15.5 * k
+        return _Plan(_ev(*retr, partial, (0.065, "queued", {"position": 0, "eta_s": 6.0, "reason": "quota_window"}),
+                         (6.07, "queued", {"position": 0, "eta_s": 6.0}), (6.08 * 1, "generating", {"attempt": 1, "model_class": "midsize"})),
+                     t, {**_explain_body(lang), "model_class_used": "midsize", "model": "mid-a", "tokens_in": 1150,
+                         "tokens_out": 214, "route_reason": "mid-size by table",
+                         "notes": {"sources": [EXCERPTS[0]["chunk_id"]], "formulas_verified": 1}})
     if outcome == "ok":
         t = 9.5 * k
         return _Plan(_ev(*retr, partial, *gen), t,
@@ -442,6 +449,34 @@ def _claim(outcome, inputs, lang, k, ctx) -> _Plan:
         return _Plan(_ev((0.0, "answered_by_rules", None)), 0.03,
                      {"data": {"verdict": outcome, "correction": "" if sup else "Plutôt : (x³)' = 3x²",
                                "source_chunk_id": None, "checked_by": "sympy"}, "notes": {"source": "rules"}})
+    if outcome in ("PARTLY", "COMPOUND"):
+        # a claim of several facts (v1.4): each part is checked on its own, the verdict is aggregated in code
+        def part(claim, verdict, corr, by, chunk=None):
+            return {"claim": claim, "verdict": verdict, "correction": corr, "source_chunk_id": chunk, "checked_by": by}
+        if outcome == "PARTLY":                           # both parts settled by sympy: no request
+            parts = [part("(x²)' = 2x", "SUPPORTED", "", "sympy"),
+                     part("(x³)' = 2x²", "CONTRADICTED", "Plutôt : (x³)' = 3x²", "sympy")]
+            ev = [(0.0, "claim_part", {"index": 0, "of": 2, "claim": parts[0]["claim"]}), (0.01, "answered_by_rules", None),
+                  (0.02, "claim_part", {"index": 1, "of": 2, "claim": parts[1]["claim"]}), (0.03, "answered_by_rules", None)]
+            fields = {"notes": {"compound_parts": 2}}
+            end, checked = 0.04, "sympy"
+        else:                                             # one part by sympy, one by the model, one outside the course
+            cid2 = "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"
+            parts = [part("(x²)' = 2x", "SUPPORTED", "", "sympy"),
+                     part("la dérivée d'une constante est 1", "CONTRADICTED", "La dérivée d'une constante est 0.", "llm", cid2),
+                     part("la photosynthèse est un processus chimique", "NOT_IN_COURSE", "", "rules")]
+            ev = [(0.0, "claim_part", {"index": 0, "of": 3, "claim": parts[0]["claim"]}), (0.01, "answered_by_rules", None),
+                  (0.02, "claim_part", {"index": 1, "of": 3, "claim": parts[1]["claim"]}),
+                  (0.03, "retrieving", None), (0.04, "checking_cache", None), (0.05, "queued", {"position": 0, "eta_s": 2.0}),
+                  (0.06, "generating", {"attempt": 1, "model_class": "compact"}),
+                  (3.0 * k, "claim_part", {"index": 2, "of": 3, "claim": parts[2]["claim"]}),
+                  (3.0 * k + 0.01, "retrieving", None), (3.0 * k + 0.02, "no_relevant_context", None)]
+            fields = {"model_class_used": "compact", "model": "compact-a", "tokens_in": 420, "tokens_out": 52,
+                      "notes": {"compound_parts": 3, "sources": [cid2]}}
+            end, checked = 3.0 * k + 0.03, "mixed"
+        from engine.claims import aggregate
+        data = aggregate(parts)
+        return _Plan(_ev(*ev), end, {"data": data, **fields, "route_reason": f"{len(parts)} parts"})
     if outcome == "NOT_IN_COURSE":
         return _Plan(_ev((0.0, "retrieving", None), (0.05, "no_relevant_context", None)), 0.05,
                      {"data": {"verdict": "NOT_IN_COURSE", "correction": "", "source_chunk_id": None,
@@ -458,7 +493,7 @@ def _claim(outcome, inputs, lang, k, ctx) -> _Plan:
                      {"data": {"verdict": "PARTLY", "correction": "", "source_chunk_id": cid, "checked_by": "llm"},
                       "model_class_used": "compact", "model": "compact-a", "safe_default": True, "degraded": True,
                       "degrade_reason": "json_invalid", "repaired": True, "tokens_in": 640, "tokens_out": 60})
-    verdict = outcome.removesuffix("_llm") if outcome != "PARTLY" else "PARTLY"
+    verdict = outcome.removesuffix("_llm")
     corr = "" if verdict == "SUPPORTED" else "La règle du produit est (u·v)' = u'·v + u·v', pas u'·v'."
     return _Plan(_ev(*base), 3.1 * k,
                  {"data": {"verdict": verdict, "correction": corr, "source_chunk_id": cid, "checked_by": "llm"},

@@ -87,6 +87,7 @@ class Settings:
     vision_max_slots: int = 1                 # vision may hold at most this many concurrency slots (ghosts included)
     background_reserve: int = 6               # BACKGROUND chat waits while fewer than this many sends remain in the window
     midsize_max_slots: int = 1                # mid-size may hold at most this many concurrency slots (ghosts included); 0 = no cap
+    explain_expected_s: float = 10.0          # typical mid-size explain; a quota wait is worth it only if it fits INTERACTIVE_DEADLINE_S minus this
     interactive_deadline_s: float = 25.0      # an INTERACTIVE explain without a body by then is answered in fast mode
     max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
     max_retry_wait_s_background: float = 65.0  # BACKGROUND: the observed quota delay is 60 s
@@ -108,6 +109,7 @@ class Settings:
     chunk_max_tokens: int = 300
     rag_course_index_dir: str = "data/index/courses"   # runtime material (uploads, professor documents), one file per course
     source_boost_professor: float = 1.3       # BM25 score factor of professor material (applied before the coverage gate)
+    claim_verdict_class: ModelClass = ModelClass.COMPACT   # class of the one model call per claim part (CLAIM_VERDICT_CLASS)
     ingest_min_tag_confidence: float = 0.6    # a chunk whose concept tag scores below this is flagged for the professor
     ingest_max_ocr_pages: int = 20            # scanned pages sent through ocr_transcribe per file
     retrieval_query_chars: int = 400          # a selected passage / whiteboard text is cut to this many characters as a search query
@@ -160,6 +162,13 @@ def _names(v: str) -> tuple[str, ...]:
 
 def _bool(v: str) -> bool:
     return v.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _claim_class(v: str) -> ModelClass:
+    v = v.strip().lower()
+    if v not in ("compact", "midsize"):
+        raise ConfigError(f"CLAIM_VERDICT_CLASS must be compact or midsize, got {v!r}")
+    return ModelClass(v)
 
 
 def _range(v: str) -> tuple[float, float]:
@@ -265,6 +274,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         vision_max_slots=get("VISION_MAX_SLOTS", int, defaults.vision_max_slots),
         midsize_max_slots=get("MIDSIZE_MAX_SLOTS", int, defaults.midsize_max_slots),
         background_reserve=get("BACKGROUND_RESERVE", int, defaults.background_reserve),
+        explain_expected_s=get("EXPLAIN_EXPECTED_S", float, defaults.explain_expected_s),
         interactive_deadline_s=get("INTERACTIVE_DEADLINE_S", float, defaults.interactive_deadline_s),
         max_retry_wait_s=get("MAX_RETRY_WAIT_S", float, defaults.max_retry_wait_s),
         max_retry_wait_s_background=get("MAX_RETRY_WAIT_S_BACKGROUND", float, defaults.max_retry_wait_s_background),
@@ -289,6 +299,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         board_budget_share=get("BOARD_BUDGET_SHARE", float, defaults.board_budget_share),
         rag_course_index_dir=e.get("RAG_COURSE_INDEX_DIR") or defaults.rag_course_index_dir,
         source_boost_professor=get("SOURCE_BOOST_PROFESSOR", float, defaults.source_boost_professor),
+        claim_verdict_class=get("CLAIM_VERDICT_CLASS", _claim_class, defaults.claim_verdict_class),
         ingest_min_tag_confidence=get("INGEST_MIN_TAG_CONFIDENCE", float, defaults.ingest_min_tag_confidence),
         ingest_max_ocr_pages=get("INGEST_MAX_OCR_PAGES", int, defaults.ingest_max_ocr_pages),
         budget_safety_margin=get("BUDGET_SAFETY_MARGIN", float, defaults.budget_safety_margin),

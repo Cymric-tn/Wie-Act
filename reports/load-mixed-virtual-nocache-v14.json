@@ -1,0 +1,95 @@
+{
+ "mode": "virtual (simulated FelCloud)",
+ "duration_s": 271.6662962918015,
+ "seed": 1,
+ "saturation_prob": 0.05,
+ "cache": "off",
+ "note": "Simulated: the real engine through the constraint simulator (compact 2-5 s, mid-size 8-15 s, vision 10-18 s, 20 / min, 2 in flight, one mid-size slot, random mid-size saturation) with canned model replies and a virtual clock. It checks the engine's scheduling, not the models, and not FelCloud.",
+ "interactive": {
+  "n": 64,
+  "p50_s": 4.58,
+  "p95_s": 25.0,
+  "max_s": 25.0,
+  "degraded": 7,
+  "degrade_reasons": {
+   "superseded": 3,
+   "deadline": 4
+  },
+  "explain": {
+   "n": 16,
+   "degraded_by_deadline": 4,
+   "share_degraded_by_deadline": 0.25
+  },
+  "by_task": {
+   "check_answer": {
+    "n": 5,
+    "p50_s": 0.0,
+    "p95_s": 7.35,
+    "max_s": 7.35
+   },
+   "check_claim": {
+    "n": 6,
+    "p50_s": 2.48,
+    "p95_s": 7.89,
+    "max_s": 7.89
+   },
+   "classify": {
+    "n": 24,
+    "p50_s": 4.39,
+    "p95_s": 7.23,
+    "max_s": 7.29
+   },
+   "explain": {
+    "n": 16,
+    "p50_s": 19.53,
+    "p95_s": 25.0,
+    "max_s": 25.0
+   },
+   "hint": {
+    "n": 8,
+    "p50_s": 4.16,
+    "p95_s": 6.24,
+    "max_s": 6.24
+   },
+   "ocr_transcribe": {
+    "n": 5,
+    "p50_s": 7.61,
+    "p95_s": 24.6,
+    "max_s": 24.6
+   }
+  }
+ },
+ "background": {
+  "n": 5,
+  "pages": 4,
+  "pages_degraded": 0,
+  "waited_for_reserve": 1
+ },
+ "provider": {
+  "chat_requests": 61,
+  "by_model": {
+   "compact-a": 39,
+   "mid-a": 20,
+   "deepseek-ocr": 2
+  },
+  "non_200": {},
+  "server_429": 0,
+  "densest_60s_window": 19
+ },
+ "exceptions": [],
+ "records": {
+  "runs": 71,
+  "by_outcome": {
+   "ok": 64,
+   "degraded": 7
+  },
+  "file": "load-mixed-virtual-nocache-v14.records.jsonl",
+  "lines": 330
+ },
+ "verdict": {
+  "interactive_p95_within_25s": true,
+  "zero_server_429": true,
+  "zero_exceptions": true,
+  "window_at_most_20": true
+ }
+}

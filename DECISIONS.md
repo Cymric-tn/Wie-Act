@@ -345,3 +345,55 @@ The live smoke of every task including one OCR call, the check_claim accuracy, t
   0: the call is there for the case where the same request id was cached too. Not verified: a real professor's use of it.
 - Fake engine: outcome `wrong_math` for explain, review store and run records in memory, so the app builds the screen
   against `--fake`.
+
+## Engine v1.4 (2026-11-02, branch `engine-v1.4`; the last engine round before the freeze)
+
+From the first live slot (`reports/engine-v1.3-felcloud.md`): the 3B called half-true compound claims SUPPORTED or CONTRADICTED
+(never PARTLY), the formula reader flagged `x² +` for a parameter it did not know, and 10 of 17 interactive explains were
+degraded `quota_low`. Five changes and one script; evidence below, none of it measured on FelCloud yet.
+
+- **Compound claims** (`engine/claims.py::split_claim`, `aggregate`; `Engine._check_compound`). A claim is split at `et`,
+  `and`, `و`, `ainsi que`, `;` and a comma before a new subject / equation; each part runs the unchanged single-claim
+  pipeline (sympy, gate, model, cache entry per part) one after the other (a room has one run in flight) and the verdict
+  is aggregated in code (all equal → that verdict, otherwise PARTLY; NOT_IN_COURSE beside a judged part → PARTLY, marked
+  in `data.parts`). One request id and one `run` record for the whole claim, so one `cache.invalidate` removes every part.
+  The splitter is conservative on purpose: both sides need ≥ 3 tokens and a verb or "=", no split inside brackets, in a
+  conditional ("Si P, Q", "Where P, Q"), or between a function definition and its claim; a claim it is unsure of stays one
+  part, which is v1.3's behaviour. At most 4 parts. Cost: a compound claim costs the sum of its parts; the cost of
+  correctness on the half-true claims. Known limit: the right part of "A, et celle de B est C" loses its subject
+  ("celle de B est C" is retrieved and judged without "la dérivée d'une somme").
+- **Prompt `check_claim` v2**: one fact, three verdicts (no PARTLY); a PARTLY the model still returns is accepted.
+  `CLAIM_VERDICT_CLASS=compact|midsize` (default compact) is the class of that one call; midsize falls back to compact
+  (and a claim is never served as fast-mode extracts when the class changes: that path is explain's).
+- **Eval: 60 claims.** The original 30 are frozen (a test pins their hash); `tests/eval/claims_set_v14.jsonl` adds 30
+  (FR/EN/AR × 10): 20 compound (12 mixed true/false/outside-the-course) with the expected verdict of every part. The
+  report gives original / added / compound / single / model-decided / per-part accuracy and p50 latency separately;
+  the request count of a row now counts `generating` events (the old window delta undercounted: the window refills).
+- **Formula reader**: parser symbols `x a b c h k m n t u v y` (b, c, m added; the whitelist stays a closed character
+  set, tested with hostile strings); the token `bx`/`ax`/`kx`/`mx`/`cx` counts as math. A span that ends on an operator,
+  holds a lone letter the parser does not know, or is followed by one, is **unchecked** (`notes.unchecked_spans`), not
+  ungrounded. `scripts/recheck_formulas.py` on the 146 saved explain answers, before (main) / after: answers with an
+  ungrounded formula **5 → 5**, with wrong_math **3 → 3**, unchecked 0 → 0; the only span change is
+  `f(x) = a +` (x-fr-4), which now parses as a new example (that answer is still ungrounded for its derivative line).
+  The saved answers do not contain the `x² +` case of the load run (its text was not kept), so the gain on real traffic
+  is not measured here.
+- **Quota-aware wait** (`Engine._quota_wait`). An INTERACTIVE, non-escalated explain that finds fewer than
+  `QUOTA_LOW_THRESHOLD` free sends computes from the sliding log when that many free up; if that is ≤
+  `INTERACTIVE_DEADLINE_S − EXPLAIN_EXPECTED_S` (new, default 10 → 15 s) it waits (event `queued`, `reason: quota_window`,
+  `eta_s`) right before the generation (a cache hit never waits; the wait counts toward the 25 s deadline); otherwise
+  `quota_low` as before. **Correction to the v1.3 report:** a `quota_low` explain is answered by *fast mode* (course
+  extracts, at most one compact framing line), not by the 3B; the "10 of 17 went to the 3B" reading was wrong.
+- **Virtual load, seed 1, v1.3 → v1.4** (`reports/load-mixed-virtual*-v13/-v14`): cache on: identical (no pressure on the
+  window; 3 degraded, p95 17.75 s). Cache off: `quota_low` **5 → 0**, `deadline` **0 → 4**, explain degraded 5/14 → 4/16,
+  full explains 9 → 12, interactive p95 **14.65 s → 25.0 s** (the 25 s deadline). So the wait turns quick extracts into
+  more full answers and a slower tail: four learners wait 25 s for extracts instead of five getting them at once.
+  `EXPLAIN_EXPECTED_S` 5, 15 and 20 give the same result (the waits needed are short); 25 (budget 0) restores v1.3
+  exactly. Whether this is better for learners is a product decision; the live load (with records) will show the real
+  wait lengths. `--setting KEY=VALUE` on `load_mixed --virtual` runs such comparisons.
+- **load_mixed records**: `<prefix>.records.jsonl`, one line per engine run (events, window free sends at start),
+  provider request (start, end, model, status, remaining header) and metrics record; written also when a live run
+  crashes (partial). `scripts/slot_run.sh` for 2026-11-03: smoke, the 60-claim eval twice (compact, then midsize), the
+  mixed load with records, the deadline share; stop rules as before plus "no records written".
+- Fake engine: `check_claim` outcomes `PARTLY` (two sympy parts) and `COMPOUND` (sympy + model + outside the course),
+  explain outcome `quota_wait`. API doc: `data.parts`, `claim_part`, `queued/quota_window`, `notes.unchecked_spans`.
+- Not verified: everything on FelCloud (the compound accuracy, the 8B as judge per part, the real wait lengths).

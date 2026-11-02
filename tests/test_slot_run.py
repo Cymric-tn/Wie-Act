@@ -1,4 +1,4 @@
-"""scripts/slot_run.sh: the order of the Monday sequence, the files it writes, and the stop rule (a server 429, an
+"""scripts/slot_run.sh: the order of the Tuesday sequence, the files it writes, and the stop rule (a server 429, an
 exception, or a step that died without a report). The provider-facing steps are replaced by a stub interpreter; the
 guard, the explain share and the scan are the real code."""
 import argparse
@@ -27,15 +27,16 @@ case "$mod" in
     n429=0; exc="[]"; [ "$k" = 429 ] && n429=2; [ "$k" = exception ] && exc='[{"task":"explain","error":"X"}]'
     echo "{\"chat_requests\": 9, \"server_429\": $n429, \"exceptions\": $exc}" > "$out" ;;
   scripts.eval_check_claim)
-    out=$(arg --guard-out "$@"); k=$(fail_kind eval)
-    n429=0; [ "$k" = 429 ] && n429=1
-    echo "{\"chat_requests\": 19, \"server_429\": $n429, \"exceptions\": []}" > "$out"; echo '{"summary": {}}' > "$(arg --out "$@")" ;;
+    out=$(arg --guard-out "$@"); k=$(fail_kind "eval-$CLAIM_VERDICT_CLASS")
+    n429=0; exc="[]"; [ "$k" = 429 ] && n429=1; [ "$k" = exception ] && exc='[{"task":"check_claim","error":"X"}]'
+    echo "{\"chat_requests\": 19, \"server_429\": $n429, \"exceptions\": $exc}" > "$out"; echo "{\"summary\": {\"verdict_class\": \"$CLAIM_VERDICT_CLASS\"}}" > "$(arg --out "$@")" ;;
   scripts.load_mixed)
     out=$(arg --out "$@"); k=$(fail_kind load); n429=0; [ "$k" = 429 ] && n429=3
     if echo "$*" | grep -q -- --probe-only; then
       k=$(fail_kind probe); n429=0; [ "$k" = 429 ] && n429=1
       echo "{\"provider\": {\"server_429\": $n429}, \"exceptions\": [], \"vision_probe\": {}}" > "$out.json"; echo "# probe" > "$out.md"
     else
+      [ "${STUB_NO_RECORDS:-}" = 1 ] || echo '{"kind": "header"}' > "$out.records.jsonl"
       echo "{\"mode\": \"real\", \"cache\": \"off\", \"provider\": {\"server_429\": $n429}, \"exceptions\": [],
              \"interactive\": {\"explain\": {\"n\": 8, \"degraded_by_deadline\": 2, \"share_degraded_by_deadline\": 0.25},
              \"by_task\": {\"explain\": {\"p50_s\": 9.0, \"p95_s\": 25.0, \"max_s\": 25.0}}}}" > "$out.json"; echo "# load" > "$out.md"
@@ -63,7 +64,7 @@ def run_slot(tmp_path):
 
     def go(**env):
         e = {**os.environ, "PYTHON": str(stub), "REAL_PY": REAL_PY, "STUB_LOG": str(log), "ENV_FILE": str(env_file),
-             "SLOT_GAP_S": "0", "SLOT_DATE": "2026-11-02", "PYTHONPATH": os.getcwd(), **env}
+             "SLOT_GAP_S": "0", "SLOT_DATE": "2026-11-03", "PYTHONPATH": os.getcwd(), **env}
         p = subprocess.run(["bash", str(script)], capture_output=True, text=True, env=e, cwd=work, timeout=60)
         calls = log.read_text().splitlines() if log.exists() else []
         return p, calls, sorted(os.listdir(work / "reports")) if (work / "reports").exists() else []
@@ -75,34 +76,49 @@ def test_the_sequence_runs_in_order_and_writes_every_report(run_slot):
     p, calls, files = run_slot()
     assert p.returncode == 0, p.stdout + p.stderr
     modules = [c.split()[1] for c in calls if c.startswith("-m")]
-    assert [m for m in modules if m != "scripts.slot_guard"] == ["scripts.smoke", "scripts.load_mixed", "scripts.eval_check_claim",
-                                                                 "scripts.load_mixed", "scripts.explain_deadline"]
-    assert "--probe-only" in calls[[i for i, c in enumerate(calls) if "load_mixed" in c][0]]
-    assert "--no-cache" in [c for c in calls if "load_mixed" in c and "--probe-only" not in c][0]
+    assert [m for m in modules if m != "scripts.slot_guard"] == [
+        "scripts.smoke", "scripts.eval_check_claim", "scripts.eval_check_claim", "scripts.load_mixed", "scripts.explain_deadline"]
+    assert not any("--probe-only" in c for c in calls)                      # the vision probe was answered on 2026-11-02
+    assert "--no-cache" in [c for c in calls if "load_mixed" in c][0]
     assert "--no-cache" in [c for c in calls if "scripts.smoke" in c][0]
-    assert all(f.startswith("felcloud-2026-11-02-") for f in files)
-    assert {"felcloud-2026-11-02-smoke.log", "felcloud-2026-11-02-smoke.guard.json", "felcloud-2026-11-02-vision-probe.json",
-            "felcloud-2026-11-02-vision-probe.md", "felcloud-2026-11-02-check-claim.json",
-            "felcloud-2026-11-02-check-claim.guard.json", "felcloud-2026-11-02-load-mixed.json",
-            "felcloud-2026-11-02-load-mixed.md", "felcloud-2026-11-02-explain-deadline.json",
-            "felcloud-2026-11-02-explain-deadline.md"} <= set(files)
+    assert all(f.startswith("felcloud-2026-11-03-") for f in files)
+    assert {"felcloud-2026-11-03-smoke.log", "felcloud-2026-11-03-smoke.guard.json",
+            "felcloud-2026-11-03-check-claim-compact.json", "felcloud-2026-11-03-check-claim-compact.guard.json",
+            "felcloud-2026-11-03-check-claim-midsize.json", "felcloud-2026-11-03-check-claim-midsize.guard.json",
+            "felcloud-2026-11-03-load-mixed.json", "felcloud-2026-11-03-load-mixed.md",
+            "felcloud-2026-11-03-load-mixed.records.jsonl", "felcloud-2026-11-03-explain-deadline.json",
+            "felcloud-2026-11-03-explain-deadline.md"} <= set(files)
     assert "slot run complete" in p.stdout
+
+
+def test_the_two_claim_evals_run_with_the_compact_then_the_midsize_class(run_slot, tmp_path):
+    p, _, _ = run_slot()
+    for cls in ("compact", "midsize"):
+        out = json.load(open(tmp_path / "repo" / "reports" / f"felcloud-2026-11-03-check-claim-{cls}.json"))
+        assert out["summary"]["verdict_class"] == cls
+
+
+def test_a_load_that_saved_no_records_stops_the_sequence(run_slot):
+    p, calls, _ = run_slot(STUB_NO_RECORDS="1")
+    assert p.returncode == 1 and "SEQUENCE STOPPED at step c: load_mixed wrote no per-request records" in p.stdout
+    assert not any("scripts.explain_deadline" in c for c in calls)
 
 
 def test_the_explain_share_comes_from_the_load_report(run_slot, tmp_path):
     p, _, _ = run_slot()
-    out = json.load(open(tmp_path / "repo" / "reports" / "felcloud-2026-11-02-explain-deadline.json"))
+    out = json.load(open(tmp_path / "repo" / "reports" / "felcloud-2026-11-03-explain-deadline.json"))
     assert out["interactive_explain"] == 8 and out["degraded_by_deadline"] == 2 and out["share"] == 0.25
-    assert "25.0%" in open(tmp_path / "repo" / "reports" / "felcloud-2026-11-02-explain-deadline.md").read()
+    assert "25.0%" in open(tmp_path / "repo" / "reports" / "felcloud-2026-11-03-explain-deadline.md").read()
 
 
 @pytest.mark.parametrize("step,kind,stopped_at,not_run", [
     ("smoke", "429", "a", ["scripts.load_mixed", "scripts.eval_check_claim", "scripts.explain_deadline"]),
     ("smoke", "exception", "a", ["scripts.load_mixed", "scripts.eval_check_claim"]),
     ("smoke", "crash", "a", ["scripts.load_mixed", "scripts.eval_check_claim"]),              # died without a report
-    ("probe", "429", "b", ["scripts.eval_check_claim", "scripts.explain_deadline"]),
-    ("eval", "429", "c", ["scripts.explain_deadline"]),
-    ("load", "429", "d", ["scripts.explain_deadline"]),
+    ("eval-compact", "429", "b1", ["scripts.load_mixed", "scripts.explain_deadline"]),
+    ("eval-compact", "exception", "b1", ["scripts.load_mixed"]),
+    ("eval-midsize", "429", "b2", ["scripts.load_mixed", "scripts.explain_deadline"]),
+    ("load", "429", "c", ["scripts.explain_deadline"]),
 ])
 def test_a_server_429_or_an_exception_stops_the_sequence(run_slot, step, kind, stopped_at, not_run):
     p, calls, files = run_slot(STUB_FAIL_STEP=step, STUB_FAIL_KIND=kind)
@@ -121,7 +137,7 @@ def test_a_failed_verdict_in_the_load_is_a_finding_not_a_stop(run_slot):
 def test_a_stale_report_from_an_earlier_run_cannot_pass_for_this_one(run_slot, tmp_path):
     reports = tmp_path / "repo" / "reports"
     reports.mkdir()
-    (reports / "felcloud-2026-11-02-smoke.guard.json").write_text('{"server_429": 0, "exceptions": []}')
+    (reports / "felcloud-2026-11-03-smoke.guard.json").write_text('{"server_429": 0, "exceptions": []}')
     p, _, _ = run_slot(STUB_FAIL_STEP="smoke", STUB_FAIL_KIND="crash")
     assert p.returncode == 1 and "SEQUENCE STOPPED at step a" in p.stdout
 
