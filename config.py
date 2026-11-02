@@ -87,6 +87,7 @@ class Settings:
     vision_max_slots: int = 1                 # vision may hold at most this many concurrency slots (ghosts included)
     background_reserve: int = 6               # BACKGROUND chat waits while fewer than this many sends remain in the window
     midsize_max_slots: int = 1                # mid-size may hold at most this many concurrency slots (ghosts included); 0 = no cap
+    explain_expected_s: float = 10.0          # typical mid-size explain; a quota wait is worth it only if it fits INTERACTIVE_DEADLINE_S minus this
     interactive_deadline_s: float = 25.0      # an INTERACTIVE explain without a body by then is answered in fast mode
     max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
     max_retry_wait_s_background: float = 65.0  # BACKGROUND: the observed quota delay is 60 s
@@ -273,6 +274,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         vision_max_slots=get("VISION_MAX_SLOTS", int, defaults.vision_max_slots),
         midsize_max_slots=get("MIDSIZE_MAX_SLOTS", int, defaults.midsize_max_slots),
         background_reserve=get("BACKGROUND_RESERVE", int, defaults.background_reserve),
+        explain_expected_s=get("EXPLAIN_EXPECTED_S", float, defaults.explain_expected_s),
         interactive_deadline_s=get("INTERACTIVE_DEADLINE_S", float, defaults.interactive_deadline_s),
         max_retry_wait_s=get("MAX_RETRY_WAIT_S", float, defaults.max_retry_wait_s),
         max_retry_wait_s_background=get("MAX_RETRY_WAIT_S_BACKGROUND", float, defaults.max_retry_wait_s_background),

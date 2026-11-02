@@ -64,7 +64,7 @@ from rag.budget import BudgetError, assemble, limit_for
 from rag.glossary import Glossary
 from rag.retriever import VIEWER, Hit, Retriever, language_plan, make_retriever
 from rag.store import CourseStore, load_chunks
-from router.policy import Decision, Router
+from router.policy import Decision, Router, escalated
 
 EventCallback = Callable[[Event], None]
 
@@ -94,6 +94,7 @@ class _Run:
         self.decision: Decision | None = None
         self.glossary: list[str] = []
         self.negative_hit = False
+        self.quota_wait = 0.0                      # seconds an interactive explain waits for the window (set by _quota_wait)
         self.nearest = ""                          # concept of the best chunk (check_claim: for the content-gap report)
         self.retrieval_on: str | None = None      # which input found the course chunks: passage | question | board_text
         self.eta: float | None = None             # when a helper run (grade) was refused with a delay
@@ -166,8 +167,9 @@ part_of: ContextVar[str | None] = ContextVar("ednova_claim_part_of", default=Non
 class Engine:
     def __init__(self, settings: Settings, caller: RetryingCaller, cache: ExactCache, sink: MetricsSink,
                  registry: Registry | None = None, clock: Callable[[], float] = time.monotonic,
-                 retriever: Retriever | None = None):
+                 retriever: Retriever | None = None, sleep: Callable = asyncio.sleep):
         self.settings, self.caller, self.cache, self.sink = settings, caller, cache, sink
+        self._sleep = sleep
         self.review = ReviewStore(getattr(cache, 'path', ':memory:'))     # flagged answers + content gaps (the dashboard)
         self.registry = registry or default_registry()
         self.router = Router.from_settings(sink, settings, clock)
@@ -216,7 +218,7 @@ class Engine:
                                 settings.input_token_budget, clock, sleep, rng,
                                 PriorityQueue(limiter, clock, background_reserve=settings.background_reserve))
         cache = cache or ExactCache(settings.cache_path, settings.cache_ttl_s)
-        return cls(settings, caller, cache, sink, registry, clock, retriever)
+        return cls(settings, caller, cache, sink, registry, clock, retriever, sleep)
 
     async def aclose(self) -> None:
         for t in list(self._probes) + list(self._background):
@@ -446,8 +448,11 @@ class Engine:
         if spec.name == "check_answer":
             return await self._check_answer(prompt, inputs, tctx, prio, run, ctx)
 
+        quota = self.caller.limiter.buckets["chat"].tokens
+        run.quota_wait = self._quota_wait(spec, prio, tctx, quota)
+        # a wait that fits the deadline replaces quota_low: the router is told the window is not short
         decision = run.decision = self.router.decide(task, tctx.as_mapping(),
-                                                     self.caller.limiter.buckets["chat"].tokens, ctx)
+                                                     self.settings.quota_low_threshold if run.quota_wait else quota, ctx)
         hits: list[Hit] = []
         if spec.grounded:
             hits = await self._retrieve(inputs, tctx, run)
@@ -534,6 +539,7 @@ class Engine:
                 run.emit(ev.name, ev.data)
         bg = _Run(self._clock, forward)
         bg.t0, bg.started = run.t0, run.started
+        bg.quota_wait = run.quota_wait
         bg.glossary = list(run.glossary)         # state the retrieval already put on the learner's run
         bg.retrieval_on = run.retrieval_on
         bg_ctx = CallContext(request_id=ctx.request_id, task=ctx.task, priority=ctx.priority, purpose=ctx.purpose,
@@ -567,6 +573,25 @@ class Engine:
                                            replace(decision, reason=decision.reason + "; interactive deadline"),
                                            llm_framing=False)
 
+    def _quota_wait(self, spec: TaskSpec, prio: Priority, tctx: TaskContext, quota: float) -> float:
+        """An INTERACTIVE explain that finds the window nearly full (fewer than QUOTA_LOW_THRESHOLD free sends) does not
+        have to give up mid-size: the sliding log knows when enough sends expire. If that is within
+        INTERACTIVE_DEADLINE_S - EXPLAIN_EXPECTED_S it waits for it (event `queued` with the ETA, just before the
+        generation, so a cache hit never waits); otherwise the router degrades it with quota_low as before."""
+        s = self.settings
+        if spec.name != "explain" or prio is not Priority.INTERACTIVE or s.interactive_deadline_s <= 0:
+            return 0.0
+        if quota >= s.quota_low_threshold or escalated(tctx.as_mapping()):
+            return 0.0
+        wait = self.caller.limiter.buckets["chat"].wait_time(s.quota_low_threshold)
+        return wait if 0 < wait <= s.interactive_deadline_s - s.explain_expected_s else 0.0
+
+    async def _wait_for_window(self, run: "_Run") -> None:
+        wait = self.caller.limiter.buckets["chat"].wait_time(self.settings.quota_low_threshold)
+        if wait > 0:
+            run.emit("queued", {"position": 0, "eta_s": round(wait, 1), "reason": "quota_window"})
+            await self._sleep(wait)
+
     async def _produce(self, spec: TaskSpec, prompt: PromptTemplate, inputs: dict, tctx: TaskContext,
                        prio: Priority, run: "_Run", ctx: CallContext, decision: Decision, hits: list[Hit],
                        key: str, messages: Messages) -> Result:
@@ -590,6 +615,8 @@ class Engine:
                                          CeilingExceeded(message=str(e), ceiling="prompt_tokens", limit=self.limit))
 
         try:
+            if run.quota_wait:
+                await self._wait_for_window(run)
             chat = await self._generate(spec, decision, messages, ctx, run)
         except _FastMode as fm:
             return await self._fast_extractive(prompt, inputs, tctx, pieces, ground_notes, ctx, run, fm.decision,
