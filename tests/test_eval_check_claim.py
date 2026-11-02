@@ -29,7 +29,7 @@ async def test_the_runner_counts_requests_and_sympy_claims_cost_none(vt, tmp_pat
         {"id": "c", "language": "FRENCH", "claim": "La photosynthèse transforme la lumière.", "expected": "NOT_IN_COURSE",
          "route": "rules"}]), encoding="utf-8")
     eng, fake, _ = make_engine(vt, lambda b: chat_ok(json.dumps({"verdict": "SUPPORTED", "correction": ""})))
-    rows = await run(str(p), eng)
+    rows = await run([("t", str(p))], eng)
     assert [r["got"] for r in rows] == ["CONTRADICTED", "SUPPORTED", "NOT_IN_COURSE"] and all(r["ok"] for r in rows)
     assert [r["requests"] for r in rows] == [0, 1, 0] and len(fake.requests) == 1
     assert [r["checked_by"] for r in rows] == ["sympy", "llm", "rules"]
