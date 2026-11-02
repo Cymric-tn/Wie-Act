@@ -277,3 +277,15 @@ async def test_a_normal_result_is_cached(vt):
 def test_detector_can_be_turned_off():
     assert make_settings().truncation_chars_per_token == 0
     assert make_settings(INPUT_TRUNCATION_CHARS_PER_TOKEN=5).truncation_chars_per_token == 5
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("Pour dériver, on prend f(x) = x² +", "Pour dériver, on prend"),                       # no sentence end: the formula is dropped
+    ("La dérivée de f(x) = x² + 3x est f'(x) = 2x +", "La dérivée de f(x) = x² + 3x est"),  # only the unfinished one
+    ("Le taux vaut 2.5 puis f(x) = x² + (", "Le taux vaut 2.5 puis"),
+    ("Soit f(x) = x² + 3x. Alors f'(x) = 2x +", "Soit f(x) = x² + 3x."),                      # a sentence end exists: unchanged rule
+    ("Pour dériver, on prend f(x) = x² + 3x", "Pour dériver, on prend f(x) = x² + 3x"),     # complete formula, kept
+    ("f(x) = x² +", "f(x) = x² +"),                                                          # nothing else to keep: not emptied
+])
+def test_a_cut_reply_returned_whole_loses_a_trailing_unfinished_formula(text, expected):
+    assert trim_to_last_sentence(text) == expected

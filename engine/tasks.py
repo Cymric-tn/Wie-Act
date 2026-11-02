@@ -495,8 +495,25 @@ def trim_to_last_sentence(text: str) -> str:
     end (or only one very early) is returned whole: a cut answer beats an empty one."""
     ends = [m.end() for m in _SENTENCE_END.finditer(text)]
     if not ends or ends[-1] < 0.3 * len(text.rstrip()) and len(text) > 200:
-        return text.strip()
+        return _drop_dangling_math(text.strip())
     return text[:ends[-1]].strip()
+
+
+_DANGLING = re.compile(r"[+\-−*/×·^=(\[,]$")
+
+
+def _drop_dangling_math(text: str) -> str:
+    """A cut reply returned whole may end inside a formula ("on prend f(x) = x² +"): drop that trailing math run, which
+    reads as a claim and would be checked as one. Only when the text ends on an operator or an open bracket; never
+    everything (a cut answer beats an empty one)."""
+    if not _DANGLING.search(text):
+        return text
+    tokens = text.split()
+    i = len(tokens)
+    while i and (not re.search(r"\w", tokens[i - 1]) or G._is_math(tokens[i - 1])):
+        i -= 1
+    kept = " ".join(tokens[:i]).rstrip(" :,;")
+    return kept if kept else text
 
 
 def _explain_finalize(text: str, p: PromptTemplate, inputs: Mapping, ctx: TaskContext) -> tuple[str, str | None]:
