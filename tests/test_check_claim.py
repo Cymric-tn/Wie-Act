@@ -14,6 +14,7 @@ def verdict(v="CONTRADICTED", c="La dérivée de x³ est 3x²."):
     return lambda body: chat_ok(json.dumps({"verdict": v, "correction": c}), 400, 30)
 
 
+ORIGINAL_SET_SHA = "97eda85605d30cbc"      # tests/eval/claims_set.jsonl as of v1.3: the 30 original claims never change
 PRODUCT = "La dérivée d'un produit est le produit des dérivées."
 
 
@@ -313,3 +314,58 @@ async def test_claim_verdict_class_midsize_is_a_setting_not_a_code_change(vt):
     assert make_settings().claim_verdict_class.value == "compact"
     with pytest.raises(Exception, match="CLAIM_VERDICT_CLASS"):
         make_settings(CLAIM_VERDICT_CLASS="huge")
+
+
+# ------------------------------------------------------------------ v1.4: the 60-claim eval
+def added_rows():
+    return [json.loads(line) for line in open("tests/eval/claims_set_v14.jsonl", encoding="utf-8") if line.strip()]
+
+
+def test_the_added_eval_set_has_30_new_claims_20_compound_12_of_them_mixed_in_three_languages():
+    rows, old = added_rows(), eval_rows()
+    assert len(rows) == 30 and len({r["id"] for r in rows} | {r["id"] for r in old}) == 60
+    assert {l: sum(r["language"] == l for r in rows) for l in ("FRENCH", "ENGLISH", "ARABIC")} == \
+        {"FRENCH": 10, "ENGLISH": 10, "ARABIC": 10}
+    compound = [r for r in rows if r.get("parts_expected")]
+    mixed = [r for r in compound if len(set(r["parts_expected"])) > 1]
+    assert len(compound) == 20 and len(mixed) >= 12
+    assert {l for r in mixed for l in [r["language"]]} == {"FRENCH", "ENGLISH", "ARABIC"}
+    for r in compound:                                     # the expected verdict is the aggregate of the expected parts
+        want = C.aggregate([part(v) for v in r["parts_expected"]])["verdict"]
+        assert r["expected"] == want, r["id"]
+        assert len(C.split_claim(r["claim"])) == len(r["parts_expected"]), r["id"]
+    assert all(len(C.split_claim(r["claim"])) == 1 for r in rows if not r.get("parts_expected"))
+
+
+def test_the_original_30_claims_are_unchanged():
+    import hashlib
+    raw = open("tests/eval/claims_set.jsonl", "rb").read()
+    assert len(raw.splitlines()) == 30
+    assert hashlib.sha256(raw).hexdigest()[:16] == ORIGINAL_SET_SHA
+
+
+async def test_the_added_claims_routed_to_sympy_are_decided_offline_with_no_request(vt):
+    eng, fake, _ = make_engine(vt, lambda b: pytest.fail("a request was sent for a claim sympy decides"))
+    decided = [r for r in added_rows() if r["route"] == "sympy"]
+    assert len(decided) >= 4
+    for r in decided:
+        got = await eng.run("check_claim", {"claim": r["claim"]}, {"language": r["language"]})
+        assert got.data["verdict"] == r["expected"] and got.data["checked_by"] == "sympy", (r["id"], got.data)
+
+
+def test_the_eval_summary_reports_each_set_and_the_compound_claims_separately():
+    from scripts.eval_check_claim import summarize_sets
+    mk = lambda i, st, exp, got, by, parts=None, pe=None, req=1: {
+        "id": i, "set": st, "language": "FRENCH", "expected": exp, "got": got, "ok": exp == got, "checked_by": by,
+        "requests": req, "degraded": False, "latency_ms": 1000.0 * (req + 1), "parts": parts, "parts_expected": pe}
+    parts = [{"claim": "a", "verdict": "SUPPORTED", "checked_by": "llm"}, {"claim": "b", "verdict": "SUPPORTED", "checked_by": "llm"}]
+    rows = [mk("a", "original", "SUPPORTED", "SUPPORTED", "llm"), mk("b", "original", "CONTRADICTED", "SUPPORTED", "llm"),
+            mk("c", "added", "PARTLY", "SUPPORTED", "mixed", parts, ["SUPPORTED", "CONTRADICTED"], 2),
+            mk("d", "added", "SUPPORTED", "SUPPORTED", "sympy", req=0)]
+    s = summarize_sets(rows)
+    assert s["original"]["overall"] == {"n": 2, "correct": 1, "accuracy": 0.5}
+    assert s["added"]["overall"] == {"n": 2, "correct": 1, "accuracy": 0.5}
+    assert s["compound"]["overall"]["n"] == 1 and s["single"]["overall"]["n"] == 3
+    assert s["model_decided"]["overall"]["n"] == 3
+    assert s["per_part"] == {"n": 2, "correct": 1, "accuracy": 0.5}
+    assert s["latency_ms_requests"]["n"] == 3

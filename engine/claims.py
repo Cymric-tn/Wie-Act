@@ -148,9 +148,9 @@ le la les l un une des ce cette ces celle celui ceux celles il elle ils elles so
 the a an its their this that these those it they each every any
 """.split())
 _AR_SUBJECT = re.compile(r"^(?:ال|مشتق|دالة|كل$|أي$|اي$|هذه$|هذا$)")
-_SUBORDINATE = frozenset("si if quand lorsque when whenever puisque since because comme as لو إذا اذا عندما حين".split())
+_SUBORDINATE = frozenset("si if quand lorsque lorsqu when whenever where wherever while once unless provided puisque since because comme as dès tant après avant après بما لو إذا اذا عندما حين حيث".split())
 _COPULA = frozenset("""
-est sont était sera soit vaut valent donne donnent devient reste change changent tend tendent admet admettent existe
+est sont a ont était sera soit vaut valent donne donnent devient reste change changent tend tendent admet admettent existe
 croît décroît passe peut peuvent doit doivent faut permet mesure représente indique définit équivaut égale égal
 is are was were has have gives give becomes stays changes change tends tend exists increases decreases means measures
 represents equals can must does do
@@ -174,13 +174,13 @@ def _starts_subject(toks: list[str]) -> bool:
 
 
 def _has_predicate(toks: list[str]) -> bool:
-    return any(t == "=" or "=" in t or _plain(t) in _COPULA for t in toks)
+    return any("=" in t or _plain(t) in _COPULA or _plain(re.split(r"['’]", t)[-1]) in _COPULA for t in toks)
 
 
-def _clause_ok(left: list[str], right: list[str]) -> bool:
+def _clause_ok(left: list[str], right: list[str], semicolon: bool = False) -> bool:
     if len(left) < MIN_PART_TOKENS or len(right) < MIN_PART_TOKENS:
         return False
-    if _plain(left[0]) in _SUBORDINATE:                         # "Si P, Q" / "Quand P et Q": one conditional claim
+    if not semicolon and _plain(left[0]) in _SUBORDINATE:       # "Si P, Q" / "Quand P et Q": one conditional claim
         return False
     return _has_predicate(left) and _has_predicate(right)
 
@@ -199,8 +199,8 @@ def split_claim(text: str) -> list[str]:
             continue
         nxt = toks[i + 1:]
         if tok.endswith(";") or tok.endswith("؛"):
-            cuts.append((i + 1, 0, i + 1))                      # boundary after this token
-        elif tok.endswith(","):
+            cuts.append((i + 1, 0, i + 1, True))                # boundary after this token
+        elif tok.endswith((",", "،")):
             left = toks[:i + 1]
             skip = 1 if _plain(nxt[0]) in ("et", "and", "ainsi", "و") else 0
             if _plain(nxt[0]) == "ainsi" and len(nxt) > 1 and _plain(nxt[1]) == "que":
@@ -208,21 +208,21 @@ def split_claim(text: str) -> list[str]:
             right = nxt[skip:]
             if skip or _starts_subject(nxt):
                 if skip or not _FORMULA_DEF.search(" ".join(left)) or not G._is_math(nxt[0]):
-                    cuts.append((i + 1 + skip, 0, i + 1))
+                    cuts.append((i + 1 + skip, 0, i + 1, False))
             elif "=" in " ".join(nxt[:6]) and "=" in " ".join(left) and not _FORMULA_DEF.search(" ".join(left)):
-                cuts.append((i + 1, 0, i + 1))                  # a new equation after an equation
+                cuts.append((i + 1, 0, i + 1, False))                  # a new equation after an equation
         elif _plain(tok) in ("et", "and", "و"):
-            cuts.append((i + 1, 1, i))
+            cuts.append((i + 1, 1, i, False))
         elif _plain(tok) == "ainsi" and _plain(nxt[0]) == "que":
-            cuts.append((i + 2, 2, i))
+            cuts.append((i + 2, 2, i, False))
         elif tok.startswith("و") and len(tok) > 2 and _AR_SUBJECT.match(tok[1:]):
             toks[i] = tok[1:]                                   # "ومشتقة": the conjunction is glued to the noun
-            cuts.append((i, 0, i))
+            cuts.append((i, 0, i, False))
     parts, starts, start = [], [], 0
-    for first_right, _drop, left_end in cuts:
+    for first_right, _drop, left_end, semi in cuts:
         left_toks = [t for t in toks[start:left_end] if t]
         right_toks = toks[first_right:]
-        if not _clause_ok(left_toks, right_toks):
+        if not _clause_ok(left_toks, right_toks, semi):
             continue
         parts.append(" ".join(toks[start:left_end]).rstrip(",;؛ "))
         starts.append(start)
