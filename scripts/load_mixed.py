@@ -254,7 +254,7 @@ def run_virtual(args) -> dict:
             s = make_settings(RAG_INDEX_PATH=index, SIMULATE_CONSTRAINTS="true", SIM_LATENCY_SCALE=1, SIM_SEED=args.seed,
                               SIM_LATENCY_COMPACT_S="2,5", SIM_LATENCY_MIDSIZE_S="8,15", SIM_LATENCY_VISION_S="10,18",
                               SIM_SATURATION_PROB=args.saturation, SIM_MIDSIZE_SLOTS=1, EXPLAIN_MAX_TOKENS=350,
-                              COURSES_DIR="data/courses", **dict(x.split("=", 1) for x in args.setting or ()))
+                              COURSES_DIR="data/courses", **dict(x.split("=", 1) for x in getattr(args, "setting", None) or ()))
             spy = SpyTransport(FnProvider(canned), loop.time)
             sim = ConstraintSimulator(spy, s, clock=loop.time, sleep=asyncio.sleep)
             sink = MemorySink()
