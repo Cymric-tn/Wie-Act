@@ -640,6 +640,8 @@ A grounded explanation of a course concept. Mid-size model, retrieval over the c
     differ only in the trimmed part are still two entries, and the same passage asked by two learners is one.
 * `text`: `[opener] + body + "À toi : <exercise>"`. `data`: `{body, opener, exercise}` so a UI can lay them out.
   `notes.sources`: chunk ids the answer is grounded in. The body's formulas are checked (sympy) against the course.
+  `notes.unchecked_spans` (v1.4): formulas the check could not read to the end (cut at a symbol it does not know, such as
+  `x² + p`); they are listed, not judged, and do not degrade the answer. The parser knows x a b c h k m n t u v y.
 * cost: 1 mid-size (~9.5 s on FelCloud) on a miss; 0 on a hit. Fast mode adds at most 1 compact line.
 * degrade: **fast mode** (`mode="fast_extractive"`, `followup_available=true`): the learner gets up to 5 course
   sentences verbatim plus the exercise, with reason `midsize_saturated`, `midsize_unavailable`, `quota_low`,
@@ -1665,15 +1667,27 @@ Transcribes a photo of handwritten or printed work. **It never grades**: feed th
 }
 ```
 
-### 3.8 `check_claim` (v1.3)
+### 3.8 `check_claim` (v1.3, compound claims v1.4)
 
 Is this statement true according to the course? For "check my notes" and whiteboard claims.
 
 * inputs: `claim` (required). `context.language` sets the language of the correction (detected when absent: a bare
   formula has no language, pass it).
-* `data`: `{verdict: SUPPORTED|CONTRADICTED|PARTLY|NOT_IN_COURSE, correction (at most 25 words, empty when SUPPORTED or
-  NOT_IN_COURSE), source_chunk_id (the course chunk it was checked against, null when computed or not in the course),
-  checked_by: sympy|rules|llm}`.
+* `data`: `{verdict: SUPPORTED|CONTRADICTED|PARTLY|NOT_IN_COURSE, correction (at most 25 words per part, empty when
+  SUPPORTED or NOT_IN_COURSE), source_chunk_id (the course chunk it was checked against, null when computed or not in
+  the course), checked_by: sympy|rules|llm|mixed}`, plus **`parts`** when the claim has several facts (below).
+* **Compound claims (v1.4).** A claim is split into atomic parts at clause boundaries: `et`, `and`, `و`, `ainsi que`,
+  `;`, and a comma before a new subject or a new equation; never inside a formula or a bracket, never when a side is too
+  short or has no verb, never in a conditional ("Si P, Q"), never between a function definition and its claim
+  (`f(x) = x², f'(x) = 2x` is one claim); at most 4 parts (the rest stays in the last). A claim of one part is exactly
+  what it was in v1.3: no `parts` key. Each part runs the pipeline below on its own (sympy, the coverage gate, the model;
+  one cache entry per part), and the verdicts are combined in code: all `SUPPORTED` → `SUPPORTED`, all `CONTRADICTED` →
+  `CONTRADICTED`, all `NOT_IN_COURSE` → `NOT_IN_COURSE`, anything else → `PARTLY` (a `NOT_IN_COURSE` part beside a judged
+  one is `PARTLY` and shows as such in `parts`). `data.parts` = `[{claim, verdict, correction, source_chunk_id,
+  checked_by, degraded?}]`, in order; `correction` is the parts' corrections joined in order (so up to 25 words per part);
+  `checked_by` is the common value, or `mixed`. One request id, one metrics `run` record and one `cache.invalidate` for
+  the whole claim; events: a `claim_part` before each part, then that part's own events. Cost: the sum of the parts'
+  (sympy and not-in-course parts are free), and the parts run one after the other.
 * How it decides, in this order:
   1. **sympy.** A claim made of formulas is checked by computation (derivatives in `(x²)' = 2x`, `d/dx`, `f(x) = ...,
      f'(x) = ...`, numeric identities). Verified and nothing else claimed: `SUPPORTED`. Refuted: `CONTRADICTED` with
@@ -1683,7 +1697,9 @@ Is this statement true according to the course? For "check my notes" and whitebo
      marked as verified for the model. `checked_by: sympy`, 0 requests, event `answered_by_rules`.
   2. **The course.** Retrieval with the coverage gate (visibility rules of section 4). Nothing relevant:
      `NOT_IN_COURSE`, `checked_by: rules`, 0 requests, event `no_relevant_context`.
-  3. **One compact JSON call** with the claim and the best chunk; the model may answer any of the four verdicts. The
+  3. **One JSON call** (compact; `CLAIM_VERDICT_CLASS=midsize` makes it mid-size, with compact as the fallback) with the
+     fact and the best chunk; the prompt (version 2) allows only `SUPPORTED`, `CONTRADICTED` and `NOT_IN_COURSE` for one
+     fact, `PARTLY` comes from the aggregation (a stray `PARTLY` from the model is still accepted). The
      correction is cut to 25 words; a correction containing a formula sympy refutes is dropped (`notes.correction_dropped`).
      One repair call if the JSON is invalid; if it still is, `PARTLY` with `checked_by: llm`, `safe_default=true`,
      `degraded=true`, `degrade_reason: json_invalid` (never cached).
@@ -1777,7 +1793,7 @@ Verified by computation (real):
 }
 ```
 
-Half right, half refuted by computation (real):
+Half right, half refuted by computation: two parts, both settled by sympy (real):
 
 *check_claim.PARTLY: real engine output*
 
@@ -1854,6 +1870,137 @@ Half right, half refuted by computation (real):
   "followup_available": false,
   "notes": {
     "compound_parts": 2
+  }
+}
+```
+
+Three facts: one by computation, one by the model, one outside the course (real):
+
+*check_claim.COMPOUND: real engine output*
+
+```json
+{
+  "task": "check_claim",
+  "request_id": "a1b2c3d4e5f6",
+  "text": null,
+  "data": {
+    "verdict": "PARTLY",
+    "correction": "La dérivée d'une constante est 0.",
+    "source_chunk_id": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
+    "checked_by": "mixed",
+    "parts": [
+      {
+        "claim": "(x²)' = 2x",
+        "verdict": "SUPPORTED",
+        "correction": "",
+        "source_chunk_id": null,
+        "checked_by": "sympy"
+      },
+      {
+        "claim": "la dérivée d'une constante est 1",
+        "verdict": "CONTRADICTED",
+        "correction": "La dérivée d'une constante est 0.",
+        "source_chunk_id": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
+        "checked_by": "llm"
+      },
+      {
+        "claim": "la photosynthèse est un processus chimique.",
+        "verdict": "NOT_IN_COURSE",
+        "correction": "",
+        "source_chunk_id": null,
+        "checked_by": "rules"
+      }
+    ]
+  },
+  "model_class_used": "compact",
+  "model": "compact-a",
+  "from_cache": false,
+  "degraded": false,
+  "degrade_reason": null,
+  "eta_seconds": null,
+  "events": [
+    {
+      "name": "claim_part",
+      "t_ms": 0.0,
+      "data": {
+        "index": 0,
+        "of": 3,
+        "claim": "(x²)' = 2x"
+      }
+    },
+    {
+      "name": "answered_by_rules",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "claim_part",
+      "t_ms": 0.0,
+      "data": {
+        "index": 1,
+        "of": 3,
+        "claim": "la dérivée d'une constante est 1"
+      }
+    },
+    {
+      "name": "retrieving",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "checking_cache",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "queued",
+      "t_ms": 0.0,
+      "data": {
+        "position": 0,
+        "eta_s": 2.0
+      }
+    },
+    {
+      "name": "generating",
+      "t_ms": 0.0,
+      "data": {
+        "attempt": 1,
+        "model_class": "compact"
+      }
+    },
+    {
+      "name": "claim_part",
+      "t_ms": 0.0,
+      "data": {
+        "index": 2,
+        "of": 3,
+        "claim": "la photosynthèse est un processus chimique."
+      }
+    },
+    {
+      "name": "retrieving",
+      "t_ms": 0.0,
+      "data": {}
+    },
+    {
+      "name": "no_relevant_context",
+      "t_ms": 0.0,
+      "data": {}
+    }
+  ],
+  "latency_ms": 0.0,
+  "tokens_in": 640,
+  "tokens_out": 40,
+  "route_reason": "3 parts",
+  "repaired": false,
+  "safe_default": false,
+  "mode": null,
+  "followup_available": false,
+  "notes": {
+    "compound_parts": 3,
+    "sources": [
+      "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle"
+    ]
   }
 }
 ```
@@ -2743,7 +2890,7 @@ regenerates.
 |---|---|---|
 | `midsize_saturated` | mid-size busy after retries | fast mode text is in the result; offer "ask again later" |
 | `midsize_unavailable` | mid-size timed out or is down (breaker); `eta_seconds` = when it is probed again | same |
-| `quota_low` / `breaker_open` | we chose not to use mid-size (quota almost used / class down) | same |
+| `quota_low` / `breaker_open` | we chose not to use mid-size (quota almost used / class down). `quota_low` only when the window will not have room within `INTERACTIVE_DEADLINE_S - EXPLAIN_EXPECTED_S` (v1.4: otherwise the explain waits, event `queued` with `reason: quota_window`) | same |
 | `deadline` | explain had no body after 25 s; generation continues into the cache | fast mode text now; asking again soon is a cache hit |
 | `quota_exhausted` | the team's per-minute quota is used; `eta_seconds` = remaining delay | show a wait, retry after `eta_seconds` |
 | `service_busy` / `service_unavailable` | provider refused or is unreachable; `eta_seconds` | show a wait and retry |
@@ -2769,7 +2916,7 @@ Each `Event` is `{name, t_ms, data}`; `t_ms` is since `run` started. Names and w
 | `retrieving`, `expanding_query` | `glossary` | grounded tasks: course search (no model) |
 | `partial_result` | `excerpts` | explain: course sentences to show while the answer is generated |
 | `compressing` | | retrieved text over the input budget |
-| `queued` | `position`, `eta_s` | waiting for a window/slot. Also the final event of a retryable degrade (`reason`, `eta_s`) |
+| `queued` | `position`, `eta_s`, [`reason: quota_window`] | waiting for a window/slot (`quota_window`: an interactive explain finding the 20/min window nearly full waits `eta_s` seconds for it instead of degrading, v1.4). Also the final event of a retryable degrade (`reason`, `eta_s`) |
 | `waiting_reserve` | `remaining`, `reserve`, `eta_s` | BACKGROUND held back to keep sends free for learners |
 | `waiting_identical_request` | | the same request is already being generated: waiting for it |
 | `generating` | `attempt`, `model_class` | a provider request is sent |

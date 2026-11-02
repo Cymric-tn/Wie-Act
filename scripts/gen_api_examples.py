@@ -115,6 +115,10 @@ async def real_examples(index: str) -> dict[str, tuple[str, Result]]:
     await go("check_claim.SUPPORTED", claim, "check_claim", {"claim": "(x³)' = 3x²"}, ctx)
     await go("check_claim.PARTLY", claim, "check_claim", {"claim": "(x²)' = 2x and (x³)' = 2x²"},
              {**ctx, "language": "ENGLISH"})
+    compound = Rig(lambda b: chat_ok(json.dumps({"verdict": "CONTRADICTED", "correction":
+                   "La dérivée d'une constante est 0."}), 640, 40), index)
+    await go("check_claim.COMPOUND", compound, "check_claim",
+             {"claim": "(x²)' = 2x ; la dérivée d'une constante est 1 ; la photosynthèse est un processus chimique."}, ctx)
     await go("check_claim.CONTRADICTED_llm", claim, "check_claim",
              {"claim": "La dérivée d'un produit est le produit des dérivées."}, ctx)
     await go("check_claim.NOT_IN_COURSE", claim, "check_claim",
