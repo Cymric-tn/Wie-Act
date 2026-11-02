@@ -21,10 +21,10 @@ from __future__ import annotations
 import re
 import unicodedata
 
-from engine.mathcheck import equivalent, parse_expression
+from engine.mathcheck import GROUNDING_VARS, equivalent, parse_expression
 
 _MATH_CHARS = re.compile(r"[\d()+\-−*/^²³⁴⁵⁶⁷⁸⁹⁰¹ⁿ⁻√·×'≠≤≥<>\[\]→]")
-_LETTERS_OK = {"x", "y", "f", "a", "h", "n", "k", "u", "v", "t", "g"}
+_LETTERS_OK = {"x", "y", "f", "a", "b", "c", "h", "k", "m", "n", "u", "v", "t", "g"}
 _FUNCS = {"ln", "lim", "sin", "cos", "tan", "exp", "sqrt", "log"}
 _EDGE_PUNCT = ".,;:!?…»«\"“”،؛؟)"
 _OPS = set("+-−*/×·^(")
@@ -32,6 +32,7 @@ _OPS = set("+-−*/×·^(")
 
 _WORD = re.compile(r"[A-Za-zÀ-ÿ\u0600-\u06FF]{3,}")
 _COMPARE = re.compile(r"[<>≤≥≠]")
+_COEFF_X = re.compile(r"[abckm]x")                  # a coefficient times x: "bx" in x² + bx + c (no other 2-letter token: "by", "at", "un")
 
 
 def _is_math(tok: str) -> bool:
@@ -41,7 +42,7 @@ def _is_math(tok: str) -> bool:
     words = [w for w in _WORD.findall(t) if w.lower() not in _FUNCS]
     if words:                                          # "(puisque", "C'est", "(racine": prose, not math
         return False
-    return bool(_MATH_CHARS.search(tok)) or t.lower() in _FUNCS or t in _LETTERS_OK
+    return bool(_MATH_CHARS.search(tok)) or t.lower() in _FUNCS or t in _LETTERS_OK or bool(_COEFF_X.fullmatch(t))
 
 
 def _single(tok: str) -> bool:
@@ -224,6 +225,33 @@ def _balance(text: str) -> str:
     return t
 
 
+_LONE_LETTER = re.compile(r"(?<![A-Za-zÀ-ÿ])([A-Za-z])(?![A-Za-zÀ-ÿ(])")
+_DANGLING_END = re.compile(r"[+\-−*/×·^(=,]$")
+
+
+def _unknown_letter(text: str) -> bool:
+    """A lone latin letter outside the parser's symbols (x a b c h k m n t u v y) and the function letters f g."""
+    return any(c.lower() not in GROUNDING_VARS and c.lower() not in "fg" for c in _LONE_LETTER.findall(text))
+
+
+def incomplete(answer: str, span: str, rhs: str | None = None) -> bool:
+    """True when a span the extractor cut cannot be judged: it ends on an operator or an open bracket (the next token was
+    not math: a symbol the parser does not know, a word), it holds a lone letter the parser does not know ("x² + p"), or
+    the answer continues with such a letter right after it. Such a span is reported as unchecked, not as ungrounded: the
+    check could not read it, which is no evidence against it."""
+    tail = (rhs if rhs is not None else span).rstrip()
+    if _DANGLING_END.search(tail) or tail.count("(") > tail.count(")"):
+        return True
+    if _unknown_letter(tail):
+        return True
+    at = answer.find(tail) if tail else -1
+    if at >= 0:
+        m = re.match(r"\s*([A-Za-z])(?![A-Za-zÀ-ÿ])", answer[at + len(tail):])
+        if m and m.group(1).lower() not in GROUNDING_VARS and m.group(1).lower() not in "fg":
+            return True
+    return False
+
+
 def check_formulas(answer: str, sources: list[str]) -> dict:
     """Classify every formula of an explain answer:
       verified      derivative claims checked with sympy against the answer's own f(x) = E, (E)' notation,
@@ -232,7 +260,7 @@ def check_formulas(answer: str, sources: list[str]) -> dict:
       ungrounded    neither verifiable nor in the sources (the limit definition when the course lacks it)
       skipped       single-variable assignments (u = 1, n = 2) and equations to solve (2x − 4 = 0)
       new_examples  functions the answer defines that the sources do not (correct ones pass)"""
-    out = {"verified": [], "wrong": [], "ungrounded": [], "skipped": [], "new_examples": []}
+    out = {"verified": [], "wrong": [], "ungrounded": [], "skipped": [], "new_examples": [], "unchecked": []}
     pool = [eq for s in sources for eq in equations(s)]
     source_defs = [_expr(r) for l, r in pool if _FUNC_DEF.match(_norm(l))]
     defs: dict[str, tuple[sympy.Symbol, sympy.Expr]] = {}
@@ -293,15 +321,20 @@ def check_formulas(answer: str, sources: list[str]) -> dict:
             continue
         if any(_lhs_match(lhs, l2) and _rhs_match(rhs, r2) for l2, r2 in pool):
             continue                                                  # in the sources: fine
+        if incomplete(answer, span, rhs):
+            out["unchecked"].append(span)                             # cut at a symbol the parser does not know
+            continue
         out["ungrounded"].append(span)
     flat = _norm(" ".join(sources))
     sides = [side for eq in pool for side in eq]
-    reported = out["ungrounded"] + out["wrong"] + out["verified"] + out["skipped"] + out["new_examples"]
+    reported = out["ungrounded"] + out["wrong"] + out["verified"] + out["skipped"] + out["new_examples"] + out["unchecked"]
     for f in formulas(answer):
         if any(_norm(f) in _norm(s) or _norm(s).endswith(_norm(f)) for s in reported):
             continue
         if _norm(f) in flat or any(_rhs_match(f, side) for side in sides) or _expr(f) is not None:
             continue
-        if f not in out["ungrounded"]:
+        if incomplete(answer, f):
+            out["unchecked"].append(f)
+        elif f not in out["ungrounded"]:
             out["ungrounded"].append(f)
     return out

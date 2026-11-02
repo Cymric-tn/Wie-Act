@@ -654,6 +654,8 @@ class Engine:
         verifiable nor in the sources. Correct new examples (verified with sympy) pass."""
         c = check_formulas(body, sources)
         notes = {"formulas_verified": len(c["verified"])}
+        if c["unchecked"]:
+            notes["unchecked_spans"] = c["unchecked"]        # cut at a symbol the parser does not know: not judged
         if c["new_examples"]:
             notes["new_examples"] = c["new_examples"]
         if c["wrong"]:
