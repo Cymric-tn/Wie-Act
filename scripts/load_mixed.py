@@ -23,6 +23,7 @@ import os
 import random
 import statistics
 import sys
+import time
 from collections import Counter, defaultdict
 
 import httpx
@@ -88,13 +89,24 @@ def densest_window(times: list[float], window: float = 60.0) -> int:
     return best
 
 
+_EVENT_KEYS = ("eta_s", "reason", "attempt", "model_class", "position", "error", "deadline_s", "wait_s")
+
+
+def _brief(ev) -> dict:
+    """An event for the records file: its name, time, and the few small fields that explain waits and degradations."""
+    data = {k: (v[:120] if isinstance(v, str) else v) for k, v in ev.data.items() if k in _EVENT_KEYS}
+    return {"name": ev.name, "t_ms": ev.t_ms, **({"data": data} if data else {})}
+
+
 class Recorder:
-    def __init__(self, clock):
+    def __init__(self, clock, engine: Engine | None = None):
         self.clock, self.runs, self.exceptions = clock, [], []
+        self.engine = engine
 
     async def run(self, engine: Engine, who: str, task: str, inputs: dict, context: dict,
                   priority: Priority = Priority.INTERACTIVE):
         t0 = self.clock()
+        remaining = engine.caller.limiter.buckets["chat"].tokens          # free sends in the engine's window as it starts
         try:
             r = await engine.run(task, inputs, {**CTX, **context}, priority)
         except Exception as e:           # engine.run must never raise a provider error
@@ -103,7 +115,10 @@ class Recorder:
         self.runs.append({"who": who, "task": task, "priority": priority.value, "t": round(t0, 2),
                           "latency_s": round(self.clock() - t0, 2), "degraded": r.degraded,
                           "degrade_reason": r.degrade_reason, "from_cache": r.from_cache, "mode": r.mode,
-                          "model_class": r.model_class_used, "waited_reserve": "waiting_reserve" in r.event_names})
+                          "model_class": r.model_class_used, "waited_reserve": "waiting_reserve" in r.event_names,
+                          "request_id": r.request_id, "window_remaining_at_start": remaining,
+                          "tokens_in": r.tokens_in, "tokens_out": r.tokens_out, "eta_s": r.eta_seconds,
+                          "events": [_brief(e) for e in r.events]})
         return r
 
 
@@ -157,6 +172,22 @@ async def prep(engine, rec, sleep, now, end, max_pages):
             rec.exceptions.append({"who": "P1", "task": "generate_page", "error": f"{type(e).__name__}: {e}"})
 
 
+def collect_records(rec: Recorder, spy, sink: MemorySink, t0: float, header: dict) -> list[dict]:
+    """Everything the run saw, one JSON object per line, in time order: `header`; `run` (one per engine.run: who, task,
+    start, latency, degradation, the window's free sends when it started, its events); `provider` (one per HTTP request:
+    start, end, model, status, the platform's remaining-requests header); `metric` (the engine's own metrics records).
+    Times of run / provider records are seconds since the start of the load."""
+    out = [{"kind": "header", **header}]
+    for r in rec.runs:
+        out.append({"kind": "run", **r, "t": round(r["t"] - t0, 2)})
+    for x in spy.log:
+        out.append({"kind": "provider", **x, "t0": round(x["t0"] - t0, 2), "t1": round(x["t1"] - t0, 2)})
+    for m in sink.records:
+        out.append({"kind": "metric", "record": m.model_dump(exclude_none=True)})        # the engine's own CallRecord, as written
+    out.extend({"kind": "exception", **e} for e in rec.exceptions)
+    return out
+
+
 def summarize(rec: Recorder, spy: SpyTransport, sink: MemorySink, duration: float, mode: str, extra: dict) -> dict:
     inter = [r for r in rec.runs if r["priority"] == "INTERACTIVE" and r["task"] != "generate_page"]
     lat = [r["latency_s"] for r in inter]
@@ -192,6 +223,13 @@ def summarize(rec: Recorder, spy: SpyTransport, sink: MemorySink, duration: floa
 
 def write(report: dict, prefix: str) -> None:
     os.makedirs("reports", exist_ok=True)
+    records = report.pop("_records", None)
+    if records is not None:                                  # every per-request record, for the analysis of a live run
+        with open(f"{prefix}.records.jsonl", "w", encoding="utf-8") as f:
+            for line in records:
+                f.write(json.dumps(line, ensure_ascii=False, default=str) + "\n")
+        report["records"]["file"] = os.path.basename(f"{prefix}.records.jsonl")
+        report["records"]["lines"] = len(records)
     with open(f"{prefix}.json", "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=1)
     i, p, v = report["interactive"], report["provider"], report["verdict"]
@@ -277,6 +315,9 @@ def run_virtual(args) -> dict:
                 "note": "Simulated: the real engine through the constraint simulator (compact 2-5 s, mid-size 8-15 s, vision "
                         "10-18 s, 20 / min, 2 in flight, one mid-size slot, random mid-size saturation) with canned model "
                         "replies and a virtual clock. It checks the engine's scheduling, not the models, and not FelCloud."})
+            rep["_records"] = collect_records(rec, spy, sink, t0, {
+                "mode": "virtual", "seed": args.seed, "cache": rep["cache"], "duration_s": args.duration,
+                "settings": list(getattr(args, "setting", None) or ())})
             await engine.aclose()
             return rep
     return vrun(main, limit_s=args.duration * 20)
@@ -328,6 +369,7 @@ def write_probe(report: dict, prefix: str) -> None:
 async def run_real(args) -> dict:
     s, clock, spy, sink, engine = real_engine(args)
     rec, rng = Recorder(clock), random.Random(args.seed)
+    args.prefix = getattr(args, "prefix", None) or "reports/load-mixed-felcloud-v14"
     from scripts.smoke import sample_image
     probe = None
     if args.probe_vision:
@@ -339,11 +381,19 @@ async def run_real(args) -> dict:
              for i, w in enumerate(LEARNERS)]
     tasks += [asyncio.ensure_future(room(engine, rec, asyncio.sleep, clock, end, rng, image_fn)),
               asyncio.ensure_future(prep(engine, rec, asyncio.sleep, clock, end, args.pages))]
-    await asyncio.gather(*tasks)
+    try:
+        await asyncio.gather(*tasks)
+    except BaseException:               # a crash or Ctrl-C in a slot must not lose what was measured
+        recs = collect_records(rec, spy, sink, t0, {"mode": "real", "partial": True, "seed": args.seed})
+        with open(f"{args.prefix}.records.jsonl", "w", encoding="utf-8") as f:
+            f.writelines(json.dumps(x, ensure_ascii=False, default=str) + "\n" for x in recs)
+        raise
     rep = summarize(rec, spy, sink, clock() - t0, "real (FelCloud)", {"seed": args.seed, "cache": "off" if args.no_cache else "on",
                     "note": "Live run against FelCloud: every request spent the team's quota."})
     if probe:
         rep["vision_probe"] = probe
+    rep["_records"] = collect_records(rec, spy, sink, t0, {"mode": "real", "seed": args.seed, "cache": rep["cache"],
+                                                           "duration_s": args.duration, "started_epoch": time.time()})
     await engine.aclose()
     return rep
 
@@ -390,8 +440,8 @@ def main() -> int:
         write_probe(report, prefix)
         print(open(f"{prefix}.md", encoding="utf-8").read())
         return 0 if all(report["verdict"].values()) else 1
+    prefix = a.prefix = a.out or f"reports/load-mixed-{'virtual' if a.virtual else 'felcloud'}-v14"
     report = run_virtual(a) if a.virtual else asyncio.run(run_real(a))
-    prefix = a.out or f"reports/load-mixed-{'virtual' if a.virtual else 'felcloud'}-v13"
     write(report, prefix)
     print(open(f"{prefix}.md", encoding="utf-8").read())
     return 0 if all(report["verdict"].values()) else 1
