@@ -2784,6 +2784,7 @@ Each `Event` is `{name, t_ms, data}`; `t_ms` is since `run` started. Names and w
 | `answered_by_rules` | | no model needed |
 | `picking_exercise` | | quiz |
 | `no_relevant_context` | | the course does not cover it |
+| `claim_part` | `index`, `of`, `claim` | check_claim only, on a claim of several facts: the part that is about to be checked (its own events follow) |
 | `unavailable` | `reason`, `eta_s`, `error` | final event of a non-retryable degrade (`superseded`, `request_too_large`) |
 | `room_busy` | `room_id`, `eta_s` | refused: the room already has a request running |
 | `resizing_image`, `parsing_steps`, `checking_steps` | | v1.3 tasks |
