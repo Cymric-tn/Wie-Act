@@ -108,6 +108,16 @@ function shapePlan(result) {
   return { ...result, data: { ...plan, sessions: [...days.values()].sort((a, b) => a.day - b.day), days: result.notes?.days } };
 }
 
+/** The engine's course graph with the `title` objects the screens read (the engine says `titles`); concepts whose course
+ * text is still a draft are left out of the units, as the planner leaves them out of plans. */
+function shapeCourse(course) {
+  const concepts = Object.fromEntries(Object.entries(course.concepts || {}).filter(([, c]) => c.status !== "draft").map(([id, c]) => [id, { ...c, title: c.titles }]));
+  return {
+    ...course, title: course.titles, concepts,
+    units: (course.units || []).map((u) => ({ ...u, title: u.titles, concepts: (u.concepts || []).filter((id) => concepts[id]) }))
+  };
+}
+
 /** A prep page as the study screen reads it: the worked example's `solution` is shown as its answer. */
 function shapePage(page) {
   const w = page.worked_example;
@@ -375,7 +385,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
     try {
       const course = isId(req.params.id) ? await engine.course(req.params.id) : null;
       if (!course) return res.status(404).json({ error: "This course has no graph in the engine yet." });
-      res.json({ course });
+      res.json({ course: shapeCourse(course) });
     } catch (error) {
       res.status(502).json({ error: error.message });
     }
@@ -519,4 +529,4 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
   return router;
 }
 
-module.exports = { createAiRouter, publicResult, INPUTS, planInputs, shapePlan, shapePage };
+module.exports = { createAiRouter, publicResult, INPUTS, planInputs, shapePlan, shapePage, shapeCourse };
