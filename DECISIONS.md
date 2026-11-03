@@ -427,3 +427,27 @@ degraded `quota_low`. Five changes and one script; evidence below, none of it me
   runs on its own cache and course index (it wrote an upload into `data/index/courses` before; removed).
 - **App:** no links to the static Constellation / Universe pages (they still list MATH102 / CS201 / PHYS101): the Atlas / Universe
   rail links of the board and "Enter 3D universe" on the map are removed; the files stay in `client/public/ednova/` unlinked.
+
+## Last engine changes (2026-11-03, `integration/real-engine`; the engine is frozen after this except dry-run bugs)
+
+- **`follow_up(classification, ctx, has_open_exercise=False)`.** Intent HINT with no open exercise routes to `explain`, reason
+  "hint without an open exercise", logged as an override (`outcome=overridden`) like the HIGH-confusion one, which keeps its own
+  reason and wins. ANSWER_ATTEMPT is unchanged. Passed by the bridge (`POST /follow_up {has_open_exercise}`), the Node tutor loop
+  (from its exercise state: it now looks the exercise up before routing) and the chat console. Why: live, the 3B called "chnowa el
+  derivee mta3 x² w kifech nal9aha ?" a HINT and the learner got a nonsensical hint with no sources. Replay offline with a scripted
+  HINT classification (`tests/test_bridge.py`): follow-up explain, grounded in two course pages, not degraded. Side effect:
+  `scripts/load_test.py` (no open exercise) now routes its HINT turns to explain.
+- **Verbal equality in the formula check** (`engine/grounding.py::verbalize`). `est égal(e) à`, `égale`, `vaut`, `equals`,
+  `is equal to`, `is`, `يساوي`, `تساوي` between two math tokens are read as "=" (`is` only directly between two math tokens). A
+  wrong one is `wrong_math` with `notes.wrong_math_forms` (span -> correct form): the upload answer's "la limite de (x^2 + 2x)/x
+  est égale à 2x + 2" -> wrong, correct form `(x^2 + 2x)/x = x + 2`. Correct ones are verified. Guards found while testing: not read
+  when the left run is the argument of a derivative / integral / value ("la dérivée de x² est égale à 2x", "the derivative of x²
+  is 2x", "مشتقة x² تساوي 2x"), when the spoken equality sits inside a written one ("of f(x) = x² − 4x + 1 is f'(x) = 2x − 4"),
+  after a sentence boundary, or when a neighbour is a word; the French verb "a" in "on a (x+1)² est égal à ..." no longer joins the
+  left run. **Known false-positive risk, by design of the request:** "limite" is not an argument noun, so a true limit written as an
+  equality ("la limite de (x² − 1)/(x − 1) est égale à 2") is judged as an identity and flagged.
+  Recheck on 151 saved explain answers (the 146 older ones + 5 e2e answers), before -> after: `wrong_math` 3 -> 4, `ungrounded`
+  7 -> 7, unchecked 0 -> 0; the only newly flagged span is `(x^2 + 2x)/x = 2x + 2` (the upload answer); nothing newly flagged
+  as ungrounded and nothing un-flagged (`reports/recheck-formulas-verbal.json`). One false positive of the first version
+  (a copula inside a written equation) was found by this recheck and fixed. Spoken equalities are rare in the corpus, so this is thin
+  evidence about false positives on new answers.

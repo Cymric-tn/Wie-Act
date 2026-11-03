@@ -690,6 +690,8 @@ class Engine:
             run.emit("guarded", {"reason": "wrong_math", "spans": c["wrong"]})
             log.warning("%s %s: wrong math %s", ctx.request_id, ctx.task, c["wrong"])
             notes["wrong_math"] = c["wrong"]
+            if c.get("forms"):
+                notes["wrong_math_forms"] = c["forms"]            # span -> the correct form, when sympy states one
         if c["ungrounded"]:
             run.degrade("ungrounded_formula")
             run.emit("guarded", {"reason": "ungrounded_formula", "spans": c["ungrounded"]})

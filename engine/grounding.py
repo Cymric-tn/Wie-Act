@@ -60,9 +60,9 @@ def _tail(s: str) -> str:
             break
         # a lone letter ("a" in "on a f(1)") belongs to the formula only right next to "=", next to an
         # operator ("x + h"), or between math tokens
-        if out and _single(tok) and not (out[0][:1] in _OPS or
+        if out and _single(tok) and not ((out[0][:1] in _OPS and not (tok == "a" and out[0][:1] == "(")) or
                                          (i > 0 and _is_math(toks[i - 1]) and not _single(toks[i - 1]))):
-            break
+            break                                      # ("on a (x+1)² = ..." : the French verb "a" is not a factor)
         if tok.rstrip().endswith((",", ";", ":", ".", "،", "؛")) and out:
             break
         out.insert(0, tok)
@@ -252,6 +252,77 @@ def incomplete(answer: str, span: str, rhs: str | None = None) -> bool:
     return False
 
 
+# ------------------------------------------------------------------ verbal equality (v1.4)
+# "(x² + 2x)/x est égale à 2x + 2", "f(2) vaut 4", "2x + 2 equals x", "يساوي": between two math runs these are "=".
+# Conservative on purpose: BOTH neighbouring tokens must be math (so "la limite est égale à 2x" is not read: "limite" is a word),
+# and the short "is" counts only directly between two math tokens.
+_VERBAL = re.compile(
+    r"(?<![\w])(?:est\s+[ée]gale?\s+[àa]|[ée]gale?\s+[àa]|[ée]gale?|vaut|is\s+equal\s+to|equals?|is|يساوي|تساوي)(?![\w])",
+    re.I)
+
+
+# A math run that is the ARGUMENT of a derivative / an integral / a value ("la dérivée de x² est égale à 2x", "the derivative of x²
+# is 2x", "مشتقة x² تساوي 2x") is not what the spoken equality is about, so it is not read. A limit is NOT in the list: "la limite de
+# (x² + 2x)/x est égale à 2x + 2" is judged as the equality it states (and a true limit written this way, e.g. the limit of
+# (x² − 1)/(x − 1) at 1 equal to 2, is a known false-positive risk of reading it).
+_ARGUMENT_NOUNS = frozenset("dérivée derivee dérivé derive derivative derivatives intégrale integrale integral valeur value مشتقة مشتقه مشتق تكامل قيمة دالة".split())
+_PREPOSITIONS = frozenset("de du des d of for pour".split())
+
+
+def _bare(word: str) -> str:
+    return re.sub(r"^[^\w]+|[^\w]+$", "", word.lower().split("'")[-1].split("’")[-1])
+
+
+def _chained(before: list[str], after: list[str]) -> bool:
+    """The spoken equality sits inside a written one ("of f(x) = x² − 4x + 1 is f'(x) = 2x − 4"): the run on its left already is
+    the right side of an "=", or the run on its right is the left side of one. It is a copula there, not an equality."""
+    k = len(before) - 1
+    while k >= 0 and _is_math(before[k]):
+        k -= 1
+    if k >= 0 and before[k].endswith("="):
+        return True
+    j = 0
+    while j < len(after) and _is_math(after[j]):
+        j += 1
+    return j < len(after) and after[j].startswith("=")
+
+
+def _argument_of_a_word(before: list[str]) -> bool:
+    k = len(before) - 1
+    while k >= 0 and _is_math(before[k]):
+        k -= 1
+    if k < 0 or k == len(before) - 1:
+        return False
+    word = _bare(before[k])
+    if word in _ARGUMENT_NOUNS or before[k].lower() in _ARGUMENT_NOUNS:
+        return True
+    return word in _PREPOSITIONS and k > 0 and _bare(before[k - 1]) in _ARGUMENT_NOUNS
+
+
+def verbalize(text: str) -> tuple[str, set[tuple[str, str]]]:
+    """The text with verbal equalities between two math tokens replaced by "=", and the (previous token, next token) pairs
+    (normalized) that mark which "=" were spoken, for the checker to judge them as claims."""
+    out, pairs, pos = [], set(), 0
+    for m in _VERBAL.finditer(text):
+        before, after = text[:m.start()].split(), text[m.end():].split()
+        if not before or not after or not _is_math(before[-1]) or not _is_math(after[0]):
+            continue
+        if before[-1].rstrip().endswith((",", ";", ":", ".")):
+            continue                                                  # a sentence boundary, not an equation
+        if _argument_of_a_word(before) or _chained(before, after):
+            continue
+        out.append(text[pos:m.start()])
+        out.append("=")
+        pos = m.end()
+        pairs.add((_norm(before[-1]), _norm(after[0])))
+    out.append(text[pos:])
+    return "".join(out), pairs
+
+
+def _simplified(e: sympy.Expr) -> str:
+    return str(sympy.simplify(e)).replace("**", "^").replace("*", "")
+
+
 def check_formulas(answer: str, sources: list[str]) -> dict:
     """Classify every formula of an explain answer:
       verified      derivative claims checked with sympy against the answer's own f(x) = E, (E)' notation,
@@ -260,7 +331,8 @@ def check_formulas(answer: str, sources: list[str]) -> dict:
       ungrounded    neither verifiable nor in the sources (the limit definition when the course lacks it)
       skipped       single-variable assignments (u = 1, n = 2) and equations to solve (2x − 4 = 0)
       new_examples  functions the answer defines that the sources do not (correct ones pass)"""
-    out = {"verified": [], "wrong": [], "ungrounded": [], "skipped": [], "new_examples": [], "unchecked": []}
+    out = {"verified": [], "wrong": [], "ungrounded": [], "skipped": [], "new_examples": [], "unchecked": [], "forms": {}}
+    answer, verbal = verbalize(answer)
     pool = [eq for s in sources for eq in equations(s)]
     source_defs = [_expr(r) for l, r in pool if _FUNC_DEF.match(_norm(l))]
     defs: dict[str, tuple[sympy.Symbol, sympy.Expr]] = {}
@@ -309,6 +381,9 @@ def check_formulas(answer: str, sources: list[str]) -> dict:
                 out["verified"].append(span)
             elif not (le.free_symbols | r.free_symbols):              # numbers only and not equal: wrong
                 out["wrong"].append(span)
+            elif any(l.endswith(p) and _norm(rhs).startswith(n) for p, n in verbal):
+                out["wrong"].append(span)                             # "A est égale à B", both sides math, not equal: a false claim
+                out["forms"][span] = f"{lhs} = {_simplified(le)}"
             elif _SINGLE_VAR.fullmatch(l):
                 out["skipped"].append(span)                           # u = 1, v = x + 2, n = 2
                 assigned[sympy.Symbol(l)] = r
