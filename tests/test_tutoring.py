@@ -436,7 +436,7 @@ AZI_1 = "chnowa ya3ni limite? ma fhemt chay fel cours"          # classify eval 
 @pytest.mark.parametrize("intent,confusion,task,overridden", [
     ("DIAGNOSTIC", "HIGH", "explain", True), ("QUIZ", "HIGH", "explain", True),
     ("DIAGNOSTIC", "LOW", "diagnostic", False), ("QUIZ", "MEDIUM", "quiz", False),
-    ("EXPLAIN", "HIGH", "explain", False), ("HINT", "HIGH", "hint", False), ("CHITCHAT", "HIGH", None, False)])
+    ("EXPLAIN", "HIGH", "explain", False), ("HINT", "HIGH", "explain", True), ("CHITCHAT", "HIGH", None, False)])
 def test_follow_up_routing_with_confusion_override(intent, confusion, task, overridden):
     from router.policy import Router
     sink = MemorySink()
@@ -802,3 +802,27 @@ async def test_negative_cache_covers_degenerate_explain(vt, index):
     assert len(fake.requests) == sent                            # no provider call on the repeat
     assert (again.degrade_reason, again.mode) == ("explain_guard:degenerate", "fast_extractive")
     assert again.notes["negative_cache"] and [r for r in sink.records if r.kind == "run"][-1].from_negative_cache
+
+
+# ====================================================================== a hint needs an open exercise (v1.4)
+@pytest.mark.parametrize("intent,open_,task,overridden", [
+    ("HINT", False, "explain", True),            # nothing to hint on: the learner asked a question
+    ("HINT", True, "hint", False),               # an exercise is open: the next stored hint
+    ("ANSWER_ATTEMPT", False, "hint", False),    # unchanged: the answer-attempt rule
+    ("ANSWER_ATTEMPT", True, "hint", False),
+    ("EXPLAIN", False, "explain", False), ("QUIZ", False, "quiz", False), ("CHITCHAT", False, None, False)])
+def test_a_hint_without_an_open_exercise_is_an_explain(intent, open_, task, overridden):
+    from router.policy import Router
+    sink = MemorySink()
+    f = Router(sink, 2).follow_up({"intent": intent, "confusion": "MEDIUM"}, None, has_open_exercise=open_)
+    assert (f.task, f.overridden) == (task, overridden)
+    assert f.reason == ("hint without an open exercise" if (intent, open_) == ("HINT", False) else f.reason)
+    [rec] = sink.records
+    assert rec.outcome == ("overridden" if overridden else "routed") and rec.detail == f.reason
+    assert Router(MemorySink(), 2).follow_up({"intent": "HINT"}).task == "explain"          # the default is no open exercise
+
+
+def test_the_high_confusion_override_keeps_its_own_reason_and_wins():
+    from router.policy import Router
+    f = Router(MemorySink(), 2).follow_up({"intent": "QUIZ", "confusion": "HIGH"}, None, has_open_exercise=False)
+    assert f.reason == "intent QUIZ with confusion HIGH -> explain (teach before testing)"

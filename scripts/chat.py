@@ -269,7 +269,7 @@ class Console:
     async def _turn(self, message: str, turn: str) -> None:
         c = await self._run("classify", {"message": message}, turn)
         d = c.data or {}
-        f = self.engine.router.follow_up(d, _TurnRef(c.request_id, self._line_turn))
+        f = self.engine.router.follow_up(d, _TurnRef(c.request_id, self._line_turn), has_open_exercise=bool(self.practice))
         follow = f.task
         if f.overridden:
             self.out(f"   · route: {f.reason}")

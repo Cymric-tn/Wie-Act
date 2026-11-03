@@ -95,7 +95,7 @@ function createHttpEngine({ url, token = "", fetchImpl = fetch, timeoutMs = RUN_
     run: (task, inputs = {}, context = {}, priority = "INTERACTIVE", onEvent) => stream("/run", { task, inputs, context, priority }, task, onEvent),
     /** Engine.generate_page: one prep page (explanation, worked example, quiz items). Resolves to the page, or a degraded Result. */
     generatePage: (focusPoint, context = {}, onEvent) => stream("/generate_page", { focus_point: focusPoint, context }, "generate_page", onEvent),
-    followUp: (classification) => call("/follow_up", { method: "POST", body: { classification } }),
+    followUp: (classification, hasOpenExercise = false) => call("/follow_up", { method: "POST", body: { classification, has_open_exercise: Boolean(hasOpenExercise) } }),
     getExercise: (id) => call(`/exercises/${encodeURIComponent(id)}`).then((r) => r.exercise || null).catch((e) => (e.status === 404 ? null : Promise.reject(e))),
     course: (id) => call(`/courses/${encodeURIComponent(id)}`).then((r) => r.course || null).catch((e) => (e.status === 404 ? null : Promise.reject(e))),
     addMaterial: (material) => call("/materials", { method: "POST", body: material, timeout: 180_000 }),

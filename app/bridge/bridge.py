@@ -18,7 +18,7 @@ Endpoints (JSON; /run and /generate_page stream NDJSON):
     POST   /run                    {task, inputs, context, priority}
                                    -> {"type":"event","event":{...}}\\n ... {"type":"result","result":{...}}\\n
     POST   /generate_page          {focus_point, plan?, context} -> events, then {"type":"result","result":{page}}
-    POST   /follow_up              {classification} -> {task, reason, overridden}
+    POST   /follow_up              {classification, has_open_exercise?} -> {task, reason, overridden}
     GET    /exercises/<id>         {exercise}   (full: solution, hints, common_mistakes)
     GET    /courses/<id>           {course}
     POST   /materials              {id, course_id, path, visibility, class_id, learner_id, source, ...}
@@ -178,8 +178,8 @@ class EngineHost:
                                                                on_event=on_event), write_line)
 
     # ----- helpers around the feature-layer calls -----
-    def follow_up(self, classification):
-        return jsonable(self.call(self.engine.router.follow_up, classification or {}))
+    def follow_up(self, classification, has_open_exercise=False):
+        return jsonable(self.call(self.engine.router.follow_up, classification or {}, None, bool(has_open_exercise)))
 
     def exercise(self, exercise_id):
         """The full exercise for the feature layer (which keeps the solution from the browser): the statement in each
@@ -353,7 +353,7 @@ def make_handler(host, token, port):
                 if path == "/generate_page":
                     return self._stream(lambda w: host.generate_page(body, w))
                 if path == "/follow_up":
-                    return self._json(200, host.follow_up(body.get("classification") or {}))
+                    return self._json(200, host.follow_up(body.get("classification") or {}, body.get("has_open_exercise")))
                 if path == "/materials":
                     return self._json(200, host.add_material(body))
                 if path == "/cache/invalidate":

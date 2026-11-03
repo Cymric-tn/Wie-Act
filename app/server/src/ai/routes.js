@@ -316,10 +316,10 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
       out.send({ type: "stage", stage: "classify", result: publicResult(classification) });
       if (classification.degraded && classification.degrade_reason === "superseded") return out.end({ type: "result", superseded: true });
       const c = classification.data || {};
-      const follow = await engine.followUp(c);
+      const openExercise = isId(req.body.exercise_id) ? await getExercise(req.body.exercise_id) : null;
+      const follow = await engine.followUp(c, Boolean(openExercise)); // a hint with no open exercise is a question: the engine routes it to explain
       const language = ctx.language || c.language;
       const turnCtx = drop({ ...base, language, confusion: c.confusion, complexity: c.complexity });
-      const openExercise = isId(req.body.exercise_id) ? await getExercise(req.body.exercise_id) : null;
 
       let task = follow?.task || null;
       let inputs = null;
