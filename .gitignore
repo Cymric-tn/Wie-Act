@@ -26,3 +26,10 @@ _legacy/*.sqlite
 
 # engine service
 runtime/
+
+# app (web front end + Node server): runtime state, uploads, dependencies
+app/server/data/
+app/**/uploads/
+app/**/node_modules/
+app/client/dist/
+app/.dev-logs/

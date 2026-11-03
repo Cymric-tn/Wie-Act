@@ -36,9 +36,13 @@ def _share(n: int, total: int) -> float:
 
 
 def summarize(records: Iterable[Mapping], since: float | None = None, class_id: str | None = None,
-              course_id: str | None = None) -> dict:
+              course_id: str | None = None, request_ids: Iterable[str] | None = None) -> dict:
+    """request_ids: only the records of these engine calls (a session's own numbers, not the whole file's)."""
+    wanted = set(request_ids) if request_ids is not None else None
     runs, attempts = [], []
     for r in records:
+        if wanted is not None and r.get("request_id") not in wanted:
+            continue
         if since is not None and r.get("ts", 0) < since:
             continue
         if class_id and r.get("class_id") != class_id:

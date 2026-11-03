@@ -1,0 +1,52 @@
+provider=https://llm.felcloud.io/v1 simulate=False saturation_prob=0.15 models={'compact': ('llama3.2-3b', 'qwen2.5-3b'), 'midsize': ('llama3.1-8b',), 'vision': ('deepseek-ocr',)} cache=:memory:
+
+[classify] class=compact model=llama3.2-3b latency=10303ms cache=miss degraded=False
+  tokens in/out: 866/41   route: table: classify -> compact
+  events: checking_cache@0 -> queued@0 -> generating@1
+  output: {"intent": "ANSWER_ATTEMPT", "language": "FRENCH", "confusion": "LOW", "complexity": 1, "confidence": 0.8}
+
+[hint] class=compact model=llama3.2-3b latency=6492ms cache=miss degraded=False
+  tokens in/out: 313/35   route: table: hint -> compact
+  events: checking_cache@0 -> queued@1 -> generating@1
+  output: Kifech s'fa7il, kif tarej kif tarej x=1: jidda tarej l 9it?
+
+[explain] class=midsize model=llama3.1-8b latency=17940ms cache=miss degraded=False
+  tokens in/out: 356/145   route: table: explain -> midsize; completes after the learner's deadline
+  events: retrieving@0 -> checking_cache@10 -> partial_result@12 -> queued@12 -> generating@13
+  sources: ['derivee-definition.fr#nombre-derive-et-taux-d-accroissement']   budget: {'tokens': 530, 'limit': 2520}
+  output: {"body": "Le nombre dérivé de f en a est le nombre qui se rapproche du taux d'accroissement entre a et a + h quand h tend vers 0. C'est-à-dire que si on prend le quotient (f(a + h) − f(a)) / h, et que h devient de plus en plus petit, le quotient se rapproche d'un nombre fini, qui est le nombre dérivé de f en a, noté f'(a). Par exemple, pour f(x) = x², le nombre dérivé est 2a, car le taux d'accroissement tend vers 2a quand h tend vers 0.", "opener": "Voici l'essentiel du cours sur ce point.", "exercise": {"id": "d10", "concept": "nombre dérivé", "level": 1, "statement": "Soit f(x) = x². Calculer f'(3).", "expression": "x²"}}
+
+[check_claim] class=None model=None latency=0ms cache=miss degraded=False
+  tokens in/out: 0/0   route: None
+  events: answered_by_rules@0
+  output: {"verdict": "CONTRADICTED", "correction": "Plutôt : (x³)' = 3x²", "source_chunk_id": null, "checked_by": "sympy"}
+
+[check_claim] class=compact model=llama3.2-3b latency=4339ms cache=miss degraded=False
+  tokens in/out: 477/51   route: table: check_claim -> compact
+  events: retrieving@0 -> checking_cache@0 -> queued@0 -> generating@1
+  sources: ['derivee-erreurs.fr#erreurs-avec-le-produit']   budget: {'tokens': 637, 'limit': 2520}
+  output: {"verdict": "CONTRADICTED", "correction": "La dérivée d'un produit n'est pas le produit des dérivées : (u·v)' = u'·v + u·v'.", "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit", "checked_by": "llm"}
+
+[check_answer] class=None model=None latency=12ms cache=miss degraded=False
+  tokens in/out: 0/0   route: table: check_answer -> compact
+  events: parsing_steps@0 -> checking_steps@12
+  output: {"steps": [{"index": 0, "verdict": "OK", "note": ""}, {"index": 1, "verdict": "WRONG", "note": "Cette ligne ne correspond pas à la précédente ni à la dérivée."}], "first_wrong": 1, "final_verdict": "INCORRECT", "feedback": "Tu as baissé l'exposant mais oublié de multiplier par l'exposant.", "graded_by": "rules"}
+
+[check_answer] class=compact model=llama3.2-3b latency=1603ms cache=miss degraded=False
+  tokens in/out: 115/24   route: table: check_answer -> compact
+  events: parsing_steps@0 -> checking_steps@16 -> queued@30 -> generating@30 -> answered_by_rules@1603
+  output: {"steps": [{"index": 0, "verdict": "OK", "note": ""}, {"index": 1, "verdict": "WRONG", "note": "Cette ligne ne correspond pas à la précédente ni à la dérivée."}], "first_wrong": 1, "final_verdict": "INCORRECT", "feedback": "Qu'est-ce qui se passe à x² lorsqu'on prend la derivee de x⁴ ?", "graded_by": "llm"}
+
+[prep_plan] class=None model=None latency=1ms cache=miss degraded=False
+  tokens in/out: 0/0   route: None
+  events: answered_by_rules@1
+  output: {"focus_points": [{"concept_id": "tangente", "day_index": 0, "reason": "Maîtrise faible (0%)", "reason_code": "low_mastery", "page_kind": "learn", "minutes": 20}, {"concept_id": "constante", "day_index": 1, "reason": "Prérequis de « Dérivée d'un polynôme, Dérivée d'un produit » ; Maîtrise faible (0%)", "reason_code": "prerequisite", "page_kind": "learn", "minutes": 20}, {"concept_id": "puissance", "day_index": 2, "reason": "Prérequis de « Dérivée d'un polynôme, Dérivée d'un produit » ; Maîtrise faible (0%)", "reason_code": "prerequisite", "page_kind": "learn", "minutes": 20}, {"concept_id": "polynôme", "day_index": 3, "reason": "Prérequis de « Dérivée d'un produit, Dérivée d'un quotient » ; Maîtrise faible (0%)", "reason_code": "prerequisite", "page_kind": "learn", "minutes": 20}, {"concept_id": "produit", "day_index": 4, "reason": "Prérequis de « Dérivée d'un quotient » ; Maîtrise faible (0%)", "reason_code": "prerequisite", "page_kind": "learn", "minutes": 20}, {"concept_id": "inverse", "day_index": 5, "reason": "Prérequis de « Dérivée d'un quotient » ; Maîtrise faible (0%)", "reason_code": "prerequisite", "page_kind": "learn", "minutes": 20}, {"concept_id": "quotient", "day_index": 6, "reason": "Maîtrise faible (0%)", "reason_code": "low_mastery", "page_kind": "learn", "minutes": 20}, {"concept_id": "racine carrée", "day_index": 7, "reason": "Maîtrise faible (0%)", "reason_code": "low_mastery", "page_kind": "learn", "minutes": 20}, {"concept_id": "variations", "day_index": 8, "reason": "Prérequis de « Extremum » ; Maîtrise faible (0%)", "reason_code": "prerequisite", "page_kind": "learn", "minutes": 20}, {"concept_id": "extremum", "day_index": 9, "reason": "Maîtrise faible (0%)", "reason_code": "low_mastery", "page_kind": "learn", "minutes": 20}, {"concept_id": "nombre dérivé", "day_index": 10, "reason": "Déjà maîtrisé (90%) : révision rapide", "reason_code": "review", "page_kind": "review", "minutes": 8}], "assessment_exercise_ids": ["d12", "d03", "d01", "d02", "d05", "d08", "d07", "d09", "d14", "d15"]}
+
+[ocr_transcribe] class=vision model=deepseek-ocr latency=17065ms cache=miss degraded=False
+  tokens in/out: 974/22   route: table: ocr_transcribe -> vision
+  events: resizing_image@43 -> checking_cache@43 -> queued@44 -> generating@44
+  output: {"text": "Type or paste your math problem in the box below. Then click \"Convert to LaTeX\" button.", "latex": null, "confidence_note": ""}
+
+[generate_page] concept=puissance degraded=False from_cache=False quiz=3 worked_example=True
+
+guard: 7 chat requests, server 429s 0, exceptions 0

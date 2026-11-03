@@ -363,3 +363,13 @@ async def test_the_fake_engine_serves_the_same_endpoints():
         assert (await c.get("/review/flagged")).json()["total"] == 0
         summary = (await c.get("/metrics/summary")).json()
         assert summary["runs"]["total"] == 4 and summary["degraded"]["by_reason"]["wrong_math"]["count"] == 1
+
+
+def test_a_summary_can_be_limited_to_the_request_ids_of_one_session():
+    records = [rec(task="explain", latency_ms=100, request_id="a"), rec(task="hint", latency_ms=50, request_id="b"),
+               rec("chat", model_class="compact", model="c", status=429, outcome="quota_exhausted", request_id="b"),
+               rec("chat", model_class="midsize", model="m", status=200, request_id="a"),
+               rec("chat", model_class="midsize", model="m", status=200, request_id="other")]
+    s = summarize(records, request_ids=["a", "b"])
+    assert s["runs"]["total"] == 2 and s["provider_requests"]["total"] == 2 and s["server_429"]["count"] == 1
+    assert summarize(records, request_ids=[])["runs"]["total"] == 0 and summarize(records)["provider_requests"]["total"] == 3

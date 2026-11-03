@@ -60,9 +60,9 @@ def _tail(s: str) -> str:
             break
         # a lone letter ("a" in "on a f(1)") belongs to the formula only right next to "=", next to an
         # operator ("x + h"), or between math tokens
-        if out and _single(tok) and not (out[0][:1] in _OPS or
+        if out and _single(tok) and not ((out[0][:1] in _OPS and not (tok == "a" and out[0][:1] == "(")) or
                                          (i > 0 and _is_math(toks[i - 1]) and not _single(toks[i - 1]))):
-            break
+            break                                      # ("on a (x+1)² = ..." : the French verb "a" is not a factor)
         if tok.rstrip().endswith((",", ";", ":", ".", "،", "؛")) and out:
             break
         out.insert(0, tok)
@@ -252,6 +252,217 @@ def incomplete(answer: str, span: str, rhs: str | None = None) -> bool:
     return False
 
 
+# ------------------------------------------------------------------ verbal equality (v1.4)
+# "(x² + 2x)/x est égale à 2x + 2", "f(2) vaut 4", "2x + 2 equals x", "يساوي": between two math runs these are "=".
+# Conservative on purpose: BOTH neighbouring tokens must be math (so "la limite est égale à 2x" is not read: "limite" is a word),
+# and the short "is" counts only directly between two math tokens.
+_VERBAL = re.compile(
+    r"(?<![\w])(?:est\s+[ée]gale?\s+[àa]|[ée]gale?\s+[àa]|[ée]gale?|vaut|is\s+equal\s+to|equals?|is|يساوي|تساوي)(?![\w])",
+    re.I)
+
+
+# A math run that is the ARGUMENT of a derivative / an integral / a value ("la dérivée de x² est égale à 2x", "the derivative of x²
+# is 2x", "مشتقة x² تساوي 2x") is not what the spoken equality is about, so it is not read. A limit is NOT in the list: "la limite de
+# (x² + 2x)/x est égale à 2x + 2" is judged as the equality it states (and a true limit written this way, e.g. the limit of
+# (x² − 1)/(x − 1) at 1 equal to 2, is a known false-positive risk of reading it).
+_ARGUMENT_NOUNS = frozenset("dérivée derivee dérivé derive derivative derivatives intégrale integrale integral valeur value مشتقة مشتقه مشتق تكامل قيمة دالة".split())
+_PREPOSITIONS = frozenset("de du des d of for pour".split())
+
+
+def _bare(word: str) -> str:
+    return re.sub(r"^[^\w]+|[^\w]+$", "", word.lower().split("'")[-1].split("’")[-1])
+
+
+def _chained(before: list[str], after: list[str]) -> bool:
+    """The spoken equality sits inside a written one ("of f(x) = x² − 4x + 1 is f'(x) = 2x − 4"): the run on its left already is
+    the right side of an "=", or the run on its right is the left side of one. It is a copula there, not an equality."""
+    k = len(before) - 1
+    while k >= 0 and _is_math(before[k]):
+        k -= 1
+    if k >= 0 and before[k].endswith("="):
+        return True
+    j = 0
+    while j < len(after) and _is_math(after[j]):
+        j += 1
+    return j < len(after) and after[j].startswith("=")
+
+
+def _argument_of_a_word(before: list[str]) -> bool:
+    k = len(before) - 1
+    while k >= 0 and _is_math(before[k]):
+        k -= 1
+    if k < 0 or k == len(before) - 1:
+        return False
+    word = _bare(before[k])
+    if word in _ARGUMENT_NOUNS or before[k].lower() in _ARGUMENT_NOUNS:
+        return True
+    return word in _PREPOSITIONS and k > 0 and _bare(before[k - 1]) in _ARGUMENT_NOUNS
+
+
+# ------------------------------------------------------------------ spoken limits (v1.4)
+# "la limite de ((x+h)² − x²)/h quand h tend vers 0 est égale à 2x": judged with sympy.limit at the stated point, never as the
+# identity it would be without one. No stated point -> the claim is listed as unchecked, never flagged.
+_LIMIT_NOUNS = frozenset("limite limit نهاية نهايه".split())
+_INF_TOKENS = frozenset(["∞", "+∞", "-∞", "−∞", "infini", "l'infini", "l’infini", "+infini", "infinity", "+infinity", "-infinity", "−infinity"])
+_ARROW = r"(?:tend(?:ent)?\s+vers|tends?\s+to|approach(?:es)?|→|->|⟶|تؤول\s+إلى|يؤول\s+إلى|تقترب\s+من|يقترب\s+من|تسعى\s+إلى)"
+_POINT = r"([+\-−]?\s*(?:∞|l['’]infini|infini|infinity|\d+(?:[.,]\d+)?|[a-z]\b))"      # infinity first: "l'infini" is not the letter l
+_CLAUSE_END = re.compile(r"(?:quand|lorsque|lorsqu['’]|when|as|عندما|حين)\s+([a-z])\s*" + _ARROW + r"\s*" + _POINT + r"[\s,]*$", re.I)
+_CLAUSE_ANY = re.compile(r"(?:quand|lorsque|lorsqu['’]|when|as|عندما|حين)\s+([a-z])\s*" + _ARROW + r"\s*" + _POINT, re.I)
+_ARROW_ANY = re.compile(r"\b([a-z])\s*(?:→|->|⟶)\s*" + _POINT, re.I)
+_LIM_TOKEN = re.compile(r"^lim[_({\s]*([a-z])\s*(?:→|->|⟶|\\to)\s*([^)}\s]+)[)}\s]*$", re.I)
+
+
+def _limit_point(var_and_point: tuple[str, str]) -> tuple[str, str]:
+    var, pt = var_and_point
+    pt = re.sub(r"\s+", "", pt.replace("’", "'").replace("−", "-"))
+    if pt.lstrip("+-").lower() in {x.lstrip("+-−").lower() for x in _INF_TOKENS}:
+        return var, "-∞" if pt.startswith("-") else "∞"                # one spelling of infinity in the reports
+    return var, pt
+
+
+def _find_point(text: str, start: int, end: int) -> tuple[str, str] | None:
+    """The stated (variable, point) in the sentence that holds text[start:end]."""
+    lo = max(text.rfind(". ", 0, start), text.rfind("\n", 0, start)) + 1
+    hi_candidates = [i for i in (text.find(". ", end), text.find("\n", end)) if i >= 0]
+    hi = min(hi_candidates) if hi_candidates else len(text)
+    sentence = text[lo:hi]
+    for rx in (_CLAUSE_ANY, _ARROW_ANY):
+        m = rx.search(sentence)
+        if m:
+            return _limit_point((m.group(1).lower(), m.group(2)))
+    return None
+
+
+def _limit_claim(text: str, m: re.Match, before: list[str], after: list[str]) -> dict | None:
+    """If the spoken equality at `m` states a limit, the claim {expr, var, point, rhs, span_start}; else None.
+    The expression sits right before the point clause, after "limite de" / "limit of" / "lim(h→0)" / "نهاية"."""
+    head = text[:m.start()]
+    clause = _CLAUSE_END.search(head)
+    var = pt = None
+    if clause:
+        var, pt = _limit_point((clause.group(1).lower(), clause.group(2)))
+        head = head[:clause.start()].rstrip(" ,")
+    toks = head.split()
+    k = len(toks)
+    while k > 0 and _is_math(toks[k - 1]):
+        k -= 1
+    run = toks[k:]
+    if not run:
+        return None
+    word_before = _bare(toks[k - 1]) if k > 0 else ""
+    first = run[0]
+    expr_tokens = run
+    lim_tok = _LIM_TOKEN.match(first)
+    if lim_tok:                                                 # lim(h→0) (...) : the point is in the first token
+        var, pt = _limit_point((lim_tok.group(1).lower(), lim_tok.group(2)))
+        expr_tokens = run[1:]
+    elif first.lower() == "lim" and len(run) > 1 and _LIM_TOKEN.match("lim" + run[1]):
+        lm = _LIM_TOKEN.match("lim" + run[1])
+        var, pt = _limit_point((lm.group(1).lower(), lm.group(2)))
+        expr_tokens = run[2:]
+    elif word_before in _LIMIT_NOUNS or (word_before in _PREPOSITIONS and k > 1 and _bare(toks[k - 2]) in _LIMIT_NOUNS):
+        pass
+    else:
+        return None
+    if not expr_tokens:
+        return None
+    # the right-hand side: the math tokens (or ∞) that follow, up to a comma / full stop
+    rhs_tokens = []
+    for tok in after:
+        bare = tok.rstrip(".,;:؛،")
+        if not (_is_math(tok) or bare in _INF_TOKENS):
+            break
+        rhs_tokens.append(bare)
+        if tok != bare:
+            break
+    if not rhs_tokens:
+        return None
+    if pt is None:
+        found = _find_point(text, m.start() - len(" ".join(toks[k:])) - 2, m.end() + len(" ".join(after[:len(rhs_tokens)])))
+        if found:
+            var, pt = found
+    return {"expr": " ".join(expr_tokens), "rhs": " ".join(rhs_tokens), "var": var, "point": pt}
+
+
+def _parse_point(pt: str):
+    t = pt.replace("−", "-").replace("’", "'").strip()
+    if t.lower().lstrip("+-") in {x.lstrip("+-−").lower() for x in _INF_TOKENS}:
+        return -sympy.oo if t.startswith("-") else sympy.oo
+    return parse_expression(t)
+
+
+def _show(value) -> str:
+    if value == sympy.oo:
+        return "∞"
+    if value == -sympy.oo:
+        return "-∞"
+    return _simplified(value)
+
+
+def judge_limit(claim: dict, out: dict) -> None:
+    """Verified / wrong (with the correct limit in out["forms"]) / unchecked, into `out`."""
+    spoken = f"{claim['expr']} = {claim['rhs']}"
+    if not claim.get("var") or claim.get("point") is None:
+        out["unchecked"].append(spoken)                           # no stated point: never flagged
+        return
+    var = sympy.Symbol(claim["var"])
+    expr, point, rhs = parse_expression(claim["expr"]), _parse_point(claim["point"]), None
+    rhs_text = claim["rhs"].strip()
+    rhs = _parse_point(rhs_text) if rhs_text.lstrip("+-−").lower() in {x.lstrip("+-−").lower() for x in _INF_TOKENS} else parse_expression(rhs_text)
+    if expr is None or point is None or rhs is None or var not in expr.free_symbols:
+        out["unchecked"].append(spoken)
+        return
+    try:
+        res = sympy.limit(expr, var, point)
+    except Exception:
+        out["unchecked"].append(spoken)
+        return
+    if isinstance(res, sympy.Limit) or res.has(sympy.nan, sympy.zoo):
+        out["unchecked"].append(spoken)
+        return
+    span = f"lim({claim['var']}→{claim['point']}) {claim['expr']} = {claim['rhs']}"
+    same = (res == rhs) if (res.is_infinite or rhs.is_infinite) else equivalent(res, rhs)
+    if same:
+        out["verified"].append(span)
+    else:
+        out["wrong"].append(span)
+        out["forms"][span] = f"lim({claim['var']}→{claim['point']}) {claim['expr']} = {_show(res)}"
+
+
+def verbalize(text: str) -> tuple[str, set[tuple[str, str]], list[dict]]:
+    """The text with verbal equalities between two math tokens replaced by "=", the (previous token, next token) pairs
+    (normalized) that mark which "=" were spoken, and the spoken LIMIT claims, which are not turned into "=" (the
+    checker judges them with sympy.limit at the stated point)."""
+    out, pairs, limits, pos = [], set(), [], 0
+    for m in _VERBAL.finditer(text):
+        if m.start() < pos:
+            continue
+        before, after = text[:m.start()].split(), text[m.end():].split()
+        claim = _limit_claim(text, m, before, after)
+        if claim is not None:
+            limits.append(claim)
+            out.append(text[pos:m.start()])
+            out.append(" ⊢ ")                                       # not math: no written equation is built from it
+            pos = m.end()
+            continue
+        if not before or not after or not _is_math(before[-1]) or not _is_math(after[0]):
+            continue
+        if before[-1].rstrip().endswith((",", ";", ":", ".")):
+            continue                                                  # a sentence boundary, not an equation
+        if _argument_of_a_word(before) or _chained(before, after):
+            continue
+        out.append(text[pos:m.start()])
+        out.append("=")
+        pos = m.end()
+        pairs.add((_norm(before[-1]), _norm(after[0])))
+    out.append(text[pos:])
+    return "".join(out), pairs, limits
+
+
+def _simplified(e: sympy.Expr) -> str:
+    return str(sympy.simplify(e)).replace("**", "^").replace("*", "")
+
+
 def check_formulas(answer: str, sources: list[str]) -> dict:
     """Classify every formula of an explain answer:
       verified      derivative claims checked with sympy against the answer's own f(x) = E, (E)' notation,
@@ -260,7 +471,10 @@ def check_formulas(answer: str, sources: list[str]) -> dict:
       ungrounded    neither verifiable nor in the sources (the limit definition when the course lacks it)
       skipped       single-variable assignments (u = 1, n = 2) and equations to solve (2x − 4 = 0)
       new_examples  functions the answer defines that the sources do not (correct ones pass)"""
-    out = {"verified": [], "wrong": [], "ungrounded": [], "skipped": [], "new_examples": [], "unchecked": []}
+    out = {"verified": [], "wrong": [], "ungrounded": [], "skipped": [], "new_examples": [], "unchecked": [], "forms": {}}
+    answer, verbal, limits = verbalize(answer)
+    for claim in limits:
+        judge_limit(claim, out)
     pool = [eq for s in sources for eq in equations(s)]
     source_defs = [_expr(r) for l, r in pool if _FUNC_DEF.match(_norm(l))]
     defs: dict[str, tuple[sympy.Symbol, sympy.Expr]] = {}
@@ -309,6 +523,9 @@ def check_formulas(answer: str, sources: list[str]) -> dict:
                 out["verified"].append(span)
             elif not (le.free_symbols | r.free_symbols):              # numbers only and not equal: wrong
                 out["wrong"].append(span)
+            elif any(l.endswith(p) and _norm(rhs).startswith(n) for p, n in verbal):
+                out["wrong"].append(span)                             # "A est égale à B", both sides math, not equal: a false claim
+                out["forms"][span] = f"{lhs} = {_simplified(le)}"
             elif _SINGLE_VAR.fullmatch(l):
                 out["skipped"].append(span)                           # u = 1, v = x + 2, n = 2
                 assigned[sympy.Symbol(l)] = r

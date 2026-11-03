@@ -24,7 +24,7 @@ from rag.glossary import Glossary
 from rag.retriever import language_plan, make_retriever
 
 DATASETS = ["tests/eval/retrieval_set.jsonl", "tests/eval/retrieval_crosslang.jsonl",
-            "tests/eval/retrieval_manual.jsonl"]
+            "tests/eval/retrieval_manual.jsonl", "tests/eval/retrieval_arabizi.jsonl"]
 
 
 async def evaluate(r, items, glossary: Glossary | None, policy: bool = False) -> dict:
