@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import hashlib
+import os
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping
@@ -112,6 +113,14 @@ class FakeEngine:
         self.review = ReviewStore(":memory:")               # same dashboard data as the real engine, in memory
         self.sink = MemorySink()                            # one "run" record per call, for /metrics/summary
         self.materials: list = []                           # chunks added through add_material / ingest_file(add=True)
+        # the real data the app needs next to run(): the exercise bank, the course graphs and the follow-up rule
+        # (no model, no network: plain files and the real routing tables)
+        from engine.course import load_courses
+        from engine.exercises import ExerciseBank
+        self.exercises = ExerciseBank.load("data/exercises/derivees.yaml", "data/templates.yaml") \
+            if os.path.exists("data/exercises/derivees.yaml") else None
+        self.courses = load_courses("data/courses") if os.path.isdir("data/courses") else {}
+        self.router = _FakeRouter()
 
     # ---------------------------------------------------------------- lifecycle (same as Engine)
     async def aclose(self) -> None:
@@ -144,7 +153,7 @@ class FakeEngine:
         `needs_ocr`. add=True keeps the chunks in memory, as Engine.ingest_file puts them in the index."""
         from rag import ingest as I
         res = I.ingest(file, course_id, unit_id, owner, visibility, source, class_id=class_id,
-                       language=kw.get("language"))
+                       language=kw.get("language"), **({"min_confidence": kw["min_confidence"]} if "min_confidence" in kw else {}))
         if add and res.chunks:
             await self.add_material(res.chunks)
         return res
@@ -163,6 +172,15 @@ class FakeEngine:
         keep = [c for c in self.materials if not gone(c)]
         n, self.materials = len(self.materials) - len(keep), keep
         return n
+
+    async def confirm_chunk(self, chunk_id: str, concept: str | None) -> dict | None:
+        """Same contract as Engine.confirm_chunk: a professor sets (or clears, with None / "") a chunk's concept tag."""
+        from dataclasses import replace
+        for i, c in enumerate(self.materials):
+            if c.chunk_id == chunk_id:
+                self.materials[i] = replace(c, concept=concept or "", confidence=1.0)
+                return self.materials[i].to_dict()
+        return None
 
     # ---------------------------------------------------------------- public
     async def run(self, task: str, inputs: Mapping[str, Any] | None = None, context: Mapping[str, Any] | None = None,
@@ -244,6 +262,18 @@ class FakeEngine:
         if outcome in self.GENERIC:
             return _generic(task, outcome, k)
         return _PLANS[task](outcome, inputs, lang, k, context)
+
+
+class _FakeRouter:
+    """Router.follow_up without a metrics sink: the same tables, the same rule."""
+
+    def follow_up(self, classification: Mapping[str, Any], ctx=None):
+        from router.policy import CONFUSED_TO_EXPLAIN, INTENT_TASKS, FollowUp
+        intent = str(classification.get("intent") or "").upper()
+        task = INTENT_TASKS.get(intent)
+        if str(classification.get("confusion") or "").upper() == "HIGH" and intent in CONFUSED_TO_EXPLAIN:
+            return FollowUp("explain", f"intent {intent} with confusion HIGH -> explain (teach before testing)", True)
+        return FollowUp(task, f"intent {intent} -> {task or 'no follow-up'}")
 
 
 class _FakeCache:
