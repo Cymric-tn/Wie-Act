@@ -214,20 +214,24 @@ class Session:
             ex = quiz["data"]["exercises"][0]
             assert "solution" not in ex and "hints" not in ex, "the solution reached the browser"
             before = self.api(f"/api/ai/mastery?learner_id={self.learner}&course_id=analyse", method="GET")[1]["mastery"].get(ex["concept"], {})
-            wrong = self.final(self.api(f"/api/ai/exercises/{ex['id']}/answer", {"attempt": "x^3", "learner_id": self.learner, "context": {"course_id": "analyse", "language": "FRENCH"}})[1])
-            right = self.final(self.api(f"/api/ai/exercises/{ex['id']}/answer", {"attempt": "4x^3", "learner_id": self.learner, "context": {"course_id": "analyse", "language": "FRENCH"}})[1])
+            # the script may read the answer from the bridge (the browser never can): a typical mistake, then the solution
+            full = self.bridge.get(f"/exercises/{ex['id']}").json()["exercise"]
+            wrong_attempt = full["common_mistakes"][0][0] if full["common_mistakes"] else "0"
+            right_attempt = full["solution"].split("=", 1)[-1].strip()
+            ask = lambda attempt: self.final(self.api(f"/api/ai/exercises/{ex['id']}/answer", {"attempt": attempt, "learner_id": self.learner, "context": {"course_id": "analyse", "language": "FRENCH"}})[1])
+            wrong, right = ask(wrong_attempt), ask(right_attempt)
             assert wrong["result"]["data"]["verdict"] == "INCORRECT", wrong["result"]["data"]
             assert right["result"]["data"]["verdict"] == "CORRECT", right["result"]["data"]
             m = right["mastery"]
             assert m["attempts"] >= 2 and m["value"] > (wrong["mastery"] or {}).get("value", 0), (wrong["mastery"], m)
-            return {"detail": {"exercise": ex["id"], "statement": ex["statement"], "wrong": {"verdict": "INCORRECT", "feedback": wrong["result"]["data"].get("feedback"), "mastery": wrong["mastery"]},
+            return {"detail": {"exercise": ex["id"], "statement": ex["statement"], "attempts": [wrong_attempt, right_attempt], "wrong": {"verdict": "INCORRECT", "feedback": wrong["result"]["data"].get("feedback"), "mastery": wrong["mastery"]},
                                "right": {"verdict": "CORRECT", "mastery": m}, "mastery_before": before, **{"graded_by": right["result"]["data"].get("graded_by")}}}
         self.step("3. Exercise answered wrong, then right (mastery changes)", 1, exercise)
 
         def board_check():
-            r, _ = self.run_task("check_answer", {"lines": ["f(x) = 3x² + 5x", "f'(x) = 6x + 5", "f'(0) = 6"]}, {"room_id": "e2e-room", "language": "FRENCH"})
+            r, _ = self.run_task("check_answer", {"lines": ["f(x) = 3x² + 5x", "f'(x) = 3 × 2x + 5 × 1", "f'(x) = 6x + 6"]}, {"room_id": "e2e-room", "language": "FRENCH"})
             d = r["data"]
-            assert d["final_verdict"] == "INCORRECT" and d["first_wrong"] == 2, d
+            assert d["final_verdict"] == "INCORRECT" and d["first_wrong"] == 1, d      # step 1 of 2: the problem line is not a step
             return {"detail": {**self.brief(r), "steps": d["steps"], "first_wrong": d["first_wrong"], "feedback": d["feedback"], "graded_by": d.get("graded_by")}}
         self.step("4. Board check with one wrong line", 1, board_check)
 
