@@ -30,8 +30,8 @@ def caps(body):
     return body.get("max_tokens"), (body.get("options") or {}).get("num_predict")
 
 
-def test_version_is_1_3():
-    assert __version__ == "1.3"
+def test_version_is_1_4():
+    assert __version__ == "1.4"
 
 
 # ------------------------------------------------------------------------------ how the cap is sent

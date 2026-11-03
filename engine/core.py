@@ -1010,6 +1010,29 @@ class Engine:
             self._persist({c.course_id for c in gone})
         return len(gone)
 
+    async def confirm_chunk(self, chunk_id: str, concept: str | None) -> dict | None:
+        """A professor confirms or fixes the concept tag of one section of the material (the sections an upload flagged
+        for low confidence). The tag becomes certain (confidence 1.0) and the retriever, the practice exercise appended to
+        explain and the planner use it from now on; "" / None clears it. Returns the chunk, or None for an unknown id;
+        ValueError when the concept is not one of the chunk's course (or, without a graph, of the exercise bank). A
+        section of the base course docs is changed for this process only (they are rebuilt from files at a restart);
+        uploaded material is persisted with its course."""
+        await self._ensure_index()
+        concept = (concept or "").strip()
+        async with self._index_lock:
+            chunk = next((c for c in self.retriever.chunks if c.chunk_id == chunk_id), None)
+            if chunk is None:
+                return None
+            if concept:
+                course = self.courses.get(chunk.course_id)
+                known = set(course.concepts) if course else set(self.exercises.concepts if self.exercises else ())
+                if concept not in known:
+                    raise ValueError(f"unknown concept {concept!r}: this course has {sorted(known)}")
+            new = replace(chunk, concept=concept, confidence=1.0)
+            self.retriever.add([new])
+            self._persist({new.course_id})
+        return new.to_dict()
+
     def _persist(self, course_ids) -> None:
         if not self.course_store:
             return

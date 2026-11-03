@@ -15,7 +15,7 @@ INPUTS = {"classify": {"message": "c'est quoi une dérivée ?"}, "hint": {"probl
           "compress": {"question": "q", "chunks": [{"chunk_id": "c", "text": "t"}]},
           "ocr_transcribe": {"image": "data:image/png;base64,AAAA"}, "check_claim": {"claim": "(x²)' = x"},
           "check_answer": {"problem": "dérive x⁴", "steps": ["4x³", "4x²"]},
-          "prep_plan": {"scope": {"unit_ids": ["derivees"]}, "deadline": "2026-11-20", "pace_min_per_day": 30}}
+          "prep_plan": {"scope": {"unit_ids": ["derivees"]}, "deadline": "2026-11-20", "pace_min_per_day": 30, "start": "2026-11-01"}}
 
 
 def test_run_has_the_same_signature_as_the_engine():
