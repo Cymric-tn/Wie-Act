@@ -87,7 +87,7 @@ class Settings:
     vision_max_slots: int = 1                 # vision may hold at most this many concurrency slots (ghosts included)
     background_reserve: int = 6               # BACKGROUND chat waits while fewer than this many sends remain in the window
     midsize_max_slots: int = 1                # mid-size may hold at most this many concurrency slots (ghosts included); 0 = no cap
-    explain_expected_s: float = 10.0          # typical mid-size explain; a quota wait is worth it only if it fits INTERACTIVE_DEADLINE_S minus this
+    explain_expected_s: float = 25.0          # a quota wait is worth it only if it fits INTERACTIVE_DEADLINE_S minus this; 25 = never wait (v1.3 behaviour), see DECISIONS "Engine v1.4 setting choices"
     interactive_deadline_s: float = 25.0      # an INTERACTIVE explain without a body by then is answered in fast mode
     max_retry_wait_s: float = 30.0            # INTERACTIVE: longest stated quota delay it will wait for
     max_retry_wait_s_background: float = 65.0  # BACKGROUND: the observed quota delay is 60 s
@@ -109,7 +109,7 @@ class Settings:
     chunk_max_tokens: int = 300
     rag_course_index_dir: str = "data/index/courses"   # runtime material (uploads, professor documents), one file per course
     source_boost_professor: float = 1.3       # BM25 score factor of professor material (applied before the coverage gate)
-    claim_verdict_class: ModelClass = ModelClass.COMPACT   # class of the one model call per claim part (CLAIM_VERDICT_CLASS)
+    claim_verdict_class: ModelClass = ModelClass.MIDSIZE   # class of the one model call per claim part (CLAIM_VERDICT_CLASS); 8B: 86.7% vs 66.7% on the 60 claims
     ingest_min_tag_confidence: float = 0.6    # a chunk whose concept tag scores below this is flagged for the professor
     ingest_max_ocr_pages: int = 20            # scanned pages sent through ocr_transcribe per file
     retrieval_query_chars: int = 400          # a selected passage / whiteboard text is cut to this many characters as a search query
