@@ -70,10 +70,12 @@ UPLOAD_ANSWER = ("Par exemple, si f(x) = x^2 + 2x, alors la limite de (x^2 + 2x)
                  "qu'une asymptote oblique de la courbe est la droite y = 2x + 2.")
 
 
-def test_the_upload_answers_spoken_equality_is_wrong_math_with_its_correct_form():
+def test_the_upload_answers_limit_without_a_stated_point_is_unchecked_not_flagged():
+    """v1.4 first read this sentence as an identity (wrong_math, form x + 2). A limit needs its point: none is stated here, so
+    the claim is listed in unchecked and never flagged."""
     c = check_formulas(UPLOAD_ANSWER, [UPLOAD_SOURCE])
-    assert c["wrong"] == ["(x^2 + 2x)/x = 2x + 2"] and c["forms"] == {"(x^2 + 2x)/x = 2x + 2": "(x^2 + 2x)/x = x + 2"}
-    assert c["ungrounded"] == [] and "f(x) = x^2 + 2x" in c["new_examples"]
+    assert c["wrong"] == [] and c["verified"] == [] and c["ungrounded"] == []
+    assert c["unchecked"] == ["(x^2 + 2x)/x = 2x + 2"] and "f(x) = x^2 + 2x" in c["new_examples"]
 
 
 @pytest.mark.parametrize("text", [
@@ -108,11 +110,15 @@ def test_the_verbal_equality_still_needs_both_neighbours_to_be_math():
     assert verbalize("2x est égal au double")[0].count("=") == 0
 
 
-async def test_the_engine_degrades_the_upload_answer_as_wrong_math_and_lists_the_correct_form(vt, index):
+async def test_the_engine_lists_a_limit_without_a_point_as_unchecked_and_degrades_a_wrong_limit(vt, index):
     eng, fake, _ = engine(vt, index, lambda b: chat_ok(UPLOAD_ANSWER))
     r = await eng.run("explain", {"question": "C'est quoi la dérivée de 1/x et de racine de x ?"})
-    assert r.degraded and r.degrade_reason == "wrong_math"
-    assert r.notes["wrong_math"] == ["(x^2 + 2x)/x = 2x + 2"] and r.notes["wrong_math_forms"]["(x^2 + 2x)/x = 2x + 2"].endswith("= x + 2")
+    assert not r.degraded and r.notes["unchecked_spans"] == ["(x^2 + 2x)/x = 2x + 2"]
+    wrong = "Par exemple, la limite de (x²+2x)/x quand x tend vers l'infini est égale à 2x + 2."
+    eng2, _, _ = engine(vt, index, lambda b: chat_ok(wrong))
+    r2 = await eng2.run("explain", {"question": "C'est quoi la dérivée de 1/x et de racine de x ?"})
+    assert r2.degraded and r2.degrade_reason == "wrong_math"
+    assert r2.notes["wrong_math"] == ["lim(x→∞) (x²+2x)/x = 2x + 2"] and r2.notes["wrong_math_forms"]["lim(x→∞) (x²+2x)/x = 2x + 2"].endswith("= ∞")
 
 
 def test_a_copula_inside_a_written_equation_is_not_a_spoken_equality():
@@ -120,3 +126,47 @@ def test_a_copula_inside_a_written_equation_is_not_a_spoken_equality():
     text = "For example, the derivative of f(x) = x² − 4x + 1 is f'(x) = 2x − 4. It equals zero when x = 2."
     c = check_formulas(text, [])
     assert c["ungrounded"] == [] and c["wrong"] == []
+
+
+
+# ---------------------------------------------------------------- spoken limits (v1.4)
+@pytest.mark.parametrize("text", [
+    "la limite de ((x+h)² − x²)/h quand h tend vers 0 est égale à 2x",
+    "la limite de (x²−1)/(x−1) quand x tend vers 1 est égale à 2",
+    "lorsque x tend vers l'infini, la limite de 1/x est égale à 0".replace("lorsque x tend vers l'infini, ", "") + " quand x tend vers l'infini",
+    "the limit of ((x+h)² − x²)/h as h approaches 0 equals 2x",
+    "the limit of (x²−1)/(x−1) as x → 1 is equal to 2",
+    "نهاية ((x+h)² − x²)/h عندما h تؤول إلى 0 تساوي 2x",
+    "lim(h→0) ((x+h)² − x²)/h est égal à 2x",
+    "la limite de (x²+2x)/x quand x tend vers l'infini est égale à +∞"])
+def test_a_spoken_limit_with_its_point_is_verified_by_sympy(text):
+    c = check_formulas(text, [])
+    assert len(c["verified"]) == 1 and c["wrong"] == [] and c["unchecked"] == [] and c["ungrounded"] == [], c
+
+
+@pytest.mark.parametrize("text,span,form", [
+    ("la limite de ((x+h)² − x²)/h quand h tend vers 0 est égale à x", "lim(h→0) ((x+h)² − x²)/h = x", "= 2x"),
+    ("la limite de (x²+2x)/x quand x tend vers l'infini est égale à 2x + 2", "lim(x→∞) (x²+2x)/x = 2x + 2", "= ∞"),
+    ("the limit of (x²−1)/(x−1) as x approaches 1 equals 3", "lim(x→1) (x²−1)/(x−1) = 3", "= 2"),
+    ("la limite de (x²−1)/(x−1) quand x tend vers 1 est égale à ∞", "lim(x→1) (x²−1)/(x−1) = ∞", "= 2")])
+def test_a_wrong_spoken_limit_is_wrong_math_with_the_correct_limit(text, span, form):
+    c = check_formulas(text, [])
+    assert c["wrong"] == [span] and c["forms"][span].endswith(form) and c["unchecked"] == [], c
+
+
+@pytest.mark.parametrize("text", [
+    "la limite de (x²−1)/(x−1) est égale à 2", "the limit of (x²−1)/(x−1) equals 2", "نهاية (x²−1)/(x−1) تساوي 2"])
+def test_a_spoken_limit_without_a_point_is_unchecked_and_never_flagged(text):
+    c = check_formulas(text, [])
+    assert c["wrong"] == [] and c["verified"] == [] and c["ungrounded"] == [] and len(c["unchecked"]) == 1, c
+
+
+def test_the_point_may_come_after_the_claim_in_the_same_sentence_and_other_sentences_do_not_count():
+    assert check_formulas("la limite de (x²−1)/(x−1) est égale à 2 quand x → 1.", [])["verified"]
+    c = check_formulas("On étudie x → 1. La limite de (x²−1)/(x−1) est égale à 2.", [])
+    assert c["verified"] == [] and len(c["unchecked"]) == 1                 # the point belongs to another sentence
+
+
+def test_a_clause_that_names_no_point_is_never_read_as_one():
+    c = check_formulas("la limite de (x²−1)/(x−1) quand n tend vers la lune est égale à 2", [])
+    assert c["wrong"] == [] and c["verified"] == [] and c["ungrounded"] == []

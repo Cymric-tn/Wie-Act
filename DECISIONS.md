@@ -451,3 +451,16 @@ degraded `quota_low`. Five changes and one script; evidence below, none of it me
   as ungrounded and nothing un-flagged (`reports/recheck-formulas-verbal.json`). One false positive of the first version
   (a copula inside a written equation) was found by this recheck and fixed. Spoken equalities are rare in the corpus, so this is thin
   evidence about false positives on new answers.
+
+- **Spoken limits (dry-run bug of the verbal-equality check).** Reading "la limite de (x² − 1)/(x − 1) est égale à 2" as the identity
+  `(x²−1)/(x−1) = 2` flagged true limits. Now, after "limite / limit / lim(h→0) / la limite de / نهاية" the stated point is looked for
+  ("quand / lorsque / when / as / عندما / حين VAR tend vers / tends to / approaches / → / تؤول إلى POINT", "x → a", or inside
+  `lim(h→0)`; ∞ / +∞ / l'infini / infinity; in the same sentence, before or after the claim) and the claim is judged with
+  `sympy.limit` against the right-hand side (a constant, ∞, or an expression in other variables such as 2x when h → 0): equal ->
+  verified; different -> `wrong_math` with the correct limit in `wrong_math_forms` (`lim(x→∞) (x²+2x)/x = 2x + 2` -> `= ∞`); **no
+  point, or a limit sympy cannot evaluate -> `notes.unchecked_spans`, never flagged**. A spoken limit is no longer turned into "=".
+  Consequence: the upload answer's "la limite de (x^2 + 2x)/x est égale à 2x + 2" (no point stated) is **unchecked, no longer
+  wrong_math**; the limit of that expression at ∞ would be flagged if the answer said so. Recheck on the 151 saved answers:
+  before this fix wrong_math 4 / ungrounded 7 / unchecked 0, after wrong_math 3 / ungrounded 7 / unchecked 1 (the upload
+  sentence moved from wrong_math to unchecked; nothing else changed); against the state before verbal equality at all: 3 / 7 / 0 ->
+  3 / 7 / 1. `reports/recheck-formulas-limits.json`.
