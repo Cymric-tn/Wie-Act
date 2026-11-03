@@ -1,5 +1,4 @@
-// The example curriculum from the EdNova Academic Constellation, so a course's
-// study room can show the same name and status colour.
+// The courses with a study room. Phase 1 has one: analyse, the course the engine has content for.
 
 export const STATUS = {
   completed: { label: "Completed", color: "#40d9be" },
@@ -9,18 +8,7 @@ export const STATUS = {
 };
 
 export const COURSES = [
-  { id: "MATH101", name: "Calculus I", year: 1, status: "completed" },
-  { id: "MATH102", name: "Calculus II", year: 2, status: "progress" },
-  { id: "MATH201", name: "Advanced Mathematics", year: 3, status: "new" },
-  { id: "PHYS101", name: "Physics I", year: 1, status: "completed" },
-  { id: "STAT101", name: "Statistics I", year: 1, status: "completed" },
-  { id: "CS101", name: "Introduction to CS", year: 1, status: "attention" },
-  { id: "CS201", name: "Data Structures", year: 2, status: "new" },
-  { id: "CS301", name: "Algorithms", year: 3, status: "new" },
-  { id: "EE101", name: "Circuits I", year: 1, status: "completed" },
-  { id: "EE201", name: "Electronics", year: 2, status: "new" },
-  { id: "ENG101", name: "Technical Writing", year: 1, status: "attention" },
-  { id: "HUM101", name: "Humanities", year: 1, status: "new" }
+  { id: "analyse", name: "Analyse : dérivation", year: 1, status: "progress" }
 ];
 
 export const courseForRoom = (room) =>

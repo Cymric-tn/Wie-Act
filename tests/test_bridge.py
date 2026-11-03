@@ -288,3 +288,11 @@ def test_the_fake_engine_serves_the_same_routes_without_a_key(tmp_path):
     finally:
         p.terminate()
         p.wait(10)
+
+
+def test_the_apps_course_map_is_generated_from_the_engines_course_graph():
+    """app/client/src/lib/analyse.generated.js must match data/courses/analyse.yaml (run app/scripts/gen_course.py)."""
+    spec = importlib.util.spec_from_file_location("gen_course", "app/scripts/gen_course.py")
+    gen = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gen)
+    assert open(gen.OUT, encoding="utf-8").read() == gen.build()

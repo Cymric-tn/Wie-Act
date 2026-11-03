@@ -2,11 +2,12 @@ import { useState } from "react";
 import Icon from "../Icons";
 import { useI18n } from "../../lib/i18n";
 import { navigate } from "../../lib/router";
-import { COURSES, ROOMS, EXAMS, MATERIALS, PEOPLE, CLASS, MASTERY, masteryLevel, weakTopics } from "../../lib/demoData";
+import { COURSE_COLOR, COURSE_ID, ROOMS, EXAMS, MATERIALS, PEOPLE, CLASS, MASTERY, masteryLevel, weakTopics } from "../../lib/demoData";
+import { useCourses } from "../../lib/courseMap";
 import { initials } from "../../lib/format";
 import { store } from "../../lib/identity";
 
-const courseById = (id) => COURSES.find((c) => c.id === id);
+const courseById = (id) => (id === COURSE_ID ? { id: COURSE_ID, name: "Analyse", color: COURSE_COLOR } : null);
 const pct = (v) => Math.round(v * 100);
 export const openBoard = (room) => navigate(room ? `/board?room=${encodeURIComponent(room)}` : "/board");
 /** Opens the board with its AI tab showing. */
@@ -225,11 +226,12 @@ export function ExamList({ onSoon }) {
 
 export function WeakTopics({ onSoon, limit = 4 }) {
   const { t } = useI18n();
+  const courses = useCourses();
   return (
     <div className="d-weak">
       <h3>{t("prep.weak")}</h3>
       <div className="d-weak-chips">
-        {weakTopics(limit).map((l) => (
+        {weakTopics(courses, limit).map((l) => (
           <button key={l.course.id + l.name} className="d-chip weak" onClick={onSoon} style={{ "--c": l.course.color }}>
             <i />{l.name}<small>{pct(l.mastery)}%</small>
           </button>

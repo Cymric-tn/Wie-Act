@@ -4,7 +4,7 @@
 import { SERVER_URL } from "./api.js";
 import { clientId, readStored, store } from "./identity.js";
 
-export const ENGINE_COURSE = "MATH101"; // the course the engine has content for
+export const ENGINE_COURSE = "analyse"; // the one course the engine has content for
 export const AI_LANGUAGES = ["auto", "FRENCH", "ENGLISH", "ARABIC", "DARIJA", "ARABIZI"];
 
 /** UI language → engine language (used for templates and quiz statements). */
@@ -121,35 +121,14 @@ function toBase64(buffer) {
   return btoa(binary);
 }
 
-/** Text layer of a PDF, so even the built-in engine can index it. Scanned pages have none. */
-async function pdfText(buffer) {
-  const pdfjs = await import("pdfjs-dist");
-  const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
-  const task = pdfjs.getDocument({ data: buffer.slice(0) });
-  try {
-    const doc = await task.promise;
-    const pages = [];
-    for (let i = 1; i <= Math.min(doc.numPages, 200); i++) {
-      const content = await (await doc.getPage(i)).getTextContent();
-      pages.push(content.items.map((it) => it.str).join(" "));
-    }
-    return pages.map((p, i) => `## Page ${i + 1}\n${p}`).join("\n\n");
-  } finally {
-    await task.destroy();
-  }
-}
-
 export const materials = {
   list: (user) => json(`/api/materials?course_id=${ENGINE_COURSE}&learner_id=${encodeURIComponent(clientId())}&role=${user.role}`).then((r) => r.materials),
   async upload(file, { title, visibility, user }) {
     const mime = mimeFor(file);
     const buffer = await file.arrayBuffer();
-    let text = "";
-    if (mime === "application/pdf") text = await pdfText(buffer).catch(() => "");
     return json("/api/materials", {
       method: "POST",
-      body: { title, filename: file.name, mime, data: toBase64(buffer), text, course_id: ENGINE_COURSE, visibility, owner_id: clientId(), owner_name: user.name, role: user.role }
+      body: { title, filename: file.name, mime, data: toBase64(buffer), course_id: ENGINE_COURSE, visibility, owner_id: clientId(), owner_name: user.name, role: user.role }
     }).then((r) => r.material);
   },
   remove: (id, user) => json(`/api/materials/${id}`, { method: "DELETE", body: { learner_id: clientId(), role: user.role } }),

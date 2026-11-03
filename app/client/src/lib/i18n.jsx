@@ -205,8 +205,8 @@ const en = {
   "ai.hello": "Hi {name}! I’m your EdNova study peer. I can explain a concept, quiz you, or check a fact — in French, English, Arabic or Darija.",
   "ai.placeholder": "Ask anything…",
   "ai.preview": "Live AI answers aren’t connected yet — this panel is a preview of how your study peer will reply.",
-  "ai.s1": "Explain integration by parts",
-  "ai.s2": "Quiz me on series convergence",
+  "ai.s1": "Explain the derivative of a product",
+  "ai.s2": "Quiz me on the tangent line",
   "ai.s3": "Summarize this week’s lecture",
 
   "prof.course": "Course",
@@ -447,8 +447,8 @@ const fr = {
   "ai.hello": "Salut {name} ! Je suis ton pair d’étude EdNova. Je peux t’expliquer une notion, t’interroger ou vérifier un fait — en français, anglais, arabe ou darija.",
   "ai.placeholder": "Demandez n’importe quoi…",
   "ai.preview": "Les réponses de l’IA ne sont pas encore connectées — ce panneau montre comment votre pair d’étude répondra.",
-  "ai.s1": "Explique l’intégration par parties",
-  "ai.s2": "Interroge-moi sur la convergence des séries",
+  "ai.s1": "Explique la dérivée d’un produit",
+  "ai.s2": "Interroge-moi sur la tangente",
   "ai.s3": "Résume le cours de la semaine",
 
   "prof.course": "Cours",
@@ -689,8 +689,8 @@ const ar = {
   "ai.hello": "مرحبًا {name}! أنا زميلك في المذاكرة على EdNova. يمكنني شرح مفهوم أو اختبارك أو التحقّق من معلومة — بالفرنسية أو الإنجليزية أو العربية أو الدارجة.",
   "ai.placeholder": "اسأل عن أي شيء…",
   "ai.preview": "إجابات الذكاء الاصطناعي غير متّصلة بعد — هذه اللوحة معاينة لطريقة ردّ زميلك في المذاكرة.",
-  "ai.s1": "اشرح التكامل بالتجزئة",
-  "ai.s2": "اختبرني في تقارب المتسلسلات",
+  "ai.s1": "اشرح مشتقة الجداء",
+  "ai.s2": "اختبرني في المماس",
   "ai.s3": "لخّص محاضرة هذا الأسبوع",
 
   "prof.course": "المادة",
