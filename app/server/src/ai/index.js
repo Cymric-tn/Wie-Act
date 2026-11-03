@@ -36,9 +36,17 @@ function createEngine(options = {}) {
     return up;
   }
 
-  probe();
-  const timer = setInterval(probe, HEALTH_EVERY_MS);
-  timer.unref?.();
+  // probe every second until the bridge answers (it starts a moment after the server), then every HEALTH_EVERY_MS
+  let timer = null;
+  let closed = false;
+  const tick = async () => {
+    await probe();
+    if (!closed) {
+      timer = setTimeout(tick, up ? HEALTH_EVERY_MS : 1000);
+      timer.unref?.();
+    }
+  };
+  tick();
 
   return {
     ...real,
@@ -57,7 +65,8 @@ function createEngine(options = {}) {
       };
     },
     close() {
-      clearInterval(timer);
+      closed = true;
+      clearTimeout(timer);
     }
   };
 }

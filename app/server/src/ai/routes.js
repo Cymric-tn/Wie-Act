@@ -21,7 +21,11 @@ const PRIORITIES = new Set(["INTERACTIVE", "BACKGROUND"]);
 // Reasons the engine raises when its own checks fail: a professor should look.
 const AUTO_FLAG = new Set(["ungrounded_formula", "wrong_math", "explain_guard:language_drift", "explain_guard:contamination", "input_truncated"]);
 // Outcomes the engine's FakeEngine can be told to produce (context.fake_outcome), for demos and tests; ignored by the real engine.
-const FORCEABLE = new Set(["fast_extractive", "deadline", "quota_exhausted", "quota_wait", "not_in_course", "wrong_math", "room_busy", "superseded", "correct", "incorrect", "cache_hit", "SUPPORTED", "CONTRADICTED", "PARTLY", "COMPOUND", "NOT_IN_COURSE"]);
+const FORCEABLE = new Set([
+  "ok", "cache_hit", "fast_extractive", "deadline", "quota_exhausted", "quota_wait", "not_in_course", "wrong_math", "room_busy", "superseded",
+  "correct", "incorrect", "stored", "safe_default", "diagnostic", "math", "low_confidence", "invalid_image", "wrong_step", "rule",
+  "llm_feedback", "unchecked", "all_mastered", "SUPPORTED", "CONTRADICTED", "PARTLY", "COMPOUND", "NOT_IN_COURSE", "CONTRADICTED_llm", "llm_failed"
+]); // = every outcome FakeEngine.OUTCOMES knows; a name the task does not have is a 400 from the engine (see app/HANDOFF.md)
 const MATERIAL_TYPES = {
   "application/pdf": ".pdf",
   "text/markdown": ".md",
