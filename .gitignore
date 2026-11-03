@@ -32,3 +32,4 @@ app/server/data/
 app/**/uploads/
 app/**/node_modules/
 app/client/dist/
+app/.dev-logs/

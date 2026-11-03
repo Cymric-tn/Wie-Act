@@ -8,9 +8,18 @@ hosts the EdNova LLM engine.
 ## Run it
 
 ```bash
-cd server && npm install && npm run dev      # http://localhost:3000
-cd client && npm install && npm run dev      # http://localhost:5173
+app/dev.sh            # bridge (the engine's fake: no key, no model) + Node server + client
+app/dev.sh --real     # the real engine, ENV_FILE=.env.real: spends the team's FelCloud quota
 ```
+
+| | Default port | Override |
+|---|---|---|
+| client (the app) | 5173 | `CLIENT_PORT` |
+| Node server | 3000 | `SERVER_PORT` |
+| engine bridge | 8765 | `BRIDGE_PORT` |
+
+`dev.sh` checks the Node version, generates a local `ENGINE_SERVICE_TOKEN` when none is set, and writes logs to
+`app/.dev-logs/`. One page for the feature team: [`HANDOFF.md`](HANDOFF.md).
 
 Boards, materials and AI history are saved under `server/data/` and survive
 restarts. The AI features need the engine's bridge (see **AI engine** below); without it they answer
@@ -29,13 +38,13 @@ restarts. The AI features need the engine's bridge (see **AI engine** below); wi
 
 Node 22.5 or newer is required (the server uses the built-in `node:sqlite`); the team's machines run Node 24.
 
-The AI features need the bridge running, with the real engine or with the engine's own fake:
+To run the three parts by hand (what `dev.sh` does):
 
 ```bash
 export ENGINE_SERVICE_TOKEN=change-me                 # the same value for the bridge and the server
-python app/bridge/bridge.py                           # the real engine (reads the repo's .env / ENV_FILE)
-python app/bridge/bridge.py --fake                    # the engine's FakeEngine: no key, no model
-cd app/server && npm run dev
+python app/bridge/bridge.py --fake                    # or without --fake: the real engine (reads the repo's .env / ENV_FILE)
+cd app/server && npm run dev                          # http://localhost:3000
+cd app/client && npm run dev                          # http://localhost:5173
 ```
 
 Tests: `npm test` in `server/` (sockets, permissions, persistence, limits, and the AI API against `bridge.py --fake`;
