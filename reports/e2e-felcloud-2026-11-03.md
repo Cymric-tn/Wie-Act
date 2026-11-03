@@ -392,3 +392,203 @@ Mixed load on the real API (cache off, 240 s, with per-request records saved, 34
  }
 }
 ```
+
+## Round 2, 2026-11-03T20:58 (engine 1.4, 5 provider requests of 15, 429s 0, stopped: no)
+
+| step | result | requests | seconds |
+|---|---|---|---|
+| R2.1 Arabizi explain: derivee mta3 x² | ok | 2 | 28.8 |
+| R2.2 Arabizi explain: chnowa el derivee mta3 x² w kifech nal9aha ? | ok | 2 | 7.4 |
+| R2.3 Upload, then the explain: full answer and flagged span | ok | 1 | 9.0 |
+
+### R2.1 Arabizi explain: derivee mta3 x²
+
+```json
+{
+ "question": "derivee mta3 x²",
+ "classified": {
+  "intent": "EXPLAIN",
+  "language": "ARABIZI",
+  "confusion": "MEDIUM"
+ },
+ "follow": "explain",
+ "task": "explain",
+ "model_class": "midsize",
+ "from_cache": false,
+ "degraded": false,
+ "degrade_reason": null,
+ "latency_ms": 18255.6,
+ "events": [
+  "retrieving",
+  "checking_cache",
+  "partial_result",
+  "queued",
+  "generating"
+ ],
+ "sources": [
+  "derivee-erreurs.fr#erreurs-avec-les-puissances",
+  "derivee-formules.fr#derivees-des-fonctions-usuelles"
+ ]
+}
+```
+
+Full answer:
+
+```text
+Behi, n3awdouha bechwaya (el char7 bel français kima fel cours):
+
+La dérivée de x² est 2x. Cela se déduit de la règle générale (xⁿ)' = n·xⁿ⁻¹. Ici, n = 2, donc (x²)' = 2·x²⁻¹ = 2x.
+
+Jarreb enti : Calculer la dérivée de f(x) = x⁴.
+```
+
+### R2.2 Arabizi explain: chnowa el derivee mta3 x² w kifech nal9aha ?
+
+```json
+{
+ "question": "chnowa el derivee mta3 x² w kifech nal9aha ?",
+ "classified": {
+  "intent": "HINT",
+  "language": "ARABIZI",
+  "confusion": "MEDIUM"
+ },
+ "follow": "hint",
+ "task": "hint",
+ "model_class": "compact",
+ "from_cache": false,
+ "degraded": false,
+ "degrade_reason": null,
+ "latency_ms": 5789.8,
+ "events": [
+  "checking_cache",
+  "queued",
+  "generating"
+ ],
+ "sources": null
+}
+```
+
+Full answer:
+
+```text
+Kifech kif 2x w 2x, msi x = 0 w 2x = 0?
+```
+
+### R2.3 Upload, then the explain: full answer and flagged span
+
+```json
+{
+ "sections": 1,
+ "task": "explain",
+ "model_class": "midsize",
+ "from_cache": false,
+ "degraded": false,
+ "degrade_reason": null,
+ "latency_ms": 8501.8,
+ "events": [
+  "retrieving",
+  "checking_cache",
+  "partial_result",
+  "queued",
+  "generating"
+ ],
+ "sources": [
+  "professor/e2e-prof/mat-70aa951b-78f#asymptotes-obliques"
+ ],
+ "flag_spans": {
+  "new_examples": [
+   "f(x) = x^2 + 2x"
+  ],
+  "formulas_verified": 0
+ },
+ "all_degrade_reasons": null,
+ "notes_keys": [
+  "budget",
+  "dropped",
+  "formulas_verified",
+  "new_examples",
+  "retrieved",
+  "sources"
+ ]
+}
+```
+
+Full answer:
+
+```text
+Voici l'essentiel du cours sur ce point.
+
+Une asymptote oblique est une droite de l'équation y = ax + b qui est tangente à la courbe de la fonction lorsque x tend vers l'infini. On la trouve en calculant la limite de f(x)/x lorsque x tend vers l'infini. Par exemple, si f(x) = x^2 + 2x, alors la limite de (x^2 + 2x)/x est égale à 2x + 2, ce qui implique qu'une asymptote oblique de la courbe est la droite y = 2x + 2.
+
+À toi : Soit f(x) = x². Calculer f'(3).
+```
+
+Engine numbers for these calls (5 engine calls, by request id):
+
+```json
+{
+ "since": null,
+ "filters": {
+  "class_id": null,
+  "course_id": null
+ },
+ "runs": {
+  "total": 5,
+  "by_task": {
+   "classify": 2,
+   "explain": 2,
+   "hint": 1
+  }
+ },
+ "provider_requests": {
+  "total": 5,
+  "by_class": {
+   "compact": 3,
+   "midsize": 2
+  },
+  "by_model": {
+   "llama3.1-8b": 2,
+   "llama3.2-3b": 3
+  }
+ },
+ "cache": {
+  "hits": 0,
+  "runs": 5,
+  "hit_rate": 0.0
+ },
+ "degraded": {
+  "count": 0,
+  "share": 0.0,
+  "by_reason": {}
+ },
+ "latency_ms": {
+  "classify": {
+   "count": 2,
+   "p50": 1596.5,
+   "p95": 10531.9
+  },
+  "explain": {
+   "count": 2,
+   "p50": 8501.8,
+   "p95": 18255.6
+  },
+  "hint": {
+   "count": 1,
+   "p50": 5789.8,
+   "p95": 5789.8
+  }
+ },
+ "server_429": {
+  "count": 0,
+  "by_outcome": {}
+ }
+}
+```
+
+### Round 2 findings
+
+5 provider requests of 15, no 429. Photo OCR and the check on its confirmed text (items 8) were **not run**: no file name was given; they run as soon as there is a photo (`scripts/e2e_round2.py --photo FILE`, then `--confirmed-text` once the learner has confirmed the reading).
+
+- **Arabizi retrieval is fixed for "derivee mta3 x²"**: retrieved two course pages, mid-size explain in Arabizi framing with French content, 18 s, not degraded (R2.1).
+- **The longer question still goes wrong, for another reason (R2.2):** retrieval is no longer the problem (the stopwords fix works offline, 6/6), but the classifier labelled "chnowa el derivee mta3 x² w kifech nal9aha ?" as **HINT** (language ARABIZI correct), so the engine answered with the hint task: a grounded-less, nonsensical hint ("Kifech kif 2x w 2x, msi x = 0 w 2x = 0?"), no sources. The follow-up rule routes HINT to `hint`; "kifech" ("how") plus a verb is read as "give me a hint". This is a classify (3B) weakness on Arabizi phrasing; a retrieval fix cannot help it. Candidate fixes (not made, they change the classifier): an Arabizi example in the classify prompt, or routing HINT without an open exercise or a problem text to `explain`.
+- **Upload explain (R2.3), not flagged this time**, so the flagged span of the first run is not reproducible (the model answers differently each time; the first answer was not saved in full). What the answer shows instead: it cites the upload (`professor/e2e-prof/…#asymptotes-obliques`) and then adds an invented example with **wrong mathematics that the guard did not catch**: "si f(x) = x^2 + 2x, alors la limite de (x^2 + 2x)/x est égale à 2x + 2, ce qui implique qu'une asymptote oblique est y = 2x + 2" (the limit is infinite, f has no oblique asymptote). The formula check only judged `f(x) = x^2 + 2x` (a new example, `formulas_verified: 0`); a formula embedded in a sentence ("est égale à") is not an equation the extractor reads. This is a gap in the guard for prose-embedded claims, worth a decision.
