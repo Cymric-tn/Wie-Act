@@ -20,7 +20,8 @@ const CONFUSION = new Set(["LOW", "MEDIUM", "HIGH"]);
 const PRIORITIES = new Set(["INTERACTIVE", "BACKGROUND"]);
 // Reasons the engine raises when its own checks fail: a professor should look.
 const AUTO_FLAG = new Set(["ungrounded_formula", "wrong_math", "explain_guard:language_drift", "explain_guard:contamination", "input_truncated"]);
-const FORCEABLE = new Set(["quota_low", "service_busy", "quota_exhausted", "midsize_unavailable", "deadline", "not_found", "wrong_math", "room_busy"]);
+// Outcomes the engine's FakeEngine can be told to produce (context.fake_outcome), for demos and tests; ignored by the real engine.
+const FORCEABLE = new Set(["fast_extractive", "deadline", "quota_exhausted", "quota_wait", "not_in_course", "wrong_math", "room_busy", "superseded", "correct", "incorrect", "cache_hit", "SUPPORTED", "CONTRADICTED", "PARTLY", "COMPOUND", "NOT_IN_COURSE"]);
 const MATERIAL_TYPES = {
   "application/pdf": ".pdf",
   "text/markdown": ".md",
@@ -29,6 +30,7 @@ const MATERIAL_TYPES = {
 };
 const MAX_MATERIAL_BYTES = 15_000_000;
 const SECRET_KEYS = ["solution", "hints", "common_mistakes", "mistakes"];
+const DEFAULT_COURSE = process.env.AI_COURSE || "analyse"; // the one course the engine has content for
 
 const isId = (v) => typeof v === "string" && /^[\w.:-]{1,80}$/.test(v);
 const str = (v, max) => (typeof v === "string" ? v.slice(0, max) : undefined);
@@ -56,19 +58,65 @@ const INPUTS = {
     exclude: ids(i.exclude), diagnostic: i.diagnostic === true ? true : undefined, intro: i.intro === false ? false : undefined
   }),
   check_claim: (i) => drop({ claim: str(i.claim, 2000) }),
-  check_answer: (i) => drop({
-    problem: str(i.problem, 2000),
-    lines: Array.isArray(i.lines) ? i.lines.slice(0, 30).map((l) => String(l).slice(0, 300)) : str(i.lines, 6000)
-  }),
+  // The engine wants the problem and the learner's worked `steps`. The board sends `lines` (first line = the problem
+  // when no problem is given); both spellings are accepted.
+  check_answer: (i) => {
+    const raw = Array.isArray(i.steps) ? i.steps : Array.isArray(i.lines) ? i.lines : typeof i.lines === "string" ? i.lines.split("\n") : [];
+    const lines = raw.map((l) => String(l).trim().slice(0, 300)).filter(Boolean).slice(0, 30);
+    const hasProblem = typeof i.problem === "string" && i.problem.trim();
+    const problem = hasProblem ? i.problem : lines[0];
+    const steps = hasProblem || lines.length < 2 ? lines : lines.slice(1);
+    return drop({ problem: str(problem, 2000), steps: steps.length ? steps : undefined, exercise_id: isId(i.exercise_id) ? i.exercise_id : undefined });
+  },
   ocr_transcribe: (i) => drop({ image: typeof i.image === "string" && /^data:image\/(png|jpe?g|webp|gif);base64,/.test(i.image) && i.image.length < 11_000_000 ? i.image : str(i.image, 100) }),
+  // The engine plans from a scope, a deadline (a date) and a pace; the app speaks in days left and minutes per day.
   prep_plan: (i) => drop({
     course_id: isId(i.course_id) ? i.course_id : undefined, days_left: int(i.days_left, 1, 60), minutes_per_day: int(i.minutes_per_day, 10, 300),
+    unit_ids: ids(i.unit_ids, 30),
     mastery: i.mastery && typeof i.mastery === "object"
       ? Object.fromEntries(Object.entries(i.mastery).filter(([k, v]) => isId(k) && Number.isFinite(Number(v))).slice(0, 200).map(([k, v]) => [k, Math.min(1, Math.max(0, Number(v)))]))
       : undefined
   }),
-  generate_page: (i) => drop({ concept: isId(i.concept) ? i.concept : undefined })
+  generate_page: (i) => drop({ concept: isId(i.concept) ? i.concept : undefined, page_kind: i.page_kind === "review" ? "review" : undefined })
 };
+
+const isoDay = (d) => d.toISOString().slice(0, 10);
+
+/** The engine's prep_plan input from the app's: scope = the given units, else every unit of the course. */
+async function planInputs(engine, inputs, courseId) {
+  const course = await engine.course(courseId).catch(() => null);
+  const unitIds = inputs.unit_ids?.length ? inputs.unit_ids : (course?.units || []).map((u) => u.id);
+  const days = inputs.days_left || 7;
+  const deadline = new Date(Date.now() + days * 86_400_000);
+  return drop({ scope: { unit_ids: unitIds }, deadline: isoDay(deadline), pace_min_per_day: inputs.minutes_per_day || 45, mastery: inputs.mastery });
+}
+
+/** The engine's focus_points grouped by day: the session list the planner screen renders (plus the raw plan). */
+function shapePlan(result) {
+  const plan = result?.data;
+  if (!plan?.focus_points) return result;
+  const days = new Map();
+  for (const f of plan.focus_points) {
+    const day = (f.day_index ?? 0) + 1;
+    if (!days.has(day)) days.set(day, { day, minutes: 0, items: [] });
+    const s = days.get(day);
+    s.minutes += f.minutes || 0;
+    s.items.push({ concept: f.concept_id, kind: f.page_kind === "review" ? "review" : "learn", minutes: f.minutes, reason: f.reason, reason_code: f.reason_code });
+  }
+  return { ...result, data: { ...plan, sessions: [...days.values()].sort((a, b) => a.day - b.day), days: result.notes?.days } };
+}
+
+/** A prep page as the study screen reads it: the worked example's `solution` is shown as its answer. */
+function shapePage(page) {
+  const w = page.worked_example;
+  return {
+    request_id: page.explain_request_id, task: "generate_page", text: page.explanation, degraded: page.degraded, degrade_reason: page.degrade_reason,
+    eta_seconds: page.eta_seconds, from_cache: page.from_cache, events: [], notes: {},
+    data: { concept_id: page.concept_id, page_kind: page.page_kind, title: page.title, language: page.language, explanation: page.explanation,
+      explanation_sections: page.explanation_sections, worked_example: w ? { id: w.exercise_id, statement: w.statement, steps: w.steps || [], answer: w.solution } : null,
+      quiz: page.quiz || [] }
+  };
+}
 
 /** Strips solutions/hints/mistakes from exercises before a result reaches the browser. */
 function publicResult(result) {
@@ -99,6 +147,7 @@ function rateLimiter({ perMinute }) {
 }
 
 function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = console.log }) {
+  const forceAllowed = () => (typeof allowForce === "function" ? allowForce() : Boolean(allowForce));
   const router = express.Router();
   const json = express.json({ limit: "25mb" });
   const aiLimit = rateLimiter({ perMinute: 40 });
@@ -122,7 +171,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
       room_id: isId(c.room_id) ? c.room_id : undefined,
       course_id: isId(c.course_id) ? c.course_id : undefined,
       class_id: isId(c.class_id) ? c.class_id : undefined,
-      fake_outcome: allowForce && FORCEABLE.has(c.fake_outcome) ? c.fake_outcome : undefined
+      fake_outcome: forceAllowed() && FORCEABLE.has(c.fake_outcome) ? c.fake_outcome : undefined
     });
   }
 
@@ -192,12 +241,32 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
       const inputs = INPUTS[task](req.body.inputs || {});
       const ctx = contextFrom(req.body);
       const priority = PRIORITIES.has(req.body.priority) ? req.body.priority : "INTERACTIVE";
-      if (task === "prep_plan" && ctx.learner_id && ctx.course_id) {
+      const onEvent = (event) => out.send({ type: "event", event });
+      const courseId = inputs.course_id || ctx.course_id || DEFAULT_COURSE;
+      if (task === "prep_plan") {
         // Real practice results override the demo mastery the browser sent.
-        const measured = store.mastery(ctx.learner_id, inputs.course_id || ctx.course_id);
-        inputs.mastery = { ...(inputs.mastery || {}), ...Object.fromEntries(Object.entries(measured).map(([k, v]) => [k, v.value])) };
+        if (ctx.learner_id) {
+          const measured = store.mastery(ctx.learner_id, courseId);
+          inputs.mastery = { ...(inputs.mastery || {}), ...Object.fromEntries(Object.entries(measured).map(([k, v]) => [k, v.value])) };
+        }
+        const result = await run(task, await planInputs(engine, inputs, courseId), { ...ctx, course_id: ctx.course_id || courseId }, "BACKGROUND", onEvent, { question: `prep plan: ${inputs.days_left || 7} days` });
+        return out.end({ type: "result", result: shapePlan(result) });
       }
-      const result = await run(task, inputs, ctx, priority, (event) => out.send({ type: "event", event }));
+      if (task === "generate_page") {
+        if (!inputs.concept) throw new RangeError("missing input: concept");
+        const m = ctx.learner_id ? store.mastery(ctx.learner_id, courseId)[inputs.concept] : null;
+        const focus = drop({ concept_id: inputs.concept, page_kind: inputs.page_kind || "learn", mastery: m ? m.value : undefined });
+        const page = await engine.generatePage(focus, { ...ctx, course_id: ctx.course_id || courseId }, onEvent);
+        if (page.concept_id === undefined) return out.end({ type: "result", result: page }); // the bridge was unreachable: already a degraded Result
+        const result = shapePage(page);
+        try {
+          store.logRun({ request_id: result.request_id, task: "generate_page", backend: engine.status().backend, learner_id: ctx.learner_id, room_id: ctx.room_id, course_id: ctx.course_id, language: ctx.language, degraded: result.degraded, degrade_reason: result.degrade_reason, mode: null, model_class: null, from_cache: result.from_cache, latency_ms: null, question: inputs.concept, answer: (result.text || "").slice(0, 6000) });
+        } catch (error) {
+          log("AI run log failed:", error.message);
+        }
+        return out.end({ type: "result", result });
+      }
+      const result = await run(task, inputs, ctx, priority, onEvent);
       out.end({ type: "result", result: publicResult(result) });
     } catch (error) {
       out.fail(error);
@@ -256,7 +325,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
       common_mistakes: (ex.common_mistakes || ex.mistakes || []).map((m) => (Array.isArray(m) ? { expr: m[0], feedback: local(m[1], ctx.language) } : { expr: m.expr, feedback: local(m.feedback, ctx.language) }))
     }, ctx, "INTERACTIVE", onEvent, { question: `${ex.id}: ${attempt}` });
     if (ctx.learner_id && result.data?.verdict) {
-      store.addAttempt({ learner_id: ctx.learner_id, course_id: ctx.course_id || "MATH101", exercise_id: ex.id, concept: ex.concept, verdict: result.data.verdict, hints_used: hintsUsed });
+      store.addAttempt({ learner_id: ctx.learner_id, course_id: ctx.course_id || DEFAULT_COURSE, exercise_id: ex.id, concept: ex.concept, verdict: result.data.verdict, hints_used: hintsUsed });
     }
     return { ...result, data: { ...result.data, exercise_id: ex.id, concept: ex.concept } };
   }
@@ -279,7 +348,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
         const attempt = str(req.body.attempt, 1000);
         if (!attempt || !attempt.trim()) throw new RangeError("missing input: attempt");
         const result = await gradeExercise(ex, attempt, ctx, int(req.body.hints_used, 0, 10) || 0, onEvent);
-        const mastery = ctx.learner_id ? store.mastery(ctx.learner_id, ctx.course_id || "MATH101")[ex.concept] || null : null;
+        const mastery = ctx.learner_id ? store.mastery(ctx.learner_id, ctx.course_id || DEFAULT_COURSE)[ex.concept] || null : null;
         return out.end({ type: "result", result, mastery });
       }
       if (action === "hint") {
@@ -287,7 +356,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
         return out.end({ type: "result", result });
       }
       // reveal: the learner gives up — counts as a missed attempt.
-      if (ctx.learner_id) store.addAttempt({ learner_id: ctx.learner_id, course_id: ctx.course_id || "MATH101", exercise_id: ex.id, concept: ex.concept, verdict: "INCORRECT", hints_used: 3 });
+      if (ctx.learner_id) store.addAttempt({ learner_id: ctx.learner_id, course_id: ctx.course_id || DEFAULT_COURSE, exercise_id: ex.id, concept: ex.concept, verdict: "INCORRECT", hints_used: 3 });
       out.end({ type: "result", result: { data: { exercise_id: ex.id, solution: ex.solution } } });
     } catch (error) {
       out.fail(error);
@@ -296,7 +365,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
 
   router.get("/ai/mastery", (req, res) => {
     const learner = isId(req.query.learner_id) ? req.query.learner_id : null;
-    const course = isId(req.query.course_id) ? req.query.course_id : "MATH101";
+    const course = isId(req.query.course_id) ? req.query.course_id : DEFAULT_COURSE;
     res.json({ course_id: course, mastery: learner ? store.mastery(learner, course) : {} });
   });
 
@@ -399,7 +468,8 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
       });
       const chunks = ingest?.chunks || [];
       const status = chunks.length ? "indexed" : ingest?.needs_ocr ? "needs_ocr" : "empty";
-      store.updateMaterial(id, { status, chunks, detail: ingest?.detail || null });
+      const notes = [ingest?.needs_ocr_pages?.length ? `${ingest.needs_ocr_pages.length} page(s) had no text` : null, ...(ingest?.warnings || [])].filter(Boolean);
+      store.updateMaterial(id, { status, chunks, detail: notes.join(" · ") || ingest?.detail || null });
     } catch (error) {
       store.updateMaterial(id, { status: "failed", chunks: [], detail: String(error.message).slice(0, 300) });
     }
@@ -412,13 +482,19 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
       .sendFile(path.join(uploadsDir, m.id + MATERIAL_TYPES[m.mime]));
   });
 
-  router.patch("/materials/:id/chunks/:chunkId", json, (req, res) => {
+  router.patch("/materials/:id/chunks/:chunkId", json, async (req, res) => {
     const m = isId(req.params.id) && store.getMaterial(req.params.id);
     if (!m) return res.status(404).json({ error: "unknown material" });
     if (req.body?.role !== "professor") return res.status(403).json({ error: "Only professors confirm concept tags." });
     const concept = req.body.concept === null ? null : isId(req.body.concept) ? req.body.concept : undefined;
     if (concept === undefined) return res.status(400).json({ error: "bad concept" });
-    const chunks = m.chunks.map((c) => (c.id === req.params.chunkId ? { ...c, concept, confidence: 1, confirmed: true } : c));
+    if (!m.chunks.some((c) => c.id === req.params.chunkId)) return res.status(404).json({ error: "unknown section" });
+    try {
+      await engine.confirmChunk(req.params.chunkId, concept); // the retriever uses the confirmed tag from now on
+    } catch (error) {
+      return res.status(error.status === 404 ? 404 : 502).json({ error: error.status === 404 ? "The engine no longer has this section (restarted?). Upload the file again." : `The engine could not save the tag: ${error.message}` });
+    }
+    const chunks = m.chunks.map((c) => (c.id === req.params.chunkId ? { ...c, concept, confidence: 1, low_confidence: false, confirmed: true } : c));
     store.updateMaterial(m.id, { status: m.status, chunks, detail: m.detail });
     res.json({ material: publicMaterial({ ...m, chunks }) });
   });
@@ -429,7 +505,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
     const q = { ...req.query, ...(req.body || {}) };
     if (m.owner_id !== q.learner_id && q.role !== "professor") return res.status(403).json({ error: "Only the uploader or a professor can remove this file." });
     try {
-      await engine.removeMaterial(m.id, m.course_id);
+      await engine.removeMaterial(m.id, m.course_id, m.owner_id);
     } catch (error) {
       log("Engine could not remove material:", error.message);
     }
@@ -441,4 +517,4 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
   return router;
 }
 
-module.exports = { createAiRouter, publicResult, INPUTS };
+module.exports = { createAiRouter, publicResult, INPUTS, planInputs, shapePlan, shapePage };
