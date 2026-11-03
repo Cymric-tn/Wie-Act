@@ -1,0 +1,2377 @@
+{
+ "summary": {
+  "overall": {
+   "n": 60,
+   "correct": 40,
+   "accuracy": 0.667
+  },
+  "by_language": {
+   "ARABIC": {
+    "n": 20,
+    "correct": 14,
+    "accuracy": 0.7
+   },
+   "ENGLISH": {
+    "n": 20,
+    "correct": 15,
+    "accuracy": 0.75
+   },
+   "FRENCH": {
+    "n": 20,
+    "correct": 11,
+    "accuracy": 0.55
+   }
+  },
+  "by_expected": {
+   "CONTRADICTED": {
+    "n": 17,
+    "correct": 16,
+    "accuracy": 0.941
+   },
+   "NOT_IN_COURSE": {
+    "n": 6,
+    "correct": 6,
+    "accuracy": 1.0
+   },
+   "PARTLY": {
+    "n": 16,
+    "correct": 9,
+    "accuracy": 0.562
+   },
+   "SUPPORTED": {
+    "n": 21,
+    "correct": 9,
+    "accuracy": 0.429
+   }
+  },
+  "by_checked_by": {
+   "llm": {
+    "n": 37,
+    "correct": 20,
+    "accuracy": 0.541
+   },
+   "mixed": {
+    "n": 6,
+    "correct": 4,
+    "accuracy": 0.667
+   },
+   "rules": {
+    "n": 7,
+    "correct": 6,
+    "accuracy": 0.857
+   },
+   "sympy": {
+    "n": 10,
+    "correct": 10,
+    "accuracy": 1.0
+   }
+  },
+  "confusion": {
+   "SUPPORTED": {
+    "CONTRADICTED": 7,
+    "SUPPORTED": 9,
+    "PARTLY": 4,
+    "NOT_IN_COURSE": 1
+   },
+   "CONTRADICTED": {
+    "CONTRADICTED": 16,
+    "PARTLY": 1
+   },
+   "PARTLY": {
+    "CONTRADICTED": 6,
+    "PARTLY": 9,
+    "NOT_IN_COURSE": 1
+   },
+   "NOT_IN_COURSE": {
+    "NOT_IN_COURSE": 6
+   }
+  },
+  "requests": 57,
+  "degraded": 0,
+  "sets": {
+   "added": {
+    "overall": {
+     "n": 30,
+     "correct": 17,
+     "accuracy": 0.567
+    },
+    "by_language": {
+     "ARABIC": {
+      "n": 10,
+      "correct": 6,
+      "accuracy": 0.6
+     },
+     "ENGLISH": {
+      "n": 10,
+      "correct": 7,
+      "accuracy": 0.7
+     },
+     "FRENCH": {
+      "n": 10,
+      "correct": 4,
+      "accuracy": 0.4
+     }
+    },
+    "by_expected": {
+     "CONTRADICTED": {
+      "n": 7,
+      "correct": 6,
+      "accuracy": 0.857
+     },
+     "PARTLY": {
+      "n": 12,
+      "correct": 7,
+      "accuracy": 0.583
+     },
+     "SUPPORTED": {
+      "n": 11,
+      "correct": 4,
+      "accuracy": 0.364
+     }
+    },
+    "by_checked_by": {
+     "llm": {
+      "n": 19,
+      "correct": 9,
+      "accuracy": 0.474
+     },
+     "mixed": {
+      "n": 6,
+      "correct": 4,
+      "accuracy": 0.667
+     },
+     "rules": {
+      "n": 1,
+      "correct": 0,
+      "accuracy": 0.0
+     },
+     "sympy": {
+      "n": 4,
+      "correct": 4,
+      "accuracy": 1.0
+     }
+    },
+    "confusion": {
+     "PARTLY": {
+      "CONTRADICTED": 4,
+      "NOT_IN_COURSE": 1,
+      "PARTLY": 7
+     },
+     "SUPPORTED": {
+      "SUPPORTED": 4,
+      "PARTLY": 4,
+      "NOT_IN_COURSE": 1,
+      "CONTRADICTED": 2
+     },
+     "CONTRADICTED": {
+      "CONTRADICTED": 6,
+      "PARTLY": 1
+     }
+    },
+    "requests": 35,
+    "degraded": 0
+   },
+   "original": {
+    "overall": {
+     "n": 30,
+     "correct": 23,
+     "accuracy": 0.767
+    },
+    "by_language": {
+     "ARABIC": {
+      "n": 10,
+      "correct": 8,
+      "accuracy": 0.8
+     },
+     "ENGLISH": {
+      "n": 10,
+      "correct": 8,
+      "accuracy": 0.8
+     },
+     "FRENCH": {
+      "n": 10,
+      "correct": 7,
+      "accuracy": 0.7
+     }
+    },
+    "by_expected": {
+     "CONTRADICTED": {
+      "n": 10,
+      "correct": 10,
+      "accuracy": 1.0
+     },
+     "NOT_IN_COURSE": {
+      "n": 6,
+      "correct": 6,
+      "accuracy": 1.0
+     },
+     "PARTLY": {
+      "n": 4,
+      "correct": 2,
+      "accuracy": 0.5
+     },
+     "SUPPORTED": {
+      "n": 10,
+      "correct": 5,
+      "accuracy": 0.5
+     }
+    },
+    "by_checked_by": {
+     "llm": {
+      "n": 18,
+      "correct": 11,
+      "accuracy": 0.611
+     },
+     "rules": {
+      "n": 6,
+      "correct": 6,
+      "accuracy": 1.0
+     },
+     "sympy": {
+      "n": 6,
+      "correct": 6,
+      "accuracy": 1.0
+     }
+    },
+    "confusion": {
+     "SUPPORTED": {
+      "CONTRADICTED": 5,
+      "SUPPORTED": 5
+     },
+     "CONTRADICTED": {
+      "CONTRADICTED": 10
+     },
+     "PARTLY": {
+      "CONTRADICTED": 2,
+      "PARTLY": 2
+     },
+     "NOT_IN_COURSE": {
+      "NOT_IN_COURSE": 6
+     }
+    },
+    "requests": 22,
+    "degraded": 0
+   },
+   "compound": {
+    "overall": {
+     "n": 24,
+     "correct": 12,
+     "accuracy": 0.5
+    },
+    "by_language": {
+     "ARABIC": {
+      "n": 7,
+      "correct": 4,
+      "accuracy": 0.571
+     },
+     "ENGLISH": {
+      "n": 9,
+      "correct": 6,
+      "accuracy": 0.667
+     },
+     "FRENCH": {
+      "n": 8,
+      "correct": 2,
+      "accuracy": 0.25
+     }
+    },
+    "by_expected": {
+     "CONTRADICTED": {
+      "n": 3,
+      "correct": 2,
+      "accuracy": 0.667
+     },
+     "PARTLY": {
+      "n": 16,
+      "correct": 9,
+      "accuracy": 0.562
+     },
+     "SUPPORTED": {
+      "n": 5,
+      "correct": 1,
+      "accuracy": 0.2
+     }
+    },
+    "by_checked_by": {
+     "llm": {
+      "n": 16,
+      "correct": 6,
+      "accuracy": 0.375
+     },
+     "mixed": {
+      "n": 6,
+      "correct": 4,
+      "accuracy": 0.667
+     },
+     "sympy": {
+      "n": 2,
+      "correct": 2,
+      "accuracy": 1.0
+     }
+    },
+    "confusion": {
+     "PARTLY": {
+      "CONTRADICTED": 6,
+      "PARTLY": 9,
+      "NOT_IN_COURSE": 1
+     },
+     "SUPPORTED": {
+      "SUPPORTED": 1,
+      "PARTLY": 4
+     },
+     "CONTRADICTED": {
+      "CONTRADICTED": 2,
+      "PARTLY": 1
+     }
+    },
+    "requests": 34,
+    "degraded": 0
+   },
+   "single": {
+    "overall": {
+     "n": 36,
+     "correct": 28,
+     "accuracy": 0.778
+    },
+    "by_language": {
+     "ARABIC": {
+      "n": 13,
+      "correct": 10,
+      "accuracy": 0.769
+     },
+     "ENGLISH": {
+      "n": 11,
+      "correct": 9,
+      "accuracy": 0.818
+     },
+     "FRENCH": {
+      "n": 12,
+      "correct": 9,
+      "accuracy": 0.75
+     }
+    },
+    "by_expected": {
+     "CONTRADICTED": {
+      "n": 14,
+      "correct": 14,
+      "accuracy": 1.0
+     },
+     "NOT_IN_COURSE": {
+      "n": 6,
+      "correct": 6,
+      "accuracy": 1.0
+     },
+     "SUPPORTED": {
+      "n": 16,
+      "correct": 8,
+      "accuracy": 0.5
+     }
+    },
+    "by_checked_by": {
+     "llm": {
+      "n": 21,
+      "correct": 14,
+      "accuracy": 0.667
+     },
+     "rules": {
+      "n": 7,
+      "correct": 6,
+      "accuracy": 0.857
+     },
+     "sympy": {
+      "n": 8,
+      "correct": 8,
+      "accuracy": 1.0
+     }
+    },
+    "confusion": {
+     "SUPPORTED": {
+      "CONTRADICTED": 7,
+      "SUPPORTED": 8,
+      "NOT_IN_COURSE": 1
+     },
+     "CONTRADICTED": {
+      "CONTRADICTED": 14
+     },
+     "NOT_IN_COURSE": {
+      "NOT_IN_COURSE": 6
+     }
+    },
+    "requests": 23,
+    "degraded": 0
+   },
+   "model_decided": {
+    "overall": {
+     "n": 43,
+     "correct": 24,
+     "accuracy": 0.558
+    },
+    "by_language": {
+     "ARABIC": {
+      "n": 16,
+      "correct": 10,
+      "accuracy": 0.625
+     },
+     "ENGLISH": {
+      "n": 15,
+      "correct": 10,
+      "accuracy": 0.667
+     },
+     "FRENCH": {
+      "n": 12,
+      "correct": 4,
+      "accuracy": 0.333
+     }
+    },
+    "by_expected": {
+     "CONTRADICTED": {
+      "n": 13,
+      "correct": 12,
+      "accuracy": 0.923
+     },
+     "PARTLY": {
+      "n": 15,
+      "correct": 8,
+      "accuracy": 0.533
+     },
+     "SUPPORTED": {
+      "n": 15,
+      "correct": 4,
+      "accuracy": 0.267
+     }
+    },
+    "by_checked_by": {
+     "llm": {
+      "n": 37,
+      "correct": 20,
+      "accuracy": 0.541
+     },
+     "mixed": {
+      "n": 6,
+      "correct": 4,
+      "accuracy": 0.667
+     }
+    },
+    "confusion": {
+     "SUPPORTED": {
+      "CONTRADICTED": 7,
+      "SUPPORTED": 4,
+      "PARTLY": 4
+     },
+     "CONTRADICTED": {
+      "CONTRADICTED": 12,
+      "PARTLY": 1
+     },
+     "PARTLY": {
+      "CONTRADICTED": 6,
+      "PARTLY": 8,
+      "NOT_IN_COURSE": 1
+     }
+    },
+    "requests": 57,
+    "degraded": 0
+   },
+   "per_part": {
+    "n": 40,
+    "correct": 26,
+    "accuracy": 0.65
+   },
+   "latency_ms_requests": {
+    "n": 41,
+    "p50": 3415.6,
+    "max": 10640.9
+   }
+  },
+  "verdict_class": "compact"
+ },
+ "rows": [
+  {
+   "id": "fr-01",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "La dérivée d'une constante est 0.",
+   "expected": "SUPPORTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "La dérivée d'une constante est effectivement nulle : on laisse le terme constant disparaître.",
+   "source_chunk_id": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 7454.7,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-02",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "(x²)' = x",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "Plutôt : (x²)' = 2x",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.1,
+   "requests": 0,
+   "events": [
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "fr-03",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "(x³)' = 3x²",
+   "expected": "SUPPORTED",
+   "got": "SUPPORTED",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.0,
+   "requests": 0,
+   "events": [
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "fr-04",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "La dérivée d'un produit est le produit des dérivées.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "La dérivée d'un produit est le produit des dérivées : (u·v)' = u'·v + u·v'.",
+   "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 1437.2,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-05",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "Si f'(a) = 0, alors f a forcément un extremum en a.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "Ce n'est pas non plus établi dans ce texte : l'existence d'un maximum ou d'un minimum n'est pas garantie.",
+   "source_chunk_id": "derivee-formules.fr#derivees-des-fonctions-usuelles",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 4780.6,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-06",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "La dérivée d'une somme est la somme des dérivées, et celle d'un produit est le produit des dérivées.",
+   "expected": "PARTLY",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "La dérivée d'une somme est la somme des dérivées",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "celle d'un produit est le produit des dérivées.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": null,
+   "correction": "La dérivée d'une somme n'est pas la somme des dérivées, c'est la somme des dérivées multipliée par une constante. Celui d'un produit n'est pas le produit des dérivées, mais plutôt u'v + u·v'.",
+   "source_chunk_id": "derivee-formules.fr#somme-et-produit-par-une-constante",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 4866.3,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-07",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "Une intégrale sert à calculer l'aire sous une courbe.",
+   "expected": "NOT_IN_COURSE",
+   "got": "NOT_IN_COURSE",
+   "checked_by": "rules",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.6,
+   "requests": 0,
+   "events": [
+    "retrieving",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "fr-08",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "La photosynthèse transforme la lumière en énergie chimique.",
+   "expected": "NOT_IN_COURSE",
+   "got": "NOT_IN_COURSE",
+   "checked_by": "rules",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.4,
+   "requests": 0,
+   "events": [
+    "retrieving",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "fr-09",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "La tangente au point d'abscisse a a pour équation y = f'(a)(x − a) + f(a).",
+   "expected": "SUPPORTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "L'équation de la tangente au point d'abscisse a est y = f'(a)(x − a) + f(a), la forme générale est y = f'(a)x - a*f'(a)",
+   "source_chunk_id": "derivee-definition.fr#interpretation-graphique-la-tangente",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 3925.6,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-10",
+   "set": "original",
+   "language": "FRENCH",
+   "claim": "Pour f(x) = x² + 7, on a f'(x) = 2x + 7.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "Plutôt : f'(x) = 2x",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.1,
+   "requests": 0,
+   "events": [
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "en-01",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "Where the derivative is positive on an interval, the function is increasing there.",
+   "expected": "SUPPORTED",
+   "got": "SUPPORTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": "derivative-variations.en#sign-of-the-derivative-and-monotonicity",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2509.5,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-02",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "(x³)' = x²",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "Rather: (x³)' = 3x²",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.0,
+   "requests": 0,
+   "events": [
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "en-03",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "(x²)' = 2x and (x³)' = 2x²",
+   "expected": "PARTLY",
+   "got": "PARTLY",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "(x²)' = 2x",
+     "verdict": "SUPPORTED",
+     "checked_by": "sympy"
+    },
+    {
+     "claim": "(x³)' = 2x²",
+     "verdict": "CONTRADICTED",
+     "checked_by": "sympy"
+    }
+   ],
+   "parts_expected": null,
+   "correction": "Rather: (x³)' = 3x²",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 5.5,
+   "requests": 0,
+   "events": [
+    "claim_part",
+    "answered_by_rules",
+    "claim_part",
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "en-04",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "A local maximum happens where the derivative changes from positive to negative.",
+   "expected": "SUPPORTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "A local maximum happens where the derivative changes from positive to negative or is zero.",
+   "source_chunk_id": "derivative-variations.en#finding-a-maximum-or-a-minimum",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2995.8,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-05",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "If f'(0) = 0 then f must have an extremum at 0.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "Si f'(0) = 0, alors f n'a pas d'extremum à 0, car c'est une condition nécessaire mais pas suffisante.",
+   "source_chunk_id": "derivative-variations.en#finding-a-maximum-or-a-minimum",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 3167.5,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-06",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "The derivative of a sum is the sum of the derivatives, and the derivative of a product is the product of the derivatives.",
+   "expected": "PARTLY",
+   "got": "PARTLY",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "The derivative of a sum is the sum of the derivatives",
+     "verdict": "SUPPORTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "the derivative of a product is the product of the derivatives.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": null,
+   "correction": "La dérivée d'un produit n'est pas le produit des dérivées : (u·v)' = u'·v + u·v'.",
+   "source_chunk_id": "derivee-formules.fr#somme-et-produit-par-une-constante",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 10264.8,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-07",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "A matrix is invertible when its determinant is not zero.",
+   "expected": "NOT_IN_COURSE",
+   "got": "NOT_IN_COURSE",
+   "checked_by": "rules",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.5,
+   "requests": 0,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "en-08",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "Python lists are mutable.",
+   "expected": "NOT_IN_COURSE",
+   "got": "NOT_IN_COURSE",
+   "checked_by": "rules",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.3,
+   "requests": 0,
+   "events": [
+    "retrieving",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "en-09",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "The slope of the tangent at x = a is the derivative f'(a).",
+   "expected": "SUPPORTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "The slope of the tangent at x = a is f'(a), not f(a).",
+   "source_chunk_id": "derivative-variations.en#finding-a-maximum-or-a-minimum",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 1424.6,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-10",
+   "set": "original",
+   "language": "ENGLISH",
+   "claim": "The derivative of a constant is 1.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "The derivative of a constant is 0, not 1.",
+   "source_chunk_id": "derivative-variations.en#sign-of-the-derivative-and-monotonicity",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2373.4,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-01",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "مشتقة الدالة الثابتة تساوي صفراً.",
+   "expected": "SUPPORTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "المشتقة للشامل تساوي صفرا : المشتقة للشامل المكون من دوال مألوفة هي مجموع المشتقات.",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 3415.6,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-02",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "مشتقة الدالة x² هي x.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "المشتقة الدالة الثابتة تساوي صفرا، ومتساوية x هي 1، ومشتقة x² هي 2x.",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 3582.7,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-03",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "إذا كانت المشتقة موجبة على مجال فإن الدالة تزايدية على هذا المجال.",
+   "expected": "SUPPORTED",
+   "got": "SUPPORTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2804.5,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-04",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "إذا كانت المشتقة سالبة على مجال فإن الدالة تزايدية على هذا المجال.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "إذا كانت المشتقة سالبة على مجال فإنّ الدالة تناقصية على هذا المجال.",
+   "source_chunk_id": "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2794.7,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-05",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "مشتقة x هي 1 ومشتقة x² هي x.",
+   "expected": "PARTLY",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "مشتقة x هي 1",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "مشتقة x² هي x.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": null,
+   "correction": "مشتقة x هي 1، ومشتقة x هي 1: مشتقات x و x² هي 1x و 2x على التوالي. المشتقة x² هي 2x : مثلًا، مشتقة x² هي 2x.",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 3939.3,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-06",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "عاصمة تونس هي مدينة تونس.",
+   "expected": "NOT_IN_COURSE",
+   "got": "NOT_IN_COURSE",
+   "checked_by": "rules",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.6,
+   "requests": 0,
+   "events": [
+    "retrieving",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "ar-07",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "العدد المشتق هو ميل المماس لمنحنى الدالة.",
+   "expected": "SUPPORTED",
+   "got": "SUPPORTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": "mochtaqa.ar#تعريف-العدد-المشتق",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 6527.0,
+   "requests": 2,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "repairing_json",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-08",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "مشتقة المجموع هي جداء المشتقات.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "المشتقة المجموعة هي مجموع المشتقات: (u + v)' = u' + v'.",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 1573.6,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-09",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "الخلية هي الوحدة الأساسية للكائنات الحية.",
+   "expected": "NOT_IN_COURSE",
+   "got": "NOT_IN_COURSE",
+   "checked_by": "rules",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.4,
+   "requests": 0,
+   "events": [
+    "retrieving",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "ar-10",
+   "set": "original",
+   "language": "ARABIC",
+   "claim": "نعلم أن (x²)' = 2x",
+   "expected": "SUPPORTED",
+   "got": "SUPPORTED",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.0,
+   "requests": 0,
+   "events": [
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "fr-11",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "La dérivée de x² est 2x et la dérivée d'une constante est 1.",
+   "expected": "PARTLY",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "La dérivée de x² est 2x",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "la dérivée d'une constante est 1.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "CONTRADICTED"
+   ],
+   "correction": "La dérivée de x² est 2x : on ne multiplie pas par l'exposant. La dérivée d'une constante est 0 : une constante ne varie pas.",
+   "source_chunk_id": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 6866.7,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-12",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "(x²)' = 2x et (x³)' = 3x².",
+   "expected": "SUPPORTED",
+   "got": "SUPPORTED",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "(x²)' = 2x",
+     "verdict": "SUPPORTED",
+     "checked_by": "sympy"
+    },
+    {
+     "claim": "(x³)' = 3x².",
+     "verdict": "SUPPORTED",
+     "checked_by": "sympy"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "SUPPORTED"
+   ],
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 1.2,
+   "requests": 0,
+   "events": [
+    "claim_part",
+    "answered_by_rules",
+    "claim_part",
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "fr-13",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "Une constante a une dérivée nulle, et la dérivée de 7x est 7.",
+   "expected": "SUPPORTED",
+   "got": "PARTLY",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "Une constante a une dérivée nulle",
+     "verdict": "NOT_IN_COURSE",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "la dérivée de 7x est 7.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "SUPPORTED"
+   ],
+   "correction": "La dérivée de 7x est 7, et non 7 : on multiplie par l'exposant.",
+   "source_chunk_id": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 8810.7,
+   "requests": 3,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating",
+    "repairing_json",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-14",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "La dérivée de 1/x est −1/x², et (√x)' = 1/(2√x).",
+   "expected": "SUPPORTED",
+   "got": "PARTLY",
+   "checked_by": "mixed",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "La dérivée de 1/x est −1/x²",
+     "verdict": "NOT_IN_COURSE",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "(√x)' = 1/(2√x).",
+     "verdict": "SUPPORTED",
+     "checked_by": "sympy"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "SUPPORTED"
+   ],
+   "correction": "",
+   "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-les-puissances",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2623.3,
+   "requests": 1,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "fr-15",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "La dérivée d'un quotient est (u'v + uv')/v² ; la racine carrée n'est pas dérivable en 0.",
+   "expected": "PARTLY",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "La dérivée d'un quotient est (u'v + uv')/v²",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "la racine carrée n'est pas dérivable en 0.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "CONTRADICTED",
+    "SUPPORTED"
+   ],
+   "correction": "La dérivée d'un quotient est (u'v - uv')/v² : la différence, pas la somme. La racine carrée de x est dérivable en 0, mais son dérivé est nul.",
+   "source_chunk_id": "derivee-formules.fr#produit-et-quotient",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 6182.7,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-16",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "La dérivée d'une constante est 1 et la dérivée d'un produit est le produit des dérivées.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "La dérivée d'une constante est 1",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "la dérivée d'un produit est le produit des dérivées.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "CONTRADICTED",
+    "CONTRADICTED"
+   ],
+   "correction": "La dérivée d'une constante est 0 : une constante ne varie pas. La dérivée d'un produit n'est pas le produit des dérivées ; elle est plutôt u'·v + u·v'.",
+   "source_chunk_id": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 10130.6,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-17",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "La dérivée d'une constante est 0 ; l'intégrale est l'aire sous une courbe.",
+   "expected": "PARTLY",
+   "got": "NOT_IN_COURSE",
+   "checked_by": "mixed",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "La dérivée d'une constante est 0",
+     "verdict": "NOT_IN_COURSE",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "l'intégrale est l'aire sous une courbe.",
+     "verdict": "NOT_IN_COURSE",
+     "checked_by": "rules"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "NOT_IN_COURSE"
+   ],
+   "correction": "",
+   "source_chunk_id": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 1128.8,
+   "requests": 1,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "fr-18",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "La fonction 1/x est décroissante sur chaque intervalle où elle est définie.",
+   "expected": "SUPPORTED",
+   "got": "NOT_IN_COURSE",
+   "checked_by": "rules",
+   "ok": false,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 1.6,
+   "requests": 0,
+   "events": [
+    "retrieving",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "fr-19",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "La dérivée de √x est 1/√x.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "La dérivée de √x est 1/(2√x), car l'on divise par l'exposant et non multipliez.",
+   "source_chunk_id": "derivee-definition.fr#idee-intuitive",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2867.8,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "fr-20",
+   "set": "added",
+   "language": "FRENCH",
+   "claim": "Pour f(x) = x³ − 2x, on a f'(x) = 3x² − 2.",
+   "expected": "SUPPORTED",
+   "got": "SUPPORTED",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.1,
+   "requests": 0,
+   "events": [
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "en-11",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "The derivative of a constant is 0 and the derivative of x² is 2x.",
+   "expected": "SUPPORTED",
+   "got": "PARTLY",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "The derivative of a constant is 0",
+     "verdict": "SUPPORTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "the derivative of x² is 2x.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "SUPPORTED"
+   ],
+   "correction": "The derivative of x² is 2x, but 2x is not equal to the derivative of x²",
+   "source_chunk_id": "derivative-variations.en#sign-of-the-derivative-and-monotonicity",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 6453.5,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-12",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "A zero of the derivative is always an extremum, and f'(a) is the slope of the tangent at a.",
+   "expected": "PARTLY",
+   "got": "PARTLY",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "A zero of the derivative is always an extremum",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "f'(a) is the slope of the tangent at a.",
+     "verdict": "SUPPORTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "CONTRADICTED",
+    "SUPPORTED"
+   ],
+   "correction": "A zero of the derivative is not always an extremum: f(x) = x³ has a zero with no extremum.",
+   "source_chunk_id": "derivative-variations.en#finding-a-maximum-or-a-minimum",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 6129.2,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-13",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "(x²)' = 2x and the derivative of a constant is 1.",
+   "expected": "PARTLY",
+   "got": "PARTLY",
+   "checked_by": "mixed",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "(x²)' = 2x",
+     "verdict": "SUPPORTED",
+     "checked_by": "sympy"
+    },
+    {
+     "claim": "the derivative of a constant is 1.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "CONTRADICTED"
+   ],
+   "correction": "The derivative of a constant is 0, not 1.",
+   "source_chunk_id": "derivative-variations.en#sign-of-the-derivative-and-monotonicity",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 1850.6,
+   "requests": 1,
+   "events": [
+    "claim_part",
+    "answered_by_rules",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-14",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "The derivative of a product is u'v + uv', and the derivative of a sum is the product of the derivatives.",
+   "expected": "PARTLY",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "The derivative of a product is u'v + uv'",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "the derivative of a sum is the product of the derivatives.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "CONTRADICTED"
+   ],
+   "correction": "La dérivée d'un produit n'est pas u'v + uv', mais u'v + u·v'. La dérivée d'une somme est la somme des dérivées : (u + v)' = u' + v'.",
+   "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 8299.6,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-15",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "The derivative of a constant is 1, and the derivative of x is x.",
+   "expected": "CONTRADICTED",
+   "got": "PARTLY",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "The derivative of a constant is 1",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "the derivative of x is x.",
+     "verdict": "NOT_IN_COURSE",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "CONTRADICTED",
+    "CONTRADICTED"
+   ],
+   "correction": "The derivative of a constant is 0, not 1: a constant does not change.",
+   "source_chunk_id": "derivative-variations.en#sign-of-the-derivative-and-monotonicity",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 5197.1,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-16",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "The derivative of a sum is the sum of the derivatives, and a matrix is invertible when its determinant is not zero.",
+   "expected": "PARTLY",
+   "got": "PARTLY",
+   "checked_by": "mixed",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "The derivative of a sum is the sum of the derivatives",
+     "verdict": "SUPPORTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "a matrix is invertible when its determinant is not zero.",
+     "verdict": "NOT_IN_COURSE",
+     "checked_by": "rules"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "NOT_IN_COURSE"
+   ],
+   "correction": "",
+   "source_chunk_id": "derivee-formules.fr#somme-et-produit-par-une-constante",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 1.1,
+   "requests": 0,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "cache_hit",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "en-17",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "The tangent line at a has equation y = f'(a)(x − a) + f(a).",
+   "expected": "SUPPORTED",
+   "got": "SUPPORTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": "derivee-definition.fr#interpretation-graphique-la-tangente",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 4049.0,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-18",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "For f(x) = x³, f'(0) = 0 and f has an extremum at 0.",
+   "expected": "PARTLY",
+   "got": "PARTLY",
+   "checked_by": "mixed",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "For f(x) = x³, f'(0) = 0",
+     "verdict": "SUPPORTED",
+     "checked_by": "sympy"
+    },
+    {
+     "claim": "f has an extremum at 0.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "CONTRADICTED"
+   ],
+   "correction": "La fonction f(x) = x³ n'a pas d'extremum à 0 : il augmente partout.",
+   "source_chunk_id": "derivative-variations.en#finding-a-maximum-or-a-minimum",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2220.9,
+   "requests": 1,
+   "events": [
+    "claim_part",
+    "answered_by_rules",
+    "claim_part",
+    "retrieving",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-19",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "If f'(x) < 0 on an interval then f is increasing on that interval.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "If f'(x) < 0 on an interval then f is decreasing, not increasing.",
+   "source_chunk_id": "derivative-variations.en#sign-of-the-derivative-and-monotonicity",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2882.9,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "en-20",
+   "set": "added",
+   "language": "ENGLISH",
+   "claim": "(3x² + 5x)' = 6x + 5",
+   "expected": "SUPPORTED",
+   "got": "SUPPORTED",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.0,
+   "requests": 0,
+   "events": [
+    "answered_by_rules"
+   ]
+  },
+  {
+   "id": "ar-11",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "مشتقة الدالة الثابتة تساوي صفراً ومشتقة x هي 1.",
+   "expected": "SUPPORTED",
+   "got": "PARTLY",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "مشتقة الدالة الثابتة تساوي صفراً",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "مشتقة x هي 1.",
+     "verdict": "NOT_IN_COURSE",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "SUPPORTED"
+   ],
+   "correction": "المشتقة الدالة الثابتة تساوي صفراً : لا تحددها.",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 5049.7,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-12",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "مشتقة المجموع هي مجموع المشتقات ومشتقة الجداء هي جداء المشتقات.",
+   "expected": "PARTLY",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": [
+    {
+     "claim": "مشتقة المجموع هي مجموع المشتقات",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "مشتقة الجداء هي جداء المشتقات.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "CONTRADICTED"
+   ],
+   "correction": "المشتقة المجموع هي مجموع المشتقات، أي (u + v)' = u' + v' المشتقة للجداء هي جداء المشتقات : يضرب k في الكتلة.",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 10640.9,
+   "requests": 2,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-13",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "مشتقة الدالة الثابتة تساوي 1 ومشتقة x هي 1.",
+   "expected": "PARTLY",
+   "got": "PARTLY",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "مشتقة الدالة الثابتة تساوي 1",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "مشتقة x هي 1.",
+     "verdict": "NOT_IN_COURSE",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "CONTRADICTED",
+    "SUPPORTED"
+   ],
+   "correction": "المشتقة الدالة الثابتة تساوي صفراً : لا تؤدي إلى صفر.",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2313.4,
+   "requests": 1,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "cache_hit"
+   ]
+  },
+  {
+   "id": "ar-14",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "مشتقة x هي 0 ومشتقة x² هي x.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "مشتقة x هي 0",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "مشتقة x² هي x.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "CONTRADICTED",
+    "CONTRADICTED"
+   ],
+   "correction": "مشتقة x هي 1، وبصفة عامة مشتقة xⁿ هي n·xⁿ⁻¹ : لقد قيل أن مشتقة x هي 0. المشتقة x² هي 2x : مثلًا، مشتقة x² هي 2x.",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 3063.5,
+   "requests": 1,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "cache_hit"
+   ]
+  },
+  {
+   "id": "ar-15",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "مشتقة الدالة الثابتة تساوي صفراً والخلية هي الوحدة الأساسية للكائنات الحية.",
+   "expected": "PARTLY",
+   "got": "PARTLY",
+   "checked_by": "mixed",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "مشتقة الدالة الثابتة تساوي صفراً",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "الخلية هي الوحدة الأساسية للكائنات الحية.",
+     "verdict": "NOT_IN_COURSE",
+     "checked_by": "rules"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "NOT_IN_COURSE"
+   ],
+   "correction": "المشتقة الدالة الثابتة تساوي صفراً : لا تحددها.",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 3.0,
+   "requests": 0,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "cache_hit",
+    "claim_part",
+    "retrieving",
+    "no_relevant_context"
+   ]
+  },
+  {
+   "id": "ar-16",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "العدد المشتق هو ميل المماس، ومشتقة x² هي x.",
+   "expected": "PARTLY",
+   "got": "PARTLY",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": [
+    {
+     "claim": "العدد المشتق هو ميل المماس،",
+     "verdict": "SUPPORTED",
+     "checked_by": "llm"
+    },
+    {
+     "claim": "مشتقة x² هي x.",
+     "verdict": "CONTRADICTED",
+     "checked_by": "llm"
+    }
+   ],
+   "parts_expected": [
+    "SUPPORTED",
+    "CONTRADICTED"
+   ],
+   "correction": "المشتقة x² هي 2x : مثلًا، مشتقة x² هي 2x.",
+   "source_chunk_id": "mochtaqa.ar#تعريف-العدد-المشتق",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2575.4,
+   "requests": 1,
+   "events": [
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "claim_part",
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "cache_hit"
+   ]
+  },
+  {
+   "id": "ar-17",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "مشتقة x² هي 2x.",
+   "expected": "SUPPORTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "المشتقة من x² هي 2x، والمرجع يقول إن مشتقة xⁿ هي n·xⁿ⁻¹ : x² = n·x",
+   "source_chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 7452.1,
+   "requests": 2,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating",
+    "repairing_json",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-18",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "الدالة تناقصية إذا كانت المشتقة سالبة على مجال.",
+   "expected": "SUPPORTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": false,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "الدالة تناقصية إذا كانت المشتقة موجبة على مجال",
+   "source_chunk_id": "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 1954.4,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-19",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "إذا كانت المشتقة موجبة على مجال فإن الدالة تناقصية على هذا المجال.",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "llm",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "إذا كانت المشتقة موجبةٌ على مجال، فإنّ الدالة تزايديةٌ على هذا المجال.",
+   "source_chunk_id": "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة",
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 2694.2,
+   "requests": 1,
+   "events": [
+    "retrieving",
+    "expanding_query",
+    "checking_cache",
+    "queued",
+    "generating"
+   ]
+  },
+  {
+   "id": "ar-20",
+   "set": "added",
+   "language": "ARABIC",
+   "claim": "(x²)' = 2x + 1",
+   "expected": "CONTRADICTED",
+   "got": "CONTRADICTED",
+   "checked_by": "sympy",
+   "ok": true,
+   "parts": null,
+   "parts_expected": null,
+   "correction": "الصحيح: (x²)' = 2x",
+   "source_chunk_id": null,
+   "degraded": false,
+   "degrade_reason": null,
+   "latency_ms": 0.1,
+   "requests": 0,
+   "events": [
+    "answered_by_rules"
+   ]
+  }
+ ]
+}

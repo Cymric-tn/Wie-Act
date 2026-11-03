@@ -84,7 +84,7 @@ function createServer(options = {}) {
   const app = express();
   app.use(cors({ origin: origins }));
   app.get("/health", (_req, res) => res.json({ status: "ok", rooms: rooms.size, ai: engine.status() }));
-  app.use("/api", createAiRouter({ engine, store: aiStore, uploadsDir, allowForce: ai.allowForce ?? engine.status().mode !== "engine", log }));
+  app.use("/api", createAiRouter({ engine, store: aiStore, uploadsDir, allowForce: ai.allowForce ?? (() => engine.status().backend === "fake"), log }));
 
   const httpServer = http.createServer(app);
   const io = new Server(httpServer, {

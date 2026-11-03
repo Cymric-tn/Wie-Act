@@ -5,6 +5,7 @@ for one engine process per API key) and serves it to the Node server over HTTP o
 
     ENGINE_SERVICE_TOKEN=... python bridge.py                      # the real engine, from the repo root
     ENGINE_SERVICE_TOKEN=... python bridge.py --fake --fake-mode slow   # the engine's own FakeEngine (no model, no key)
+    python bridge.py --fake --fake-speed 0                          # instant, for tests
     python bridge.py --engine-dir /path/to/wie --port 8765
 
 Standard library only; the engine brings its own requirements.txt. The bridge binds to 127.0.0.1, only answers a Host of
@@ -74,7 +75,8 @@ class EngineHost:
     engine_factory=...: called on the engine's own loop (tests: an Engine over a scripted provider); otherwise the engine
     is created from engine_dir (the repo root: the engine reads .env, data/ and prompts/ relative to it)."""
 
-    def __init__(self, engine_dir=None, fake=False, fake_mode="normal", engine=None, lock=True, engine_factory=None):
+    def __init__(self, engine_dir=None, fake=False, fake_mode="normal", engine=None, lock=True, engine_factory=None,
+                 fake_speed=0.2):
         self.loop = asyncio.new_event_loop()
         threading.Thread(target=self.loop.run_forever, name="engine-loop", daemon=True).start()
         self._lock = None
@@ -91,7 +93,7 @@ class EngineHost:
             os.chdir(self.engine_dir)
             if not fake and lock:
                 self._take_lock()
-            self.engine = self.call(self._create, fake, fake_mode)
+            self.engine = self.call(self._create, fake, fake_mode, fake_speed)
         import engine as engine_pkg  # noqa: E402  (path set above)
         self.version = getattr(engine_pkg, "__version__", None)
         from engine import Priority  # noqa: E402
@@ -103,10 +105,10 @@ class EngineHost:
         self._lock = InstanceLock(lock_path(load_settings().api_key))
         self._lock.acquire()                      # SystemExit when another engine process holds this key
 
-    async def _create(self, fake, fake_mode):
+    async def _create(self, fake, fake_mode, fake_speed=0.2):
         if fake:
             from engine.fake import FakeEngine
-            return FakeEngine(mode=fake_mode)
+            return FakeEngine(mode=fake_mode, speed=fake_speed)
         from engine import Engine
         return Engine.create()
 
@@ -180,8 +182,15 @@ class EngineHost:
         return jsonable(self.call(self.engine.router.follow_up, classification or {}))
 
     def exercise(self, exercise_id):
+        """The full exercise for the feature layer (which keeps the solution from the browser): the statement in each
+        language, the solution, the graded hints and the mistakes with their feedback."""
         bank = getattr(self.engine, "exercises", None)
-        return jsonable(bank.get(exercise_id)) if bank is not None else None
+        ex = bank.get(exercise_id) if bank is not None else None
+        if ex is None:
+            return None
+        return {"id": ex.id, "concept": ex.concept, "level": ex.level, "solution": ex.solution, "hints": list(ex.hints),
+                "common_mistakes": [list(m) for m in ex.common_mistakes], "expression": ex.expression,
+                "statement": {lang: ex.render(lang) for lang in ("fr", "en", "ar")}}
 
     def course(self, course_id):
         course = (getattr(self.engine, "courses", None) or {}).get(course_id)
@@ -390,13 +399,14 @@ def main():
     parser.add_argument("--port", type=int, default=int(os.environ.get("BRIDGE_PORT", "8765")))
     parser.add_argument("--fake", action="store_true", help="use the engine's own engine.fake.FakeEngine (no LLM, no key)")
     parser.add_argument("--fake-mode", default="normal", choices=["normal", "slow", "degraded"])
+    parser.add_argument("--fake-speed", type=float, default=0.2, help="1.0 = the real timings, 0 = instant")
     args = parser.parse_args()
     token = os.environ.get("ENGINE_SERVICE_TOKEN", "")
     if not token:
         print("ENGINE_SERVICE_TOKEN is not set (the same value the Node server reads)", file=sys.stderr)
         return 2
     try:
-        host = EngineHost(args.engine_dir, fake=args.fake, fake_mode=args.fake_mode)
+        host = EngineHost(args.engine_dir, fake=args.fake, fake_mode=args.fake_mode, fake_speed=args.fake_speed)
     except SystemExit as e:
         print(e, file=sys.stderr)
         return 3

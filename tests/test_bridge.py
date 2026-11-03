@@ -103,6 +103,7 @@ def test_health_reports_the_real_engine_and_its_version(rig):
 def test_exercises_courses_and_the_follow_up_rule_come_from_the_engine(rig):
     ex = rig.http.get("/exercises/d01").json()["exercise"]
     assert ex["solution"] and ex["hints"] and rig.http.get("/exercises/nope").status_code == 404
+    assert set(ex["statement"]) == {"fr", "en", "ar"} and "x⁴" in ex["statement"]["fr"] and ex["common_mistakes"][0] == ["x³", ex["common_mistakes"][0][1]]
     c = rig.http.get("/courses/analyse").json()["course"]
     assert c["id"] == "analyse" and c["units"] and rig.http.get("/courses/nope").status_code == 404
     f = rig.http.post("/follow_up", json={"classification": {"intent": "QUIZ", "confusion": "HIGH"}}).json()
