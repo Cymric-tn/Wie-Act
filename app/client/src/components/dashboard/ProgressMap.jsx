@@ -2,7 +2,6 @@ import { Fragment, memo, useEffect, useRef, useState } from "react";
 import { MASTERY, masteryLevel, courseMastery } from "../../lib/demoData";
 import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { useI18n } from "../../lib/i18n";
-import Icon from "../Icons";
 
 const W = 800;
 const H = 460;
@@ -203,7 +202,7 @@ function Moons({ course, unit, t }) {
 }
 
 /** The interactive solar-system progress map. */
-function ProgressMap({ compact = false, initialCourse = null, onOpenFull, onOpenUniverse }) {
+function ProgressMap({ compact = false, initialCourse = null, onOpenFull }) {
   const { t } = useI18n();
   const COURSES = useCourses();
   useEffect(() => { refreshCourseMap(); }, []);
@@ -242,9 +241,7 @@ function ProgressMap({ compact = false, initialCourse = null, onOpenFull, onOpen
         </nav>
         <div className="pm-actions">
           {onOpenFull && <button className="d-btn ghost small" onClick={onOpenFull}>{t("map.open")}</button>}
-          {onOpenUniverse && (
-            <a className="d-btn ghost small" href="/ednova/universe.html#universe"><Icon name="orbit" size={15} /> {t("map.universe")}</a>
-          )}
+          {/* "Enter 3D universe" is hidden: the static page behind it still lists MATH102 / CS201 / PHYS101 (Phase 1 has one course) */}
         </div>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="pm-svg" role="group" aria-label={t("map.title")}>

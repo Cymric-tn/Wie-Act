@@ -259,7 +259,7 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
       return (
         <div className="d-page">
           <Card icon="planet" title={t("map.title")} sub={t("map.sub")} example className="map-full">
-            <ProgressMap onOpenUniverse />
+            <ProgressMap />
           </Card>
         </div>
       );
