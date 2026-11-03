@@ -1,0 +1,198 @@
+import Icon from "../Icons";
+import ProgressMap from "../dashboard/ProgressMap";
+import { Link } from "../../lib/router";
+import { useI18n, LanguageSwitcher } from "../../lib/i18n";
+import { getUser } from "../../lib/session";
+import "../dashboard/dashboard.css";
+import "./landing.css";
+
+const FEATURES = [
+  { id: "map", icon: "planet", color: "#a279ff" },
+  { id: "rooms", icon: "users", color: "#75e8ff" },
+  { id: "board", icon: "board", color: "#40d9be" },
+  { id: "voice", icon: "mic", color: "#ffc45c" },
+  { id: "prep", icon: "exam", color: "#ff7fa8" },
+  { id: "materials", icon: "book", color: "#8dbdff" },
+  { id: "companion", icon: "sparkle", color: "#c6a0ff" },
+  { id: "language", icon: "globe", color: "#8affd3" }
+];
+
+function Nav() {
+  const { t } = useI18n();
+  const user = getUser();
+  return (
+    <header className="lp-nav">
+      <Link to="/" className="d-brand"><i>✧</i> EdNova</Link>
+      <nav className="lp-links">
+        <a href="#features">{t("nav.features")}</a>
+        <a href="#how">{t("nav.how")}</a>
+        <a href="#roles">{t("nav.roles")}</a>
+      </nav>
+      <div className="lp-nav-right">
+        <LanguageSwitcher />
+        {user ? (
+          <Link to="/app" className="d-btn primary small">{t("nav.home")} <Icon name="right" size={15} /></Link>
+        ) : (
+          <>
+            <Link to="/login" className="lp-login">{t("nav.login")}</Link>
+            <Link to="/login?mode=signup" className="d-btn primary small">{t("nav.start")}</Link>
+          </>
+        )}
+      </div>
+    </header>
+  );
+}
+
+function HeroVisual() {
+  const { t } = useI18n();
+  return (
+    <div className="lp-visual">
+      <div className="lp-window">
+        <div className="lp-window-bar">
+          <i /><i /><i />
+          <span>EdNova · {t("map.title")}</span>
+        </div>
+        <ProgressMap compact />
+      </div>
+      <div className="lp-float lp-float-chat" dir="auto">
+        <span className="d-ai-avatar small"><Icon name="sparkle" size={14} /></span>
+        <p>{t("chat.ai2")}</p>
+      </div>
+      <div className="lp-float lp-float-fact">
+        <Icon name="shield" size={16} />
+        <span>{t("board.fact")}</span>
+        <Icon name="check" size={16} />
+      </div>
+      <div className="lp-float lp-float-room">
+        <span className="d-live on" />
+        <b>Calculus II · Series</b>
+        <span className="d-avatars">
+          {["#a279ff", "#75e8ff", "#40d9be"].map((c, i) => <span key={c} className="d-avatar" style={{ "--c": c }}>{["AK", "YB", "ST"][i]}</span>)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export default function Landing() {
+  const { t } = useI18n();
+  return (
+    <div className="lp">
+      <div className="lp-sky" aria-hidden="true" />
+      <Nav />
+
+      <section className="lp-hero">
+        <div className="lp-hero-copy">
+          <span className="eyebrow">{t("hero.eyebrow")}</span>
+          <h1>
+            {t("hero.title1")}
+            <em>{t("hero.title2")}</em>
+          </h1>
+          <p className="lp-lead">{t("hero.sub")}</p>
+          <div className="lp-ctas">
+            <Link to="/login?mode=signup" className="d-btn primary lp-big">{t("hero.ctaStudent")} <Icon name="right" size={17} /></Link>
+            <Link to="/login?mode=signup&role=professor" className="d-btn ghost lp-big">{t("hero.ctaProf")}</Link>
+          </div>
+          <p className="lp-langs"><Icon name="globe" size={16} /> {t("hero.langs")}</p>
+          <dl className="lp-stats">
+            <div><dt>3</dt><dd>{t("hero.stat1")}</dd></div>
+            <div><dt>{t("hero.live")}</dt><dd>{t("hero.stat2")}</dd></div>
+            <div><dt><Icon name="shield" size={22} /></dt><dd>{t("hero.stat3")}</dd></div>
+          </dl>
+        </div>
+        <HeroVisual />
+      </section>
+
+      <section className="lp-section" id="features">
+        <div className="lp-head">
+          <span className="eyebrow">{t("features.eyebrow")}</span>
+          <h2>{t("features.title")}</h2>
+        </div>
+        <div className="lp-features">
+          {FEATURES.map((f) => (
+            <article key={f.id} className="lp-feature" style={{ "--c": f.color }}>
+              <span className="lp-feature-icon"><Icon name={f.icon} size={22} /></span>
+              <h3>{t(`feature.${f.id}.title`)}</h3>
+              <p>{t(`feature.${f.id}.desc`)}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="lp-section" id="how">
+        <div className="lp-head">
+          <span className="eyebrow">{t("how.eyebrow")}</span>
+          <h2>{t("how.title")}</h2>
+        </div>
+        <ol className="lp-steps">
+          {[1, 2, 3].map((n) => (
+            <li key={n}>
+              <span className="lp-step-num">{n}</span>
+              <h3>{t(`how.${n}.title`)}</h3>
+              <p>{t(`how.${n}.desc`)}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="lp-section lp-chat-section">
+        <div className="lp-chat-copy">
+          <span className="eyebrow">{t("chat.eyebrow")}</span>
+          <h2>{t("chat.title")}</h2>
+          <p className="lp-lead">{t("chat.sub")}</p>
+        </div>
+        <div className="lp-chat">
+          <div className="lp-bubble me" dir="ltr" lang="aeb-Latn">
+            {t("chat.user")}
+            <small>Darija</small>
+          </div>
+          <div className="lp-bubble ai">
+            <span className="d-ai-avatar small"><Icon name="sparkle" size={14} /></span>
+            <div>
+              <p>{t("chat.ai")}</p>
+              <span className="lp-verified"><Icon name="shield" size={13} /> {t("chat.badge")}</span>
+            </div>
+          </div>
+          <div className="lp-bubble ai">
+            <span className="d-ai-avatar small"><Icon name="sparkle" size={14} /></span>
+            <p>{t("chat.ai2")}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section" id="roles">
+        <div className="lp-head">
+          <span className="eyebrow">{t("roles.eyebrow")}</span>
+        </div>
+        <div className="lp-roles">
+          {[
+            ["student", "users", "#a279ff", "/login?mode=signup"],
+            ["prof", "chart", "#ffc45c", "/login?mode=signup&role=professor"]
+          ].map(([role, icon, color, to]) => (
+            <article key={role} className="lp-role" style={{ "--c": color }}>
+              <span className="lp-feature-icon"><Icon name={icon} size={22} /></span>
+              <h3>{t(`roles.${role}.title`)}</h3>
+              <ul>
+                {[1, 2, 3, 4].map((n) => <li key={n}><Icon name="check" size={16} /> {t(`roles.${role}.${n}`)}</li>)}
+              </ul>
+              <Link to={to} className="d-btn ghost">{role === "prof" ? t("hero.ctaProf") : t("hero.ctaStudent")} <Icon name="right" size={16} /></Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="lp-cta">
+        <h2>{t("cta.title")}</h2>
+        <p>{t("cta.sub")}</p>
+        <Link to="/login?mode=signup" className="d-btn primary lp-big">{t("cta.button")} <Icon name="right" size={17} /></Link>
+      </section>
+
+      <footer className="lp-footer">
+        <span className="d-brand small"><i>✧</i> EdNova</span>
+        <span>© 2026 · {t("footer.made")}</span>
+        <span className="d-badge soon">{t("footer.preview")}</span>
+        <LanguageSwitcher />
+      </footer>
+    </div>
+  );
+}
