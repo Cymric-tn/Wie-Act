@@ -190,9 +190,37 @@ def build_plan(course: Course, scope: Mapping[str, Any], deadline: Any, pace_min
 
 
 # ------------------------------------------------------------------ exercises for a page
+def _point_variant(ex, n: int) -> dict | None:
+    """The 'value of f' at a' and 'tangent at a' exercises: the function times (n + 1) at the same point, the solution
+    recomputed with sympy (v1.4: "nombre dérivé" has only two such exercises and no prerequisite with any, so its page
+    came back with 1 quiz item instead of 3)."""
+    a = dict(ex.params).get("a")
+    f = parse_answer(ex.expression) if ex.expression else None
+    pa = parse_answer(a) if a else None
+    if f is None or pa is None or not f.has(X) or pa.free_symbols:
+        return None
+    g = sympy.expand((n + 1) * f)
+    d = sympy.diff(g, X).subs(X, pa)
+    if ex.template_key == "derivative_at":
+        solution = f"f'({a}) = {pretty(d)}"
+    elif ex.template_key == "tangent_at":
+        solution = f"y = {pretty(sympy.expand(d * (X - pa) + g.subs(X, pa)))}"
+    else:
+        return None
+    expr = pretty(g)
+    phrases = dict(ex.phrases)
+    if not {"fr", "en", "ar"} <= set(phrases):
+        return None
+    return {"id": f"{ex.id}~v{n}", "concept": ex.concept, "level": ex.level, "expression": expr,
+            "statement": {k: phrases[k].format(expr=expr, **dict(ex.params)) for k in ("fr", "en", "ar")},
+            "solution": solution, "source": "variant", "generated": True}
+
+
 def variant_of(ex, n: int = 1) -> dict | None:
     """A deterministic variant of a derivative exercise: the function times (n + 1), the solution recomputed. None when
-    the exercise is not a plain 'derive f' one."""
+    the exercise is not a plain 'derive f' one or a value / tangent at a point."""
+    if ex.template_key in ("derivative_at", "tangent_at"):
+        return _point_variant(ex, n)
     if ex.solution.strip().startswith(("y", "f'(") and ("f'(x",)) and not ex.solution.strip().startswith("f'(x)"):
         return None
     f = parse_answer(ex.expression) if ex.expression else None

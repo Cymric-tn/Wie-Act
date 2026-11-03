@@ -397,3 +397,70 @@ degraded `quota_low`. Five changes and one script; evidence below, none of it me
 - Fake engine: `check_claim` outcomes `PARTLY` (two sympy parts) and `COMPOUND` (sympy + model + outside the course),
   explain outcome `quota_wait`. API doc: `data.parts`, `claim_part`, `queued/quota_window`, `notes.unchecked_spans`.
 - Not verified: everything on FelCloud (the compound accuracy, the 8B as judge per part, the real wait lengths).
+
+## Engine v1.4 setting choices and fixes after the first live slot (2026-11-03, branch `integration/real-engine`)
+
+- **`CLAIM_VERDICT_CLASS` default = midsize** (`config.py`, `.env.example`). 60 claims on FelCloud, same code, class only:
+  3B 40/60 = 66.7% (original 30: 23, added 30: 17, compound 12/24, per part 26/40), 8B 52/60 = **86.7%** (28, 24,
+  compound 21/24, per part 36/40); p50 per model request 3.4 s vs 4.5 s. The cost: 1 mid-size request per model-judged
+  claim part instead of 1 compact, inside the 20/min window the 8B also serves `explain`. `reports/felcloud-2026-11-03-check-claim-{compact,midsize}.json`.
+  The test profile (`tests/conftest.py`) pins compact so the older tests keep their meaning; a test asserts the production default.
+- **`EXPLAIN_EXPECTED_S` default = 25** (budget 0: an interactive explain never waits for the window, v1.3 behaviour).
+  Rule: compare the load runs at 25 / 15 / 10 and keep the one with the most full explains among those with a deadline rate
+  <= 18% and interactive p95 < 25 s; none qualifies or one run only -> 25. Only **one** live run happened (setting 10, 2026-11-03,
+  `felcloud-2026-11-03-load-mixed.*`): deadline rate 4/15 = 26.7%, p95 25.0 s, `quota_low` 0. It does not qualify under the
+  rule, and a single run cannot be compared, so 25. The wait stays available (`EXPLAIN_EXPECTED_S=10`) and stays unmeasured at 15.
+- **Arabizi retrieval.** Diagnosis: "derivee mta3 x²" already retrieves (`mta3` was a stopword; coverage 1.0, four chunks). The
+  e2e question that missed was "chnowa el derivee mta3 x² w kifech nal9aha ?": `nal9aha` ("I find it") is a content token with no
+  match, coverage 1/3 < the 0.4 gate, so nothing passed. Fix: Tunisian function words and common verbs (ta3, mtaa, wala, 3la,
+  3and, nel9a/nal9aha, n7esbha, na3mel, nekteb, nfhem, 9olli..., and Arabic-script تاع، هاذا، نلقاها، نعمل...) are stopwords
+  (`rag/normalize.py`); glossary variants stay out of it (`n7seb`, `نحسب` map to "calculer"). New set
+  `tests/eval/retrieval_arabizi.jsonl` (6 questions of this pattern): **4/6 -> 6/6**; retrieval_set 13/15 and 14/15, off-topic 4/4,
+  crosslang 6/8 and 7/8, manual 2/2 unchanged.
+- **`generate_page` quiz length.** Only the "nombre dérivé" page had 1 quiz item: the concept has two bank exercises of the
+  "value of f' at a" kind, its only prerequisite (`limite`) is a draft without exercises, and `variant_of` handled only
+  "derive f" exercises. Now also "f'(a)" and "tangent at a" exercises get variants (f times n+1 at the same point, solution
+  by sympy). Test: every published concept's page has 3 distinct quiz items and a worked example. Side effect found in the app:
+  generated items carry their solution; the Node layer keeps it server-side (variant ids contain `~`) and grades them, and sends
+  the browser the item without it.
+- **e2e report:** the engine numbers are filtered by the session's request ids (`/metrics/summary?request_ids=`), and the session
+  runs on its own cache and course index (it wrote an upload into `data/index/courses` before; removed).
+- **App:** no links to the static Constellation / Universe pages (they still list MATH102 / CS201 / PHYS101): the Atlas / Universe
+  rail links of the board and "Enter 3D universe" on the map are removed; the files stay in `client/public/ednova/` unlinked.
+
+## Last engine changes (2026-11-03, `integration/real-engine`; the engine is frozen after this except dry-run bugs)
+
+- **`follow_up(classification, ctx, has_open_exercise=False)`.** Intent HINT with no open exercise routes to `explain`, reason
+  "hint without an open exercise", logged as an override (`outcome=overridden`) like the HIGH-confusion one, which keeps its own
+  reason and wins. ANSWER_ATTEMPT is unchanged. Passed by the bridge (`POST /follow_up {has_open_exercise}`), the Node tutor loop
+  (from its exercise state: it now looks the exercise up before routing) and the chat console. Why: live, the 3B called "chnowa el
+  derivee mta3 x² w kifech nal9aha ?" a HINT and the learner got a nonsensical hint with no sources. Replay offline with a scripted
+  HINT classification (`tests/test_bridge.py`): follow-up explain, grounded in two course pages, not degraded. Side effect:
+  `scripts/load_test.py` (no open exercise) now routes its HINT turns to explain.
+- **Verbal equality in the formula check** (`engine/grounding.py::verbalize`). `est égal(e) à`, `égale`, `vaut`, `equals`,
+  `is equal to`, `is`, `يساوي`, `تساوي` between two math tokens are read as "=" (`is` only directly between two math tokens). A
+  wrong one is `wrong_math` with `notes.wrong_math_forms` (span -> correct form): the upload answer's "la limite de (x^2 + 2x)/x
+  est égale à 2x + 2" -> wrong, correct form `(x^2 + 2x)/x = x + 2`. Correct ones are verified. Guards found while testing: not read
+  when the left run is the argument of a derivative / integral / value ("la dérivée de x² est égale à 2x", "the derivative of x²
+  is 2x", "مشتقة x² تساوي 2x"), when the spoken equality sits inside a written one ("of f(x) = x² − 4x + 1 is f'(x) = 2x − 4"),
+  after a sentence boundary, or when a neighbour is a word; the French verb "a" in "on a (x+1)² est égal à ..." no longer joins the
+  left run. **Known false-positive risk, by design of the request:** "limite" is not an argument noun, so a true limit written as an
+  equality ("la limite de (x² − 1)/(x − 1) est égale à 2") is judged as an identity and flagged.
+  Recheck on 151 saved explain answers (the 146 older ones + 5 e2e answers), before -> after: `wrong_math` 3 -> 4, `ungrounded`
+  7 -> 7, unchecked 0 -> 0; the only newly flagged span is `(x^2 + 2x)/x = 2x + 2` (the upload answer); nothing newly flagged
+  as ungrounded and nothing un-flagged (`reports/recheck-formulas-verbal.json`). One false positive of the first version
+  (a copula inside a written equation) was found by this recheck and fixed. Spoken equalities are rare in the corpus, so this is thin
+  evidence about false positives on new answers.
+
+- **Spoken limits (dry-run bug of the verbal-equality check).** Reading "la limite de (x² − 1)/(x − 1) est égale à 2" as the identity
+  `(x²−1)/(x−1) = 2` flagged true limits. Now, after "limite / limit / lim(h→0) / la limite de / نهاية" the stated point is looked for
+  ("quand / lorsque / when / as / عندما / حين VAR tend vers / tends to / approaches / → / تؤول إلى POINT", "x → a", or inside
+  `lim(h→0)`; ∞ / +∞ / l'infini / infinity; in the same sentence, before or after the claim) and the claim is judged with
+  `sympy.limit` against the right-hand side (a constant, ∞, or an expression in other variables such as 2x when h → 0): equal ->
+  verified; different -> `wrong_math` with the correct limit in `wrong_math_forms` (`lim(x→∞) (x²+2x)/x = 2x + 2` -> `= ∞`); **no
+  point, or a limit sympy cannot evaluate -> `notes.unchecked_spans`, never flagged**. A spoken limit is no longer turned into "=".
+  Consequence: the upload answer's "la limite de (x^2 + 2x)/x est égale à 2x + 2" (no point stated) is **unchecked, no longer
+  wrong_math**; the limit of that expression at ∞ would be flagged if the answer said so. Recheck on the 151 saved answers:
+  before this fix wrong_math 4 / ungrounded 7 / unchecked 0, after wrong_math 3 / ungrounded 7 / unchecked 1 (the upload
+  sentence moved from wrong_math to unchecked; nothing else changed); against the state before verbal equality at all: 3 / 7 / 0 ->
+  3 / 7 / 1. `reports/recheck-formulas-limits.json`.

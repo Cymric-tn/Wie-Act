@@ -311,7 +311,7 @@ async def test_claim_verdict_class_midsize_is_a_setting_not_a_code_change(vt):
     r = await eng.run("check_claim", {"claim": "La dérivée d'une constante est 0."}, {"language": "FRENCH"})
     assert r.model_class_used == "midsize" and fake.requests[0]["body"]["model"] == "mid-a"
     from tests.conftest import make_settings
-    assert make_settings().claim_verdict_class.value == "compact"
+    assert make_settings().claim_verdict_class.value == "compact"                  # the test profile; production default below
     with pytest.raises(Exception, match="CLAIM_VERDICT_CLASS"):
         make_settings(CLAIM_VERDICT_CLASS="huge")
 
@@ -369,3 +369,10 @@ def test_the_eval_summary_reports_each_set_and_the_compound_claims_separately():
     assert s["model_decided"]["overall"]["n"] == 3
     assert s["per_part"] == {"n": 2, "correct": 1, "accuracy": 0.5}
     assert s["latency_ms_requests"]["n"] == 3
+
+
+def test_the_production_defaults_are_a_midsize_claim_judge_and_no_quota_wait():
+    from config import load_settings
+    s = load_settings({"LLM_BASE_URL": "http://x/v1", "LLM_API_KEY": "k", "MODEL_COMPACT": "c", "MODEL_MIDSIZE": "m"})
+    assert s.claim_verdict_class.value == "midsize" and s.explain_expected_s == 25.0
+    assert s.interactive_deadline_s - s.explain_expected_s <= 0           # a quota wait never fits: v1.3 behaviour

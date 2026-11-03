@@ -1,0 +1,40 @@
+{
+ "before_this_fix (verbal equality, no limit handling)": {
+  "answers": 151,
+  "ungrounded": 7,
+  "wrong_math": 4,
+  "unchecked": 0
+ },
+ "after": {
+  "answers": 151,
+  "ungrounded": 7,
+  "wrong_math": 3,
+  "unchecked": 1
+ },
+ "before_verbal_equality": {
+  "answers": 151,
+  "ungrounded": 7,
+  "wrong_math": 3,
+  "unchecked": 0
+ },
+ "newly_ungrounded": [],
+ "no_longer_ungrounded": [],
+ "newly_wrong_math": [],
+ "no_longer_wrong_math": [
+  [
+   "e2e_answers_extra.json",
+   "R2.3 Upload,",
+   "round2",
+   "(x^2 + 2x)/x = 2x + 2"
+  ]
+ ],
+ "newly_unchecked": [
+  [
+   "e2e_answers_extra.json",
+   "R2.3 Upload,",
+   "round2",
+   "(x^2 + 2x)/x = 2x + 2"
+  ]
+ ],
+ "no_longer_unchecked": []
+}

@@ -146,8 +146,10 @@ class Router:
         self._log(d, ctx)
         return d
 
-    def follow_up(self, classification: Mapping[str, Any], ctx=None) -> FollowUp:
-        """intent -> task, with the confusion override: HIGH confusion + DIAGNOSTIC/QUIZ -> explain.
+    def follow_up(self, classification: Mapping[str, Any], ctx=None, has_open_exercise: bool = False) -> FollowUp:
+        """intent -> task, with two overrides: HIGH confusion + DIAGNOSTIC/QUIZ -> explain (teach before testing), and
+        intent HINT while the learner has no open exercise -> explain (a hint is a step on something; with nothing open the
+        learner asked a question, e.g. the Arabizi "kifech nal9aha ?" read as a request for a hint).
         Logged as a kind="route" record with its reason, like every other routing decision."""
         intent = str(classification.get("intent") or "").upper()
         confusion = str(classification.get("confusion") or "").upper()
@@ -155,6 +157,8 @@ class Router:
         f = FollowUp(task, f"intent {intent} -> {task or 'no follow-up'}")
         if confusion == "HIGH" and intent in CONFUSED_TO_EXPLAIN:
             f = FollowUp("explain", f"intent {intent} with confusion HIGH -> explain (teach before testing)", True)
+        elif intent == "HINT" and not has_open_exercise:
+            f = FollowUp("explain", "hint without an open exercise", True)
         log.info("follow-up: %s", f.reason)
         self.sink.write(CallRecord(
             request_id=getattr(ctx, "request_id", None) or "-", turn_id=getattr(ctx, "turn_id", None),

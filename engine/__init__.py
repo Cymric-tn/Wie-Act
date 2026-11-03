@@ -9,6 +9,6 @@ from engine.fake import FakeEngine
 from engine.result import Event, Result
 from gatekeeper.queue import Priority
 
-__version__ = "1.3"
+__version__ = "1.4"
 
 __all__ = ["Engine", "Event", "FakeEngine", "Priority", "Result", "__version__"]
