@@ -57,13 +57,16 @@ class Session:
         self.tmp = tempfile.mkdtemp(prefix="ednova-e2e-")
         self.procs: list[subprocess.Popen] = []
         self.steps: list[dict] = []
+        self.request_ids: set[str] = set()
         self.stopped: str | None = None
         self.learner = "e2e-learner-1"
         self.ctx = {"course_id": "analyse", "class_id": "E2E", "language": None}
 
     # ---------------------------------------------------------------- processes
     def start(self):
-        env = {**os.environ, "ENGINE_SERVICE_TOKEN": self.token}
+        # the session's uploads and cache are its own: nothing is written into the repo's data/ and no old answer is reused
+        env = {**os.environ, "ENGINE_SERVICE_TOKEN": self.token, "RAG_COURSE_INDEX_DIR": os.path.join(self.tmp, "courses"),
+               "CACHE_PATH": os.path.join(self.tmp, "cache.sqlite")}
         cmd = [sys.executable, os.path.join(ROOT, "app/bridge/bridge.py"), "--port", str(self.bridge_port)]
         if self.a.fake:
             cmd += ["--fake", "--fake-speed", "0"]
@@ -154,8 +157,20 @@ class Session:
         self.steps.append(entry)
         print(f"{entry['status']:12} {name}  ({entry['requests']} requests, {entry['seconds']} s)", flush=True)
 
-    @staticmethod
-    def final(lines):
+    def collect(self, obj):
+        """Remember every engine request id that shows up in a response: the session's own calls."""
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if k in ("request_id", "explain_request_id") and isinstance(v, str):
+                    self.request_ids.add(v)
+                else:
+                    self.collect(v)
+        elif isinstance(obj, list):
+            for v in obj:
+                self.collect(v)
+
+    def final(self, lines):
+        self.collect(lines)
         return next(x for x in lines if x["type"] == "result")
 
     def brief(self, r):
@@ -171,7 +186,8 @@ class Session:
             self.play()
         finally:
             self.total = self.used() - self.base_used
-            self.metrics = self.bridge.get("/metrics/summary").json()
+            # only this session's calls (by request id), not the whole metrics file
+            self.metrics = self.bridge.get("/metrics/summary", params={"request_ids": ",".join(sorted(self.request_ids))}).json()
             self.stop()
 
     def turn(self, message, **extra):
@@ -303,7 +319,7 @@ class Session:
         not_run = [s for s in self.steps if s["status"] == "not run"]
         if not_run:
             lines += ["", "## Not run (moves to the next slot)", ""] + [f"- {s['step']}: {s['why']}" for s in not_run]
-        lines += ["", "## Engine numbers for the session", "", "```json", json.dumps(self.metrics, ensure_ascii=False, indent=1), "```"]
+        lines += ["", f"## Engine numbers for the session ({len(self.request_ids)} engine calls, filtered by request id)", "", "```json", json.dumps(self.metrics, ensure_ascii=False, indent=1), "```"]
         text = "\n".join(lines) + "\n"
         if key and key in text:
             raise SystemExit("the report contains the API key: not written")

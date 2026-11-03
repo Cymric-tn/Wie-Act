@@ -26,7 +26,7 @@ Endpoints (JSON; /run and /generate_page stream NDJSON):
     DELETE /materials/<id>?course_id=   removes every chunk of that upload
     PATCH  /materials/chunks/<chunk_id> {concept}   a professor confirms or fixes a concept tag
     POST   /cache/invalidate       {request_id} -> {removed}
-    GET    /metrics/summary?since= the engine's own numbers (runs, cache, degraded, latency, 429s)
+    GET    /metrics/summary?since=&request_ids=a,b   the engine's own numbers (runs, cache, degraded, latency, 429s)
 """
 
 import argparse
@@ -243,10 +243,10 @@ class EngineHost:
         value = self.call(cache.invalidate, request_id)
         return {"removed": value if isinstance(value, int) else int(bool(value))}
 
-    def metrics(self, since):
+    def metrics(self, since, request_ids=None):
         from metrics.review import parse_since
         from metrics.summary import summarize
-        return summarize(self.engine.metrics_records(), parse_since(since))
+        return summarize(self.engine.metrics_records(), parse_since(since), request_ids=request_ids)
 
     def health(self):
         status = self.engine.status() if hasattr(self.engine, "status") else {}
@@ -334,7 +334,9 @@ def make_handler(host, token, port):
                     course = host.course(parts[1])
                     return self._json(200 if course else 404, {"course": course})
                 if parts == ["metrics", "summary"]:
-                    return self._json(200, host.metrics((parse_qs(url.query).get("since") or [None])[0]))
+                    q = parse_qs(url.query)
+                    ids = [x for x in ",".join(q.get("request_ids") or []).split(",") if x] if "request_ids" in q else None
+                    return self._json(200, host.metrics((q.get("since") or [None])[0], ids))
                 self._json(404, {"error": "not found"})
             self._guard(go)
 
