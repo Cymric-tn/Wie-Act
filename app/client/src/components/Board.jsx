@@ -1570,8 +1570,7 @@ export default function Board({ session, status, onLeave }) {
       <aside className="rail" aria-label="EdNova navigation">
         <div className="logo">✧</div>
         <a className="nav" href="/app"><Icon name="home" /><small>Home</small></a>
-        <a className="nav" href="/ednova/universe.html#universe"><Icon name="orbit" /><small>Universe</small></a>
-        <a className="nav" href={`/ednova/constellation.html${course ? `?course=${course.id}` : ""}`}><Icon name="atlas" /><small>Atlas</small></a>
+        {/* The static Universe / Atlas pages (client/public/ednova/) still list the old example curriculum: no links to them in Phase 1. */}
         <span className="nav active" aria-current="page"><Icon name="board" /><small>Board</small></span>
       </aside>
 
