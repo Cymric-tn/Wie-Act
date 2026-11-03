@@ -137,6 +137,33 @@ describe("generated practice items", () => {
   });
 });
 
+describe("the tutor loop passes its exercise state to the follow-up rule", () => {
+  test("a HINT with no open exercise is routed by the engine to explain; with one, to the stored hint", async () => {
+    const seen = [];
+    const stub = {
+      kind: "engine", status: () => ({ backend: "engine", connected: true }), probe: async () => true, close() {},
+      course: async () => null,
+      getExercise: async (id) => (id === "d01" ? { id, concept: "puissance", level: 1, statement: { fr: "Dérive x⁴" }, solution: "4x³", hints: ["h1", "h2", "h3"], common_mistakes: [] } : null),
+      followUp: async (c, hasOpen) => { seen.push(hasOpen); return hasOpen ? { task: "hint", reason: "r", overridden: false } : { task: "explain", reason: "hint without an open exercise", overridden: true }; },
+      run: async (task) => ({ request_id: `r-${task}`, task, text: task === "classify" ? null : "x", data: task === "classify" ? { intent: "HINT", language: "ARABIZI", confusion: "MEDIUM", complexity: 2 } : { body: "b" }, events: [], degraded: false })
+    };
+    const server = createServer({ log: quiet, ai: { engine: stub } });
+    const port = await server.listen(0, "127.0.0.1");
+    const post = (body) => fetch(`http://127.0.0.1:${port}/api/ai/turn`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then(ndjson);
+    try {
+      const none = (await post({ message: "chnowa el derivee mta3 x² w kifech nal9aha ?", learner_id: "l1" })).find((l) => l.type === "result");
+      assert.equal(none.follow.task, "explain");
+      assert.equal(none.follow.reason, "hint without an open exercise");
+      assert.equal(none.result.task, "explain");
+      const open = (await post({ message: "un indice ?", exercise_id: "d01", hints_used: 0, learner_id: "l1" })).find((l) => l.type === "result");
+      assert.equal(open.follow.task, "hint");
+      assert.deepEqual(seen, [false, true]);
+    } finally {
+      await server.close();
+    }
+  });
+});
+
 describe("AI API through the bridge (the engine's FakeEngine)", { skip }, () => {
   const port = 8790 + Math.floor(Math.random() * 100);
   let bridge;

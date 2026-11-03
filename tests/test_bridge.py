@@ -276,7 +276,7 @@ def test_the_fake_engine_serves_the_same_routes_without_a_key(tmp_path):
         h = c.get("/health").json()
         assert h["fake"] is True and "explain" in h["tasks"]
         assert c.get("/exercises/d01").json()["exercise"]["solution"] and c.get("/courses/analyse").status_code == 200
-        assert c.post("/follow_up", json={"classification": {"intent": "HINT"}}).json()["task"] == "hint"
+        assert c.post("/follow_up", json={"classification": {"intent": "HINT"}, "has_open_exercise": True}).json()["task"] == "hint"
         r = c.post("/run", json={"task": "explain", "inputs": {"question": "x"}, "context": {"fake_outcome": "not_in_course"}})
         assert json.loads(r.text.splitlines()[-1])["result"]["notes"]["retrieval"] == "no_relevant_chunks"
         page = c.post("/generate_page", json={"focus_point": {"concept_id": "puissance", "page_kind": "learn"}})
@@ -306,3 +306,35 @@ def test_metrics_can_be_limited_to_given_request_ids(rig):
     only = rig.http.get("/metrics/summary", params={"request_ids": a["request_id"]}).json()
     assert only["runs"]["total"] == 1 and only["provider_requests"]["total"] == 1
     assert rig.http.get("/metrics/summary", params={"request_ids": "nope"}).json()["runs"]["total"] == 0
+
+
+def test_follow_up_takes_has_open_exercise(rig):
+    f = rig.http.post("/follow_up", json={"classification": {"intent": "HINT"}}).json()
+    assert (f["task"], f["overridden"], f["reason"]) == ("explain", True, "hint without an open exercise")
+    g = rig.http.post("/follow_up", json={"classification": {"intent": "HINT"}, "has_open_exercise": True}).json()
+    assert (g["task"], g["overridden"]) == ("hint", False)
+
+
+def test_the_failing_arabizi_question_misread_as_a_hint_is_routed_to_explain_and_answered_from_the_course(tmp_path):
+    """The tutor loop of the app, offline: classify (scripted to answer HINT, as the 3B did live) -> follow_up with no open
+    exercise -> the follow-up task. Before v1.4 the task was `hint` (a nonsensical hint, no sources)."""
+    q = "chnowa el derivee mta3 x² w kifech nal9aha ?"
+    azi_hint = json.dumps({"intent": "HINT", "language": "ARABIZI", "confusion": "MEDIUM", "complexity": 2, "confidence": 0.8})
+    r = Rig(tmp_path, reply="Behi: la dérivée de x² est 2x, par la règle (xⁿ)' = n·xⁿ⁻¹.")
+    try:
+        r.prompts.clear()
+        # the scripted model answers classify with HINT whatever it is asked
+        import tests.test_bridge as me
+        me.JSON_REPLY, saved = azi_hint, me.JSON_REPLY
+        try:
+            _, c = r.lines("/run", {"task": "classify", "inputs": {"message": q}, "context": {"turn_id": "t1"}})
+        finally:
+            me.JSON_REPLY = saved
+        assert c["data"]["intent"] == "HINT" and c["data"]["language"] == "ARABIZI"
+        f = r.http.post("/follow_up", json={"classification": c["data"], "has_open_exercise": False}).json()
+        assert f["task"] == "explain" and f["overridden"] and f["reason"] == "hint without an open exercise"
+        events, ex = r.lines("/run", {"task": "explain", "inputs": {"question": q}, "context": {"language": "ARABIZI", "course_id": "analyse"}})
+        assert "no_relevant_context" not in [e["event"]["name"] for e in events] and not ex["degraded"]
+        assert ex["notes"]["sources"] and ex["task"] == "explain"                      # grounded in the course, not a bare hint
+    finally:
+        r.close()
