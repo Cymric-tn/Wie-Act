@@ -28,6 +28,10 @@ BASE_ENV = {
     "INPUT_TRUNCATION_CHARS_PER_TOKEN": "0",
     # the budget tests were written against 2 chars/token; the estimator default (2.3) has its own tests
     "ESTIMATE_CHARS_PER_TOKEN": "2.0",
+    # the production defaults (CLAIM_VERDICT_CLASS=midsize, EXPLAIN_EXPECTED_S=25) have their own tests; the older tests
+    # were written for the compact judge and for a 10 s explain
+    "CLAIM_VERDICT_CLASS": "compact",
+    "EXPLAIN_EXPECTED_S": "10",
 }
 
 
