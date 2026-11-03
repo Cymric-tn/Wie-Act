@@ -3349,7 +3349,7 @@ curl -s -H "X-Engine-Token: $ENGINE_SERVICE_TOKEN" http://127.0.0.1:8765/health
 ```json
 {
   "status": "ok",
-  "engine_version": "1.3",
+  "engine_version": "1.4",
   "fake": true,
   "fake_mode": "normal",
   "breaker": {

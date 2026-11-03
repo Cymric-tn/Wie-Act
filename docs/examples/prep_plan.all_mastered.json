@@ -133,11 +133,11 @@
     "skipped_draft": [
       "limite"
     ],
-    "days": 18,
+    "days": 19,
     "minutes_needed": 88,
-    "minutes_available": 540,
+    "minutes_available": 570,
     "pace_min_per_day": 30,
-    "start": "2026-11-02",
+    "start": "2026-11-01",
     "deadline": "2026-11-20"
   }
 }

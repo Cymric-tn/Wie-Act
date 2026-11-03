@@ -7,6 +7,7 @@ import subprocess
 import sys
 import threading
 import time
+from urllib.parse import quote
 
 import httpx
 import pytest
@@ -203,10 +204,10 @@ def test_upload_errors(rig):
 
 def test_confirming_a_concept_tag_reaches_the_index(rig):
     cid = rig.upload("mat-tag.md").json()["chunks"][0]["id"]
-    out = rig.http.patch(f"/materials/chunks/{cid}", json={"concept": "tangente"})
+    out = rig.http.patch(f"/materials/chunks/{quote(cid, safe='')}", json={"concept": "tangente"})
     assert out.status_code == 200 and out.json()["chunk"]["concept"] == "tangente" and out.json()["chunk"]["confidence"] == 1.0
     assert next(c for c in rig.host.engine.retriever.chunks if c.chunk_id == cid).concept == "tangente"
-    assert rig.http.patch(f"/materials/chunks/{cid}", json={"concept": "pas-un-concept"}).status_code == 400
+    assert rig.http.patch(f"/materials/chunks/{quote(cid, safe='')}", json={"concept": "pas-un-concept"}).status_code == 400
     assert rig.http.patch("/materials/chunks/unknown", json={"concept": "tangente"}).status_code == 404
 
 
