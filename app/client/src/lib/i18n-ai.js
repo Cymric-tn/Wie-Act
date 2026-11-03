@@ -75,7 +75,7 @@ export const en = {
   "ai.cached": "earlier answer",
   "ai.rules": "no model needed",
   "ai.newChat": "New chat",
-  "ai.scope": "Course: Calculus I · Derivatives",
+  "ai.scope": "Course: Analyse · Derivatives",
   "ai.notFound": "Not in the course material",
 
   "ex.label": "Exercise",
@@ -226,7 +226,7 @@ export const fr = {
   "ai.cached": "réponse déjà connue",
   "ai.rules": "sans modèle",
   "ai.newChat": "Nouvelle discussion",
-  "ai.scope": "Cours : Analyse I · Dérivées",
+  "ai.scope": "Cours : Analyse · Dérivation",
   "ai.notFound": "Absent des supports du cours",
 
   "ex.label": "Exercice",
@@ -377,7 +377,7 @@ export const ar = {
   "ai.cached": "إجابة سابقة",
   "ai.rules": "دون نموذج",
   "ai.newChat": "محادثة جديدة",
-  "ai.scope": "المادة: التحليل 1 · الاشتقاق",
+  "ai.scope": "المادة: التحليل · الاشتقاق",
   "ai.notFound": "غير موجود في مراجع الدرس",
 
   "ex.label": "تمرين",

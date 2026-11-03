@@ -1,5 +1,10 @@
-// Example data for the preview dashboards, until the real backend exists.
-// Mastery is 0–1. Course ids match the study-room names on the whiteboard.
+// The course graph is the engine's (generated from data/courses/analyse.yaml); mastery is the learner's real practice
+// results (/api/ai/mastery). The rooms, exams, materials and class lists below are still example data for the preview
+// dashboards, all about the one course the engine has content for: analyse.
+import { ANALYSE } from "./analyse.generated.js";
+
+export const COURSE_ID = ANALYSE.id;
+export const COURSE_COLOR = "#a68bff";
 
 export const MASTERY = {
   mastered: { color: "#40d9be", key: "mastery.mastered" },
@@ -15,61 +20,38 @@ export function masteryLevel(value) {
   return "new";
 }
 
-const unit = (name, lessons) => ({
-  name,
-  lessons: lessons.map(([lesson, mastery]) => ({ name: lesson, mastery })),
-  get mastery() {
-    return this.lessons.reduce((s, l) => s + l.mastery, 0) / this.lessons.length;
-  }
-});
+const title = (titles, lang) => titles?.[lang] || titles?.fr || titles?.en || "";
 
-export const COURSES = [
-  {
-    id: "MATH102",
-    name: "Calculus II",
-    color: "#a68bff",
-    professor: "Dr. Ben Salah",
-    units: [
-      unit("Integration techniques", [["Substitution", 0.92], ["Integration by parts", 0.81], ["Partial fractions", 0.66]]),
-      unit("Improper integrals", [["Infinite bounds", 0.55], ["Comparison test", 0.38]]),
-      unit("Sequences & series", [["Convergence tests", 0.24], ["Power series", 0.3], ["Taylor series", 0.12]]),
-      unit("Parametric & polar", [["Parametric curves", 0.4], ["Polar area", 0]]),
-      unit("Differential equations", [["Separable ODEs", 0], ["Linear first order", 0]])
-    ]
-  },
-  {
-    id: "CS201",
-    name: "Data Structures",
-    color: "#61d9f2",
-    professor: "Dr. Trabelsi",
-    units: [
-      unit("Arrays & lists", [["Dynamic arrays", 0.95], ["Linked lists", 0.88]]),
-      unit("Stacks & queues", [["Stacks", 0.9], ["Queues", 0.78], ["Deques", 0.6]]),
-      unit("Trees", [["Binary search trees", 0.62], ["AVL trees", 0.31], ["Heaps", 0.45]]),
-      unit("Hash tables", [["Hashing", 0.5], ["Collisions", 0.22]]),
-      unit("Graphs", [["Representations", 0.2], ["BFS & DFS", 0]])
-    ]
-  },
-  {
-    id: "PHYS101",
-    name: "Physics I",
-    color: "#f8bc68",
-    professor: "Dr. Gharbi",
-    units: [
-      unit("Kinematics", [["Motion in 1D", 1], ["Projectiles", 0.9]]),
-      unit("Newton’s laws", [["Forces", 0.86], ["Friction", 0.74]]),
-      unit("Energy", [["Work", 0.7], ["Conservation", 0.52]]),
-      unit("Momentum", [["Impulse", 0.35], ["Collisions", 0.18]])
-    ]
-  }
-];
+/**
+ * The course as the progress map draws it: the sun is the course, each CONCEPT is a planet, and a planet's moons are
+ * the concepts it builds on (or one "Practice" moon when it builds on nothing). `mastery` = { concept: 0–1 }.
+ * Draft concepts (course text still under review) are left out, as the engine's planner leaves them out.
+ */
+export function buildCourse(mastery = {}, lang = "fr") {
+  const concepts = ANALYSE.concepts.filter((c) => c.status !== "draft");
+  const byId = Object.fromEntries(ANALYSE.concepts.map((c) => [c.id, c]));
+  const level = (id) => Math.max(0, Math.min(1, Number(mastery[id]) || 0));
+  const units = concepts.map((c) => {
+    const needs = c.requires.filter((r) => byId[r] && byId[r].status !== "draft");
+    const lessons = needs.length
+      ? needs.map((r) => ({ id: r, name: title(byId[r].titles, lang), mastery: level(r) }))
+      : [{ id: c.id, name: lang === "fr" ? "Exercices" : lang === "ar" ? "تمارين" : "Practice", mastery: level(c.id) }];
+    return { id: c.id, name: title(c.titles, lang), lessons, mastery: level(c.id) };
+  });
+  return {
+    id: COURSE_ID, name: title(ANALYSE.titles, lang), color: COURSE_COLOR, professor: "", units,
+    get mastery() {
+      return units.length ? units.reduce((s, u) => s + u.mastery, 0) / units.length : 0;
+    }
+  };
+}
 
 export const courseMastery = (course) =>
-  course.units.reduce((s, u) => s + u.mastery, 0) / course.units.length;
+  course.units.length ? course.units.reduce((s, u) => s + u.mastery, 0) / course.units.length : 0;
 
-/** The lowest-mastery lessons that have been started, across all courses. */
-export function weakTopics(limit = 5) {
-  return COURSES.flatMap((c) => c.units.flatMap((u) => u.lessons.map((l) => ({ ...l, course: c }))))
+/** The lowest-mastery concepts that have been started. */
+export function weakTopics(courses, limit = 5) {
+  return courses.flatMap((c) => c.units.map((u) => ({ name: u.name, mastery: u.mastery, course: c })))
     .filter((l) => l.mastery > 0 && l.mastery < 0.4)
     .sort((a, b) => a.mastery - b.mastery)
     .slice(0, limit);
@@ -85,50 +67,49 @@ export const PEOPLE = {
 };
 
 export const ROOMS = [
-  { code: "MATH102", name: "Calculus II · Series workshop", course: "MATH102", assignedBy: "Dr. Ben Salah", online: ["amira", "youssef", "salma"], live: true },
-  { code: "algo-night", name: "Algo night", course: "CS201", online: ["karim", "ines"], live: true },
-  { code: "PHYS101", name: "Physics I · Lab 3 report", course: "PHYS101", assignedBy: "Dr. Gharbi", online: [], live: false }
+  { code: "analyse", name: "Analyse · Atelier dérivées", course: COURSE_ID, assignedBy: "Dr. Ben Salah", online: ["amira", "youssef", "salma"], live: true },
+  { code: "derivees-soir", name: "Dérivées · Révision du soir", course: COURSE_ID, online: ["karim", "ines"], live: true },
+  { code: "analyse-tp", name: "Analyse · TD produit et quotient", course: COURSE_ID, assignedBy: "Dr. Ben Salah", online: [], live: false }
 ];
 
 export const EXAMS = [
-  { title: "Quiz 4 · Series convergence", course: "MATH102", inDays: 1, readiness: 0.38 },
-  { title: "Midterm · Trees & hashing", course: "CS201", inDays: 6, readiness: 0.57 },
-  { title: "Lab exam · Energy", course: "PHYS101", inDays: 11, readiness: 0.71 }
+  { title: "Quiz 1 · Dérivées de base", course: COURSE_ID, inDays: 1, readiness: 0.38 },
+  { title: "Test · Produit, quotient, racine", course: COURSE_ID, inDays: 6, readiness: 0.57 },
+  { title: "Examen · Variations et extremum", course: COURSE_ID, inDays: 11, readiness: 0.71 }
 ];
 
 export const MATERIALS = [
-  { title: "Chapter 7 — Infinite series (slides)", course: "MATH102", type: "PDF", official: true, by: "Dr. Ben Salah" },
-  { title: "Worked examples: ratio test", course: "MATH102", type: "PDF", official: true, by: "Dr. Ben Salah" },
-  { title: "AVL rotations cheat sheet", course: "CS201", type: "PNG", official: false, by: "Karim M." },
-  { title: "Lab 3 — energy measurements", course: "PHYS101", type: "DOCX", official: true, by: "Dr. Gharbi" },
-  { title: "Taylor series summary (Darija notes)", course: "MATH102", type: "PDF", official: false, by: "Salma T." }
+  { title: "Chapitre 1 — La dérivation (cours)", course: COURSE_ID, type: "PDF", official: true, by: "Dr. Ben Salah" },
+  { title: "Exemples corrigés : produit et quotient", course: COURSE_ID, type: "PDF", official: true, by: "Dr. Ben Salah" },
+  { title: "Fiche : formules de dérivation", course: COURSE_ID, type: "PNG", official: false, by: "Karim M." },
+  { title: "Notes : tangente et nombre dérivé (darija)", course: COURSE_ID, type: "PDF", official: false, by: "Salma T." }
 ];
 
-// ---------- professor view: MATH102 ----------
+// ---------- professor view: analyse ----------
 export const CLASS = {
-  course: "MATH102",
+  course: COURSE_ID,
   students: 48,
   materials: 14,
   groups: [
-    { name: "Group A · Series", members: 5, mastery: 0.71, online: 3 },
-    { name: "Group B · Series", members: 5, mastery: 0.58, online: 2 },
-    { name: "Group C · Integrals", members: 6, mastery: 0.64, online: 0 },
-    { name: "Group D · Integrals", members: 5, mastery: 0.42, online: 1 },
-    { name: "Group E · Polar", members: 6, mastery: 0.35, online: 0 }
+    { name: "Groupe A · Dérivées de base", members: 5, mastery: 0.71, online: 3 },
+    { name: "Groupe B · Dérivées de base", members: 5, mastery: 0.58, online: 2 },
+    { name: "Groupe C · Produit", members: 6, mastery: 0.64, online: 0 },
+    { name: "Groupe D · Quotient", members: 5, mastery: 0.42, online: 1 },
+    { name: "Groupe E · Variations", members: 6, mastery: 0.35, online: 0 }
   ],
   roster: [
-    { name: "Amira Khelifi", group: "A", mastery: 0.82, active: 0, weak: "Taylor series" },
-    { name: "Youssef Bouazizi", group: "A", mastery: 0.74, active: 0, weak: "Comparison test" },
-    { name: "Salma Toumi", group: "B", mastery: 0.66, active: 2, weak: "Power series" },
-    { name: "Karim Mansouri", group: "D", mastery: 0.39, active: 26, weak: "Convergence tests" },
-    { name: "Inès Dridi", group: "C", mastery: 0.61, active: 5, weak: "Partial fractions" },
-    { name: "Nour Haddad", group: "E", mastery: 0.28, active: 72, weak: "Polar area" }
+    { name: "Amira Khelifi", group: "A", mastery: 0.82, active: 0, weak: "Tangente" },
+    { name: "Youssef Bouazizi", group: "A", mastery: 0.74, active: 0, weak: "Produit" },
+    { name: "Salma Toumi", group: "B", mastery: 0.66, active: 2, weak: "Polynôme" },
+    { name: "Karim Mansouri", group: "D", mastery: 0.39, active: 26, weak: "Quotient" },
+    { name: "Inès Dridi", group: "C", mastery: 0.61, active: 5, weak: "Inverse" },
+    { name: "Nour Haddad", group: "E", mastery: 0.28, active: 72, weak: "Extremum" }
   ],
   weakPoints: [
-    { topic: "Convergence tests", share: 0.62 },
-    { topic: "Taylor series", share: 0.54 },
-    { topic: "Polar area", share: 0.47 },
-    { topic: "Comparison test", share: 0.36 },
-    { topic: "Partial fractions", share: 0.22 }
+    { topic: "Quotient", share: 0.62 },
+    { topic: "Racine carrée", share: 0.54 },
+    { topic: "Extremum", share: 0.47 },
+    { topic: "Inverse", share: 0.36 },
+    { topic: "Produit", share: 0.22 }
   ]
 };

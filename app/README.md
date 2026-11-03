@@ -13,8 +13,8 @@ cd client && npm install && npm run dev      # http://localhost:5173
 ```
 
 Boards, materials and AI history are saved under `server/data/` and survive
-restarts. Without the engine, AI features run on a built-in preview engine
-(see **AI engine** below).
+restarts. The AI features need the engine's bridge (see **AI engine** below); without it they answer
+"service unavailable" and say so.
 
 | Setting | Where | Default |
 |---|---|---|
@@ -22,14 +22,25 @@ restarts. Without the engine, AI features run on a built-in preview engine
 | `CLIENT_ORIGINS` | server, comma-separated | `http://localhost:5173,http://127.0.0.1:5173` |
 | `DB_PATH` | server | `server/data/whiteboard.db` |
 | `VITE_SERVER_URL` | client | port 3000 on the host that served the page |
-| `ENGINE` | server: `auto`, `engine` or `fake` | `auto` |
 | `ENGINE_URL` | server: where the bridge listens | `http://127.0.0.1:8765` |
-| `ENGINE_FAKE_MODE` | server: preview engine speed, `normal`, `slow` or `degraded` | `normal` |
-| `ENGINE_ALLOW_FORCE` | server: let requests force a degraded state (`context.fake_outcome`) for demos | on unless `ENGINE=engine` |
+| `ENGINE_SERVICE_TOKEN` | server **and** bridge: the shared secret (header `X-Engine-Token`) | none: the bridge refuses to start without it |
+| `ENGINE_ALLOW_FORCE` | server: let requests force a degraded state (`context.fake_outcome`) for demos | on only when the bridge runs `--fake` |
+| `AI_COURSE` | server: the default course id | `analyse` |
 
-Tests: `npm test` in `server/` (sockets, permissions, persistence, limits, the
-AI API, and the Python bridge when `python3` is installed) and in `client/`
-(geometry, undo, history replay, templates, translations).
+Node 22.5 or newer is required (the server uses the built-in `node:sqlite`); the team's machines run Node 24.
+
+The AI features need the bridge running, with the real engine or with the engine's own fake:
+
+```bash
+export ENGINE_SERVICE_TOKEN=change-me                 # the same value for the bridge and the server
+python app/bridge/bridge.py                           # the real engine (reads the repo's .env / ENV_FILE)
+python app/bridge/bridge.py --fake                    # the engine's FakeEngine: no key, no model
+cd app/server && npm run dev
+```
+
+Tests: `npm test` in `server/` (sockets, permissions, persistence, limits, and the AI API against `bridge.py --fake`;
+set `ENGINE_PYTHON` to a python that has the engine's requirements) and in `client/` (geometry, undo, history replay,
+templates, translations). The bridge itself is tested against the real `Engine` in the repo's `tests/test_bridge.py`.
 
 ## Pages
 
@@ -77,24 +88,21 @@ All of them run on the EdNova engine through the server (`/api/ai/*`):
 ## AI engine
 
 ```
-browser ──/api/ai/*──▶ Node server (feature layer) ──HTTP/NDJSON──▶ bridge/bridge.py ──▶ EdNova engine
-                         └─ built-in preview engine when the bridge is down (ENGINE=auto)
+browser ──/api/ai/*──▶ Node server (feature layer) ──HTTP/NDJSON, X-Engine-Token──▶ bridge/bridge.py ──▶ EdNova engine
 ```
 
-- `server/src/ai/routes.js` — the feature layer: per-task input whitelist,
-  learner / room / course ids, the tutor loop, exercise grading, materials,
-  run log and review queue.
-- `server/src/ai/http-engine.js` — talks to the bridge; never throws on a
-  transport error (returns a `service_unavailable` result, like the engine).
-- `server/src/ai/fake/` — the preview engine: same `run()` contract, Result /
-  Event shapes, degrade reasons and per-room / per-learner fairness, over a
-  small Derivatives course in FR / EN / AR with a Darija / Arabizi glossary.
-  Grading uses a whitelisted math parser, never `eval`.
-- `bridge/bridge.py` — standard-library Python; hosts one `Engine` per process
-  on localhost and streams events. `bridge/test/stand_in/` is a minimal
-  stand-in with the engine's interface, used only by the tests.
-
-To plug in the real engine, see [`../engine/README.md`](../engine/README.md).
+- `server/src/ai/routes.js` — the feature layer: per-task input whitelist, learner / room / course ids, the tutor loop,
+  exercise grading, materials, run log and review queue. It adapts the app's vocabulary to the engine's contract
+  (`check_answer` takes `problem` + `steps`; `prep_plan` takes a `scope`, a `deadline` date and a pace and answers
+  `focus_points`, which become day sessions; study pages come from the bridge's `/generate_page`).
+- `server/src/ai/http-engine.js` — talks to the bridge; never throws on a transport error (returns a
+  `service_unavailable` result, like the engine).
+- `bridge/bridge.py` — standard-library Python; the single service for the app: hosts one `Engine` per process on
+  127.0.0.1, answers only with the shared token, holds the one-process-per-key lock (it shares it with the engine's own
+  `services/engine_server.py`: never run both) and streams events. `--fake` serves the engine's own `FakeEngine`
+  (same Result / Event shapes, forced outcomes with `context.fake_outcome`), which is what the AI tests use.
+- The course is `analyse` (derivation), the engine's only course: the progress map draws its concepts as planets,
+  generated from `data/courses/analyse.yaml` by `python app/scripts/gen_course.py` (a repo test fails if it drifts).
 
 ## Whiteboard features
 

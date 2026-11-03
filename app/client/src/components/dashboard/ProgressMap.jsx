@@ -1,5 +1,6 @@
 import { Fragment, memo, useEffect, useRef, useState } from "react";
-import { COURSES, MASTERY, masteryLevel, courseMastery } from "../../lib/demoData";
+import { MASTERY, masteryLevel, courseMastery } from "../../lib/demoData";
+import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { useI18n } from "../../lib/i18n";
 import Icon from "../Icons";
 
@@ -29,7 +30,7 @@ function orbit(cx, cy, rx, ry, angle) {
   return { x: cx + Math.cos(angle) * rx, y: cy + Math.sin(angle) * ry, front: Math.sin(angle) >= 0 };
 }
 
-function Defs() {
+function Defs({ COURSES }) {
   return (
     <defs>
       {Object.entries(MASTERY).map(([level, { color }]) => (
@@ -112,7 +113,7 @@ function Sun({ course, x, y, r, onSelect, showLabel = true, t }) {
   );
 }
 
-function Galaxy({ t, onCourse }) {
+function Galaxy({ t, onCourse, COURSES }) {
   const spots = [[190, 205], [420, 130], [615, 255]];
   return COURSES.map((course, ci) => {
     const [cx, cy] = spots[ci % spots.length];
@@ -204,7 +205,10 @@ function Moons({ course, unit, t }) {
 /** The interactive solar-system progress map. */
 function ProgressMap({ compact = false, initialCourse = null, onOpenFull, onOpenUniverse }) {
   const { t } = useI18n();
-  const [courseIndex, setCourseIndex] = useState(initialCourse);
+  const COURSES = useCourses();
+  useEffect(() => { refreshCourseMap(); }, []);
+  // one course: open its planets (the concepts) straight away
+  const [courseIndex, setCourseIndex] = useState(initialCourse ?? 0);
   const [unitIndex, setUnitIndex] = useState(null);
   const ref = useRef(null);
   const [visible, setVisible] = useState(true);
@@ -244,12 +248,12 @@ function ProgressMap({ compact = false, initialCourse = null, onOpenFull, onOpen
         </div>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="pm-svg" role="group" aria-label={t("map.title")}>
-        <Defs />
+        <Defs COURSES={COURSES} />
         <rect width={W} height={H} fill="url(#pm-nebula)" />
         {STARS.map((s, i) => (
           <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#d5e6ff" opacity={s.o * (0.75 + Math.sin(time * 0.9 + i) * 0.25)} />
         ))}
-        {!course && <Galaxy t={time} onCourse={setCourseIndex} />}
+        {!course && <Galaxy t={time} onCourse={setCourseIndex} COURSES={COURSES} />}
         {course && !unit && <System course={course} t={time} onUnit={setUnitIndex} />}
         {unit && <Moons course={course} unit={unit} t={time} />}
       </svg>

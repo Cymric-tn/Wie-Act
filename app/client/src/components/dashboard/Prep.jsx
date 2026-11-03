@@ -3,10 +3,11 @@ import Icon from "../Icons";
 import { Card, Meter } from "./Widgets";
 import { useI18n } from "../../lib/i18n";
 import { ai, ENGINE_COURSE, engineLanguage, replyLanguage } from "../../lib/engine";
-import { COURSES, EXAMS } from "../../lib/demoData";
+import { COURSE_COLOR, COURSE_ID, EXAMS } from "../../lib/demoData";
+import { refreshCourseMap } from "../../lib/courseMap";
 import { AnswerText, Degraded, ExerciseCard, Progress, errorText, useProgress } from "../ai/AIBits";
 
-const courseById = (id) => COURSES.find((c) => c.id === id);
+const courseById = (id) => (id === COURSE_ID ? { color: COURSE_COLOR } : null);
 const pct = (v) => Math.round(v * 100);
 
 /** Context for prep calls: the learner's reply language, else the UI language. */
@@ -118,7 +119,7 @@ export default function Prep({ onToast }) {
   const plan = useTask();
   const diag = useTask();
   const more = useTask();
-  const bump = () => setVersion((v) => v + 1);
+  const bump = () => { setVersion((v) => v + 1); refreshCourseMap(); };
   const l = lang === "ar" ? "ar" : lang;
 
   useEffect(() => {
@@ -126,7 +127,7 @@ export default function Prep({ onToast }) {
   }, []);
 
   const buildPlan = (d = days) => plan.run("prep_plan", { course_id: ENGINE_COURSE, days_left: d, minutes_per_day: minutes }, { context });
-  const exams = [{ title: `Quiz · ${course?.title?.[l] || "Calculus I — Derivatives"}`, course: ENGINE_COURSE, inDays: 3, readiness: 0.52 }, ...EXAMS];
+  const exams = [{ title: `Quiz · ${course?.title?.[l] || "Analyse"}`, course: ENGINE_COURSE, inDays: 3, readiness: 0.52 }, ...EXAMS];
 
   async function anotherExercise() {
     const mastery = (await ai.mastery().catch(() => ({ mastery: {} }))).mastery;
@@ -161,7 +162,7 @@ export default function Prep({ onToast }) {
                 <button
                   className={"d-btn small " + (live ? "ai" : "ghost")}
                   onClick={() => {
-                    if (!live) return onToast(t("prep.engineOnly", { course: `${ENGINE_COURSE} · ${course?.title?.[l] || "Calculus I"}` }));
+                    if (!live) return onToast(t("prep.engineOnly", { course: `${ENGINE_COURSE} · ${course?.title?.[l] || "Analyse"}` }));
                     setDays(exam.inDays);
                     buildPlan(exam.inDays);
                   }}

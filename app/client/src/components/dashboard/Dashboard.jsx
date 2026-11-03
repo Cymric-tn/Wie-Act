@@ -13,7 +13,8 @@ import {
 import { useI18n, LanguageSwitcher, LANGUAGES } from "../../lib/i18n";
 import { Link, navigate } from "../../lib/router";
 import { getUser, saveUser, signOut } from "../../lib/session";
-import { COURSES, ROOMS, EXAMS, CLASS, courseMastery } from "../../lib/demoData";
+import { ROOMS, EXAMS, CLASS, courseMastery } from "../../lib/demoData";
+import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { initials } from "../../lib/format";
 import { ai, AI_LANGUAGES, replyLanguage, setReplyLanguage } from "../../lib/engine";
 import "./dashboard.css";
@@ -160,6 +161,8 @@ function TopBar({ user, section, onMenu, onRole, onCompanion, onSoon }) {
 function Greeting({ user, onCompanion }) {
   const { t, lang } = useI18n();
   const live = ROOMS.filter((r) => r.live).length;
+  const COURSES = useCourses();
+  useEffect(() => { refreshCourseMap(); }, []);
   const overall = COURSES.reduce((s, c) => s + courseMastery(c), 0) / COURSES.length;
   const isProf = user.role === "professor";
   const course = COURSES.find((c) => c.id === CLASS.course);

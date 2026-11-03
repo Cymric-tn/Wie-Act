@@ -65,7 +65,7 @@ function HeroVisual() {
       </div>
       <div className="lp-float lp-float-room">
         <span className="d-live on" />
-        <b>Calculus II · Series</b>
+        <b>Analyse · Dérivées</b>
         <span className="d-avatars">
           {["#a279ff", "#75e8ff", "#40d9be"].map((c, i) => <span key={c} className="d-avatar" style={{ "--c": c }}>{["AK", "YB", "ST"][i]}</span>)}
         </span>

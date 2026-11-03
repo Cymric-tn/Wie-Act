@@ -43,30 +43,42 @@ function ClaimResult({ data }) {
   return (
     <div className="bai-claim">
       <span className={`bai-verdict ${v.tone}`}>{v.label}</span>
-      {data.explanation && <p dir="auto">{data.explanation}</p>}
-      {data.correct_form && <p className="bai-correct">Correct form: <b dir="ltr">{data.correct_form}</b></p>}
+      {(data.parts || []).length > 1 && (
+        <ul className="bai-parts">
+          {data.parts.map((p, i) => {
+            const pv = VERDICTS[p.verdict] || { label: p.verdict, tone: "muted" };
+            return (
+              <li key={i} className={pv.tone}>
+                <span className={`bai-verdict ${pv.tone}`}>{pv.label}</span> <span dir="auto">{p.claim}</span>
+                {p.correction && <small dir="auto"> → {p.correction}</small>}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {!(data.parts || []).length && data.correction && <p className="bai-correct">Correction: <b dir="auto">{data.correction}</b></p>}
       {(data.evidence || []).map((e) => <blockquote key={e.chunk_id} className="ai-partial" dir="auto"><small>{e.chunk_id}</small>{e.text}</blockquote>)}
     </div>
   );
 }
 
-function WorkResult({ data }) {
+function WorkResult({ data, steps = [] }) {
   return (
     <div className="bai-work">
       <ol>
-        {(data.lines || []).map((line) => {
-          const s = LINE_STATUS[line.status] || LINE_STATUS.UNCHECKED;
+        {(data.steps || []).map((step) => {
+          const s = LINE_STATUS[step.verdict] || LINE_STATUS.UNCHECKED;
           return (
-            <li key={line.index} className={s.tone}>
+            <li key={step.index} className={s.tone}>
               <Icon name={s.icon} size={13} />
-              <code dir="ltr">{line.text}</code>
-              <small>{line.status === "UNCHECKED" ? "couldn’t check" : line.status === "OK" ? "ok" : "check this line"}</small>
+              <code dir="ltr">{steps[step.index]}</code>
+              <small dir="auto">{step.verdict === "UNCHECKED" ? "couldn’t check" : step.verdict === "OK" ? "ok" : step.note || "check this line"}</small>
             </li>
           );
         })}
       </ol>
-      {data.question && <p className="ai-ex-hint" dir="auto"><b>Think about it:</b> {data.question}</p>}
-      {data.verdict === "OK" && <p className="bai-good">Every line checks out.</p>}
+      {data.feedback && <p className="ai-ex-hint" dir="auto"><b>Think about it:</b> {data.feedback}</p>}
+      {data.final_verdict === "CORRECT" && <p className="bai-good">Every line checks out.</p>}
     </div>
   );
 }
@@ -106,8 +118,9 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
   const ask = () => question.trim() && go("explain", "explain", { question: question.trim(), passage: selectionText || undefined, board_text: boardText || undefined });
   const factCheck = (claim = selectionText) => claim.trim() && go("claim", "check_claim", { claim });
   const checkWork = () => {
-    const [problem, ...lines] = selectionLines;
-    go("work", "check_answer", { problem, lines: lines.length ? lines : selectionLines });
+    // first line = the problem (e.g. f(x) = 3x^2 + 5x), the next lines = the learner's steps
+    const [problem, ...steps] = selectionLines;
+    go("work", "check_answer", steps.length ? { problem, steps } : { problem, steps: [problem] });
   };
   async function readHandwriting() {
     setBusy("ocr");
@@ -130,8 +143,8 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
         : result?.text
     : null;
   const pinText = out?.kind === "explain" ? answerText
-    : out?.kind === "claim" ? `${VERDICTS[data.verdict]?.label || data.verdict}: ${out.inputs.claim}${data.correct_form ? `\n→ ${data.correct_form}` : ""}`
-      : out?.kind === "work" ? (data.question || (data.verdict === "OK" ? "✓ Every line checks out" : null))
+    : out?.kind === "claim" ? `${VERDICTS[data.verdict]?.label || data.verdict}: ${out.inputs.claim}${data.correction ? `\n→ ${data.correction}` : ""}`
+      : out?.kind === "work" ? (data.feedback || (data.final_verdict === "CORRECT" ? "✓ Every line checks out" : null))
         : out?.kind === "ocr" ? data.text || data.latex : null;
 
   return (
@@ -168,7 +181,7 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
               {out.kind === "explain" && <AnswerText text={answerText} />}
               {out.kind === "explain" && data.exercise && <p className="ai-ex-hint" dir="auto"><b>Try:</b> {data.exercise.statement}</p>}
               {out.kind === "claim" && result.data && <ClaimResult data={data} />}
-              {out.kind === "work" && result.data && <WorkResult data={data} />}
+              {out.kind === "work" && result.data && <WorkResult data={data} steps={out.inputs.steps} />}
               {out.kind === "ocr" && (data.text || data.latex) && (
                 <div className="bai-ocr">
                   {data.text && <AnswerText text={data.text} />}

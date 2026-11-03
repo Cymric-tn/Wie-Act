@@ -164,7 +164,8 @@ describe("templates and courses", () => {
   });
 
   test("course rooms resolve case-insensitively", () => {
-    assert.equal(courseForRoom("math102").name, "Calculus II");
+    assert.equal(courseForRoom("ANALYSE").name, "Analyse : dérivation");
+    assert.equal(courseForRoom("math102"), null);                       // Phase 1 has one course
     assert.equal(courseForRoom("brainstorm"), null);
   });
 });
