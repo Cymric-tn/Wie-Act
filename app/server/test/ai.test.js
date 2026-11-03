@@ -4,7 +4,7 @@ const path = require("path");
 const { spawn, spawnSync } = require("child_process");
 const { createServer } = require("../src/app");
 const { createEngine } = require("../src/ai");
-const { INPUTS, planInputs, shapePlan, shapePage } = require("../src/ai/routes");
+const { INPUTS, planInputs, shapePlan, shapePage, shapeCourse } = require("../src/ai/routes");
 
 const quiet = () => {};
 const TOKEN = "app-test-token";
@@ -61,6 +61,16 @@ describe("the engine's contract, as the feature layer adapts it", () => {
     assert.equal(INPUTS.check_answer({ lines: ["only one line"] }).steps[0], "only one line");
   });
 
+  test("the course graph arrives with the title objects the screens read, without draft concepts", () => {
+    const c = shapeCourse({ id: "analyse", titles: { fr: "Analyse" }, units: [{ id: "u", titles: { fr: "U" }, concepts: ["limite", "tangente"] }],
+      concepts: { limite: { id: "limite", titles: { fr: "Limite" }, status: "draft" }, tangente: { id: "tangente", titles: { fr: "Tangente" }, status: "published" } } });
+    assert.equal(c.title.fr, "Analyse");
+    assert.deepEqual(c.units[0].concepts, ["tangente"]);
+    assert.equal(c.units[0].title.fr, "U");
+    assert.equal(c.concepts.tangente.title.fr, "Tangente");
+    assert.equal(c.concepts.limite, undefined);
+  });
+
   test("concept ids keep their spaces and accents (nombre dérivé, racine carrée, polynôme)", () => {
     assert.equal(INPUTS.generate_page({ concept: "nombre dérivé" }).concept, "nombre dérivé");
     assert.equal(INPUTS.quiz({ concept: "racine carrée" }).concept, "racine carrée");
@@ -113,6 +123,12 @@ describe("AI API through the bridge (the engine's FakeEngine)", { skip }, () => 
     assert.equal(s.connected, true);
     assert.match(s.version, /^\d+\.\d+/);
     assert.ok(s.tasks.includes("check_answer"));
+  });
+
+  test("the course graph is served with titles for the screens", async () => {
+    const { course } = await (await fetch(ctx.base + "/api/ai/courses/analyse")).json();
+    assert.ok(course.title.fr && course.units[0].title.fr && course.concepts["nombre dérivé"].title.en);
+    assert.equal((await fetch(ctx.base + "/api/ai/courses/nope")).status, 404);
   });
 
   test("/api/ai/run streams the engine's events then the result; solutions never reach the browser", async () => {

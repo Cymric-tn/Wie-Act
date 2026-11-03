@@ -54,7 +54,7 @@ export function eventLabel(t, event, stage) {
 export function useProgress() {
   const [state, setState] = useState({ event: null, stage: null, partial: null });
   const onEvent = (event, stage) =>
-    setState((s) => ({ event, stage, partial: event.name === "partial_result" ? event.data?.sentences || null : s.partial }));
+    setState((s) => ({ event, stage, partial: event.name === "partial_result" ? event.data?.excerpts?.map((e) => e.text) || event.data?.sentences || null : s.partial }));
   const reset = () => setState({ event: null, stage: null, partial: null });
   return [state, onEvent, reset];
 }
@@ -142,17 +142,30 @@ export function Degraded({ result, onRetry, onFull }) {
   );
 }
 
+/**
+ * The chunks an answer is grounded in (`notes.sources`, ids). Course pages look like `derivee-formules.fr#produit-et-quotient`,
+ * a professor's upload like `professor/<owner>/<file>#<section>` and a learner's own like `learner/<owner>/<file>#<section>`.
+ */
+export function sourceChips(notes) {
+  const ids = Array.isArray(notes?.sources) ? notes.sources : [];
+  return ids.map((id) => {
+    const [file, section = ""] = String(id).split("#");
+    const professor = String(id).startsWith("professor/");
+    return { id, professor, title: (section || file.split("/").pop()).replace(/[-_]+/g, " ") };
+  });
+}
+
 export function Sources({ notes }) {
   const { t } = useI18n();
-  const list = notes?.retrieved;
-  if (!Array.isArray(list) || !list.length) return null;
+  const list = sourceChips(notes);
+  if (!list.length) return null;
   return (
     <div className="ai-sources">
       <small>{t("ai.sources")}</small>
       {list.map((s) => (
-        <span key={s.chunk_id} className={"ai-source" + (s.source === "professor" ? " prof" : "")} title={s.chunk_id}>
-          {s.source === "professor" && <Icon name="shield" size={11} />}
-          {s.title || s.chunk_id}
+        <span key={s.id} className={"ai-source" + (s.professor ? " prof" : "")} title={s.id}>
+          {s.professor && <Icon name="shield" size={11} />}
+          {s.title}
         </span>
       ))}
     </div>
