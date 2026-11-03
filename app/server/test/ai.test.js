@@ -61,6 +61,13 @@ describe("the engine's contract, as the feature layer adapts it", () => {
     assert.equal(INPUTS.check_answer({ lines: ["only one line"] }).steps[0], "only one line");
   });
 
+  test("concept ids keep their spaces and accents (nombre dérivé, racine carrée, polynôme)", () => {
+    assert.equal(INPUTS.generate_page({ concept: "nombre dérivé" }).concept, "nombre dérivé");
+    assert.equal(INPUTS.quiz({ concept: "racine carrée" }).concept, "racine carrée");
+    assert.deepEqual(INPUTS.prep_plan({ mastery: { "polynôme": 0.4, "x; drop table": 1 } }).mastery, { "polynôme": 0.4 });
+    assert.equal(INPUTS.generate_page({ concept: "<script>" }).concept, undefined);
+  });
+
   test("prep_plan: days left and minutes per day become scope, a deadline date and a pace", async () => {
     const engine = { course: async () => ({ units: [{ id: "derivees" }, { id: "variations" }] }) };
     const out = await planInputs(engine, INPUTS.prep_plan({ days_left: 3, minutes_per_day: 40, mastery: { puissance: 0.2 } }), "analyse");

@@ -33,6 +33,8 @@ const SECRET_KEYS = ["solution", "hints", "common_mistakes", "mistakes"];
 const DEFAULT_COURSE = process.env.AI_COURSE || "analyse"; // the one course the engine has content for
 
 const isId = (v) => typeof v === "string" && /^[\w.:-]{1,80}$/.test(v);
+// Concept ids are the course graph's own: "nombre dérivé", "racine carrée", "polynôme" (letters, digits, spaces, accents).
+const isConcept = (v) => typeof v === "string" && /^[\p{L}\p{N} _.:'’-]{1,80}$/u.test(v);
 const str = (v, max) => (typeof v === "string" ? v.slice(0, max) : undefined);
 const int = (v, lo, hi) => (Number.isFinite(Number(v)) ? Math.min(hi, Math.max(lo, Math.round(Number(v)))) : undefined);
 const ids = (v, max = 50) => (Array.isArray(v) ? v.filter(isId).slice(0, max) : undefined);
@@ -54,7 +56,7 @@ const INPUTS = {
   }),
   hint: (i) => drop({ problem: str(i.problem, 2000), attempt: str(i.attempt, 1000) }),
   quiz: (i) => drop({
-    message: str(i.message, 1000), concept: isId(i.concept) ? i.concept : undefined, difficulty: int(i.difficulty, 1, 3),
+    message: str(i.message, 1000), concept: isConcept(i.concept) ? i.concept : undefined, difficulty: int(i.difficulty, 1, 3),
     exclude: ids(i.exclude), diagnostic: i.diagnostic === true ? true : undefined, intro: i.intro === false ? false : undefined
   }),
   check_claim: (i) => drop({ claim: str(i.claim, 2000) }),
@@ -74,10 +76,10 @@ const INPUTS = {
     course_id: isId(i.course_id) ? i.course_id : undefined, days_left: int(i.days_left, 1, 60), minutes_per_day: int(i.minutes_per_day, 10, 300),
     unit_ids: ids(i.unit_ids, 30),
     mastery: i.mastery && typeof i.mastery === "object"
-      ? Object.fromEntries(Object.entries(i.mastery).filter(([k, v]) => isId(k) && Number.isFinite(Number(v))).slice(0, 200).map(([k, v]) => [k, Math.min(1, Math.max(0, Number(v)))]))
+      ? Object.fromEntries(Object.entries(i.mastery).filter(([k, v]) => isConcept(k) && Number.isFinite(Number(v))).slice(0, 200).map(([k, v]) => [k, Math.min(1, Math.max(0, Number(v)))]))
       : undefined
   }),
-  generate_page: (i) => drop({ concept: isId(i.concept) ? i.concept : undefined, page_kind: i.page_kind === "review" ? "review" : undefined })
+  generate_page: (i) => drop({ concept: isConcept(i.concept) ? i.concept : undefined, page_kind: i.page_kind === "review" ? "review" : undefined })
 };
 
 const isoDay = (d) => d.toISOString().slice(0, 10);
