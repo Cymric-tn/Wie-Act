@@ -1,0 +1,32 @@
+{
+ "before": {
+  "answers": 151,
+  "ungrounded": 7,
+  "wrong_math": 3,
+  "unchecked": 0
+ },
+ "after": {
+  "answers": 151,
+  "ungrounded": 7,
+  "wrong_math": 4,
+  "unchecked": 0
+ },
+ "newly_flagged_ungrounded": [],
+ "no_longer_flagged_ungrounded": [],
+ "newly_flagged_wrong_math": [
+  [
+   "e2e_answers_extra.json",
+   "R2.3 Upload,",
+   "round2",
+   "(x^2 + 2x)/x = 2x + 2"
+  ]
+ ],
+ "no_longer_flagged_wrong_math": [],
+ "files": [
+  "eval_explain_felcloud.json",
+  "eval_explain.json",
+  "eval_explain.run-a.json",
+  "eval_explain.before-v1.json",
+  "e2e answers (round 1 steps 1,2,8; round 2 R2.1, R2.3; round 1 answers truncated at 400 chars)"
+ ]
+}

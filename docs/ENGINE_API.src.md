@@ -159,6 +159,8 @@ A grounded explanation of a course concept. Mid-size model, retrieval over the c
     differ only in the trimmed part are still two entries, and the same passage asked by two learners is one.
 * `text`: `[opener] + body + "À toi : <exercise>"`. `data`: `{body, opener, exercise}` so a UI can lay them out.
   `notes.sources`: chunk ids the answer is grounded in. The body's formulas are checked (sympy) against the course.
+  `notes.wrong_math_forms` (v1.4): for a wrong *spoken* equality ("la limite de (x² + 2x)/x est égale à 2x + 2"), span → the correct form
+  sympy states ("(x² + 2x)/x = x + 2"). Spoken equalities (`est égal(e) à`, `vaut`, `equals`, `is`, `يساوي`) between two math runs count as "=".
   `notes.unchecked_spans` (v1.4): formulas the check could not read to the end (cut at a symbol it does not know, such as
   `x² + p`); they are listed, not judged, and do not degrade the answer. The parser knows x a b c h k m n t u v y.
 * cost: 1 mid-size (~9.5 s on FelCloud) on a miss; 0 on a hit. Fast mode adds at most 1 compact line.
