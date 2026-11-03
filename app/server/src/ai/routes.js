@@ -32,7 +32,7 @@ const MAX_MATERIAL_BYTES = 15_000_000;
 const SECRET_KEYS = ["solution", "hints", "common_mistakes", "mistakes"];
 const DEFAULT_COURSE = process.env.AI_COURSE || "analyse"; // the one course the engine has content for
 
-const isId = (v) => typeof v === "string" && /^[\w.:-]{1,80}$/.test(v);
+const isId = (v) => typeof v === "string" && /^[\w.:~-]{1,80}$/.test(v); // ~ : generated variants (d10~v1)
 // Concept ids are the course graph's own: "nombre dérivé", "racine carrée", "polynôme" (letters, digits, spaces, accents).
 const isConcept = (v) => typeof v === "string" && /^[\p{L}\p{N} _.:'’-]{1,80}$/u.test(v);
 const str = (v, max) => (typeof v === "string" ? v.slice(0, max) : undefined);
@@ -118,15 +118,29 @@ function shapeCourse(course) {
   };
 }
 
-/** A prep page as the study screen reads it: the worked example's `solution` is shown as its answer. */
-function shapePage(page) {
+const VARIANT_CAP = 500;
+
+/** A prep page as the study screen reads it: the worked example's `solution` is shown as its answer. Quiz items the engine
+ * generated (ids like `d10~v1`, with their solution) are kept on the server in `variants` so they can be graded; the
+ * browser gets them without the solution. */
+function shapePage(page, variants) {
   const w = page.worked_example;
+  const quiz = (page.quiz || []).map((item) => {
+    if (item.solution === undefined) return item;
+    const { solution, ...rest } = item;
+    if (variants) {
+      if (variants.size >= VARIANT_CAP) variants.delete(variants.keys().next().value);
+      variants.set(item.id, { id: item.id, concept: item.concept, level: item.level, solution, hints: [], common_mistakes: [],
+        statement: { fr: item.statement, en: item.statement, ar: item.statement } });
+    }
+    return rest;
+  });
   return {
     request_id: page.explain_request_id, task: "generate_page", text: page.explanation, degraded: page.degraded, degrade_reason: page.degrade_reason,
     eta_seconds: page.eta_seconds, from_cache: page.from_cache, events: [], notes: {},
     data: { concept_id: page.concept_id, page_kind: page.page_kind, title: page.title, language: page.language, explanation: page.explanation,
       explanation_sections: page.explanation_sections, worked_example: w ? { id: w.exercise_id, statement: w.statement, steps: w.steps || [], answer: w.solution } : null,
-      quiz: page.quiz || [] }
+      quiz }
   };
 }
 
@@ -159,6 +173,8 @@ function rateLimiter({ perMinute }) {
 }
 
 function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = console.log }) {
+  const variants = new Map(); // generated practice items (id -> exercise with its solution), never sent to the browser
+  const getExercise = async (id) => variants.get(id) || engine.getExercise(id);
   const forceAllowed = () => (typeof allowForce === "function" ? allowForce() : Boolean(allowForce));
   const router = express.Router();
   const json = express.json({ limit: "25mb" });
@@ -270,7 +286,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
         const focus = drop({ concept_id: inputs.concept, page_kind: inputs.page_kind || "learn", mastery: m ? m.value : undefined });
         const page = await engine.generatePage(focus, { ...ctx, course_id: ctx.course_id || courseId }, onEvent);
         if (page.concept_id === undefined) return out.end({ type: "result", result: page }); // the bridge was unreachable: already a degraded Result
-        const result = shapePage(page);
+        const result = shapePage(page, variants);
         try {
           store.logRun({ request_id: result.request_id, task: "generate_page", backend: engine.status().backend, learner_id: ctx.learner_id, room_id: ctx.room_id, course_id: ctx.course_id, language: ctx.language, degraded: result.degraded, degrade_reason: result.degrade_reason, mode: null, model_class: null, from_cache: result.from_cache, latency_ms: null, question: inputs.concept, answer: (result.text || "").slice(0, 6000) });
         } catch (error) {
@@ -303,7 +319,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
       const follow = await engine.followUp(c);
       const language = ctx.language || c.language;
       const turnCtx = drop({ ...base, language, confusion: c.confusion, complexity: c.complexity });
-      const openExercise = isId(req.body.exercise_id) ? await engine.getExercise(req.body.exercise_id) : null;
+      const openExercise = isId(req.body.exercise_id) ? await getExercise(req.body.exercise_id) : null;
 
       let task = follow?.task || null;
       let inputs = null;
@@ -352,7 +368,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
     try {
       const { id, action } = req.params;
       if (!isId(id) || !["answer", "hint", "reveal"].includes(action)) throw new RangeError("unknown exercise action");
-      const ex = await engine.getExercise(id);
+      const ex = await getExercise(id);
       if (!ex) throw new RangeError("unknown exercise");
       const ctx = contextFrom(req.body);
       const onEvent = (event) => out.send({ type: "event", event });
