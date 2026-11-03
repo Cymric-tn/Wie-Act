@@ -142,7 +142,7 @@ def test_generate_page_is_a_route_not_a_task(rig):
         "scope": {"unit_ids": ["derivees"]}, "deadline": "2099-01-01", "pace_min_per_day": 45}})
     focus = plan["data"]["focus_points"][0]
     events, page = rig.lines("/generate_page", {"focus_point": focus, "context": {"language": "FRENCH", "course_id": "analyse"}})
-    assert page["concept_id"] == focus["concept_id"] and page["worked_example"] and len(page["quiz"]) >= 1
+    assert page["concept_id"] == focus["concept_id"] and page["worked_example"] and len(page["quiz"]) == 3
     assert page["explanation"] and not page["degraded"] and events
     assert rig.http.post("/generate_page", json={"focus_point": {}}).status_code == 400
     assert rig.http.post("/run", json={"task": "generate_page", "inputs": {"concept": "puissance"}}).status_code == 400

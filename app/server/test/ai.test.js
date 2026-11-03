@@ -105,6 +105,38 @@ describe("the engine's contract, as the feature layer adapts it", () => {
   });
 });
 
+describe("generated practice items", () => {
+  test("a generated quiz item reaches the browser without its solution and can still be graded", async () => {
+    const calls = [];
+    const stub = {
+      kind: "engine", status: () => ({ backend: "engine", connected: true }), probe: async () => true, close() {},
+      course: async () => ({ id: "analyse", units: [{ id: "derivees" }], concepts: {} }),
+      followUp: async () => ({ task: null }), getExercise: async () => null,
+      generatePage: async () => ({ concept_id: "nombre dérivé", page_kind: "learn", title: "Nombre dérivé", language: "FRENCH", explanation: "x",
+        explain_request_id: "r1", degraded: false, worked_example: { exercise_id: "d10", statement: "s", steps: [], solution: "f'(3) = 6" },
+        quiz: [{ id: "d11", concept: "nombre dérivé", level: 2, statement: "bank", source: "bank" },
+               { id: "d10~v1", concept: "nombre dérivé", level: 1, statement: "Soit f(x) = 2x². Calculer f'(3).", source: "variant", solution: "f'(3) = 12" }] }),
+      run: async (task, inputs) => { calls.push([task, inputs]); return { request_id: "g1", task, data: { verdict: inputs.attempt === inputs.solution ? "CORRECT" : "INCORRECT", feedback: "" }, events: [], degraded: false }; }
+    };
+    const server = createServer({ log: quiet, ai: { engine: stub } });
+    const port = await server.listen(0, "127.0.0.1");
+    const base = `http://127.0.0.1:${port}`;
+    const post = (url, body) => fetch(base + url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    try {
+      const page = (await ndjson(await post("/api/ai/run", { task: "generate_page", inputs: { concept: "nombre dérivé" }, learner_id: "l1" }))).find((l) => l.type === "result").result;
+      assert.equal(page.data.quiz.length, 2);
+      assert.ok(!JSON.stringify(page.data.quiz).includes("f'(3) = 12"), "the solution reached the browser");
+      assert.equal(page.data.worked_example.answer, "f'(3) = 6");                      // the worked example's answer is shown on purpose
+      const graded = (await ndjson(await post("/api/ai/exercises/d10~v1/answer", { attempt: "f'(3) = 12", learner_id: "l1", context: { course_id: "analyse" } }))).find((l) => l.type === "result");
+      assert.equal(graded.result.data.verdict, "CORRECT");
+      assert.deepEqual(calls.at(-1)[1].solution, "f'(3) = 12");
+      assert.equal((await post("/api/ai/exercises/d99~v9/answer", { attempt: "1", learner_id: "l1" })).status, 400);   // unknown id: refused
+    } finally {
+      await server.close();
+    }
+  });
+});
+
 describe("AI API through the bridge (the engine's FakeEngine)", { skip }, () => {
   const port = 8790 + Math.floor(Math.random() * 100);
   let bridge;
