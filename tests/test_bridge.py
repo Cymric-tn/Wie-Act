@@ -297,3 +297,12 @@ def test_the_apps_course_map_is_generated_from_the_engines_course_graph():
     gen = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(gen)
     assert open(gen.OUT, encoding="utf-8").read() == gen.build()
+
+
+def test_metrics_can_be_limited_to_given_request_ids(rig):
+    _, a = rig.lines("/run", {"task": "hint", "inputs": {"problem": "Dérive f(x) = 3x² + 5x"}, "context": {"language": "FRENCH"}})
+    rig.lines("/run", {"task": "hint", "inputs": {"problem": "Dérive f(x) = x⁴"}, "context": {"language": "FRENCH"}})
+    assert rig.http.get("/metrics/summary").json()["runs"]["total"] == 2
+    only = rig.http.get("/metrics/summary", params={"request_ids": a["request_id"]}).json()
+    assert only["runs"]["total"] == 1 and only["provider_requests"]["total"] == 1
+    assert rig.http.get("/metrics/summary", params={"request_ids": "nope"}).json()["runs"]["total"] == 0
