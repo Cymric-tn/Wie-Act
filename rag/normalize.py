@@ -76,8 +76,12 @@ the an of to in on for is are was be been what why how do does did can could i y
 my your this that these those and or with without please explain me tell about if its when
 chnowa chnoua chnou chniya ya3ni yaani ena enti inti howa hiya fi fel el w ama ken kifech kifeh
 3lech alech bech mta3 mte3 hedha hedhi chay barcha ki kifh nheb n7eb
+ta3 mtaa mt3 wala walla lel bel fil wel 3la 3al 3and 3andi 3ala hedhom hedhouma haka hakeka ken kan nel9a nal9a
+nel9aha nal9aha nel9ah nal9ah nel9ouha nhseb nehseb ne7seb n7esb nhesb n7esbha nhesbha nehsebha ne7sebha
+na3mel n3mel na3mlou nekteb nektebha nkteb nfhem nafhem nefhem 9olli 9oul 3tini a3tini wrini warini
 من في على الى إلى عن ما ماذا هل هو هي هذا هذه ذلك التي الذي ان أن إن و ثم او أو كيف لماذا متى مع كل
 شنوة شنوا شنية كيفاش علاش باش متاع برشا فما توا كي
+تاع متاعها متاعو في فيه هاذا هاذي هاذاك هاذوما هكا برشة نلقى نلقاها نلقاه نحسبها نكتب نكتبها نعمل نفهم قولي وريني عطيني
 معناها معنى يعني تعني معناه
 """
 STOPWORDS = frozenset(t for t in _raw_tokens(_STOP_RAW))

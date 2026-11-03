@@ -167,5 +167,17 @@ async def test_existing_retrieval_evals_are_unchanged():
     assert got[("retrieval_set.jsonl", "policy")] == (13, 14, 4)
     assert got[("retrieval_crosslang.jsonl", "policy")][:2] == (6, 7)
     assert got[("retrieval_manual.jsonl", "policy")][:2] == (2, 2)
+    # v1.4: Arabizi questions padded with Tunisian function words and verbs (mta3, kifech nal9aha, n7esbha...): 4/6 before
+    # the stopwords of rag/normalize.py grew, 6/6 after
+    assert got[("retrieval_arabizi.jsonl", "policy")][:2] == (6, 6)
     assert got[("retrieval_set.jsonl", "plain")] == (13, 14, 4)
     assert got[("retrieval_crosslang.jsonl", "glossary")][:2] == (6, 7)
+
+
+def test_tunisian_function_words_and_verbs_are_not_content_terms():
+    from rag.normalize import tokenize
+    assert tokenize("chnowa el derivee mta3 x² w kifech nal9aha ?") == ["deriv", "x2"]
+    assert tokenize("kifech n7esbha el derivee mta3 el produit") == ["deriv", "produit"]
+    assert tokenize("شنية مشتقة الجداء تاع x؟") == ["مشتقه", "جداء"]
+    assert tokenize("ya3ni chnowa el tangente mta3 courbe") == ["tangent", "courb"]          # course words stay
+    assert "n7seb" in tokenize("n7seb")                                             # a glossary variant (calculer) is not a stopword

@@ -1,0 +1,6 @@
+{"id": "azi-fw-1", "language": "ARABIZI", "question": "chnowa el derivee mta3 x² w kifech nal9aha ?", "expected": ["derivee-formules.fr#derivees-des-fonctions-usuelles", "derivee-erreurs.fr#erreurs-avec-les-puissances"]}
+{"id": "azi-fw-2", "language": "ARABIZI", "question": "chnowa el derivee mta3 el produit w kifech n7esbha ?", "expected": ["derivee-formules.fr#produit-et-quotient", "derivee-erreurs.fr#erreurs-avec-le-produit"]}
+{"id": "azi-fw-3", "language": "ARABIZI", "question": "ya3ni chnowa el tangente mta3 courbe fi nokta a ?", "expected": "derivee-definition.fr#interpretation-graphique-la-tangente"}
+{"id": "azi-fw-4", "language": "ARABIZI", "question": "kifech nal9a el derivee mta3 constante w chnowa el natija ?", "expected": ["derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle", "derivee-formules.fr#derivees-des-fonctions-usuelles"]}
+{"id": "azi-fw-5", "language": "ARABIZI", "question": "chnowa el nombre derive mta3 f fi a w kifech nekteb el equation mta3 el tangente ?", "expected": ["derivee-definition.fr#nombre-derive-et-taux-d-accroissement", "derivee-definition.fr#interpretation-graphique-la-tangente"]}
+{"id": "azi-fw-6", "language": "ARABIZI", "question": "kifech na3mel el derivee mta3 racine carree w mta3 1/x ?", "expected": "derivee-formules.fr#derivees-des-fonctions-usuelles"}
