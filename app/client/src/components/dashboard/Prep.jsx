@@ -199,7 +199,9 @@ function ExamPage({ examId, readiness, conceptName, masteryOf, context, onBack, 
                       </button>
                       <span className="pn-reveal label" aria-hidden="true">{t("prep.study")}</span>
                       <small>{t("prep.min", { n: item.minutes })}</small>
-                      <i className={`pn-dot ${level}`} title={t(MASTERY[level].key)} />
+                      {level === "mastered"
+                        ? <span className="chip chip-mastered"><Icon name="check" size={13} /> {t(MASTERY[level].key)}</span>
+                        : <i className={`pn-dot ${level}`} title={t(MASTERY[level].key)} />}
                     </li>
                   );
                 })}

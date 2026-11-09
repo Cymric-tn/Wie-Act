@@ -5,6 +5,7 @@ import { useI18n, LanguageSwitcher } from "../../lib/i18n";
 import { getUser } from "../../lib/session";
 import "../dashboard/dashboard.css";
 import "./landing.css";
+import { LumiLogo, LumiSpark } from "../LumiSpark";
 
 const FEATURES = [
   { id: "map", icon: "planet", color: "var(--lumi-iris)" },
@@ -22,7 +23,7 @@ function Nav() {
   const user = getUser();
   return (
     <header className="lp-nav">
-      <Link to="/" className="d-brand"><i>✧</i> Lumi</Link>
+      <Link to="/" className="d-brand"><LumiLogo height={26} /></Link>
       <nav className="lp-links">
         <a href="#features">{t("nav.features")}</a>
         <a href="#how">{t("nav.how")}</a>
@@ -55,7 +56,7 @@ function HeroVisual() {
         <ProgressMap compact />
       </div>
       <div className="lp-float lp-float-chat" dir="auto">
-        <span className="d-ai-avatar small"><Icon name="sparkle" size={14} /></span>
+        <span className="d-ai-avatar small"><LumiSpark size={18} onDark /></span>
         <p>{t("chat.ai2")}</p>
       </div>
       <div className="lp-float lp-float-fact">
@@ -147,14 +148,14 @@ export default function Landing() {
             <small>Darija</small>
           </div>
           <div className="lp-bubble ai">
-            <span className="d-ai-avatar small"><Icon name="sparkle" size={14} /></span>
+            <span className="d-ai-avatar small"><LumiSpark size={18} onDark /></span>
             <div>
               <p>{t("chat.ai")}</p>
               <span className="lp-verified"><Icon name="shield" size={13} /> {t("chat.badge")}</span>
             </div>
           </div>
           <div className="lp-bubble ai">
-            <span className="d-ai-avatar small"><Icon name="sparkle" size={14} /></span>
+            <span className="d-ai-avatar small"><LumiSpark size={18} onDark /></span>
             <p>{t("chat.ai2")}</p>
           </div>
         </div>
@@ -188,7 +189,7 @@ export default function Landing() {
       </section>
 
       <footer className="lp-footer">
-        <span className="d-brand small"><i>✧</i> Lumi</span>
+        <span className="d-brand small"><LumiLogo height={20} /></span>
         <span>© 2026 · {t("footer.made")}</span>
         <span className="d-badge soon">{t("footer.preview")}</span>
         <LanguageSwitcher />

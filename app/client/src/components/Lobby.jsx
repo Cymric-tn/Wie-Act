@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { COURSES, STATUS, courseForRoom } from "../lib/courses";
+import { LumiLogo } from "./LumiSpark";
 
 const SUGGESTED_ROOMS = ["classroom", "study-group", "physics-lab", "brainstorm"];
 
@@ -31,7 +32,7 @@ export default function Lobby({ status, initialName, initialRoom, error, onJoin 
     <div className="lobby">
       <div className="lobby-sky" aria-hidden="true" />
       <section className="lobby-card">
-        <div className="brand lobby-brand"><i>✧</i> Lumi</div>
+        <div className="brand lobby-brand"><LumiLogo height={30} /></div>
         <div className="eyebrow">COLLABORATIVE WHITEBOARD</div>
         <h1>Sketch ideas<br /><em>together, in real time</em></h1>
         <p className="lobby-copy">
@@ -93,7 +94,7 @@ export default function Lobby({ status, initialName, initialRoom, error, onJoin 
           {error && <p className="form-error" role="alert">{error.message}</p>}
 
           <button className="btn btn-primary" type="submit" disabled={!online || !name.trim() || !room.trim()}>
-            ✧ Enter the board
+            Enter the board
           </button>
         </form>
 

@@ -6,6 +6,7 @@ import Icon from "../Icons";
 import { useI18n } from "../../lib/i18n";
 import { ai } from "../../lib/engine";
 import "./ai.css";
+import { LumiSpark } from "../LumiSpark";
 
 // ---------- engine status ----------
 export function useAiStatus(pollMs = 20000) {
@@ -63,7 +64,7 @@ export function Progress({ state }) {
   const { t } = useI18n();
   return (
     <div className="ai-progress" role="status">
-      <span className="ai-dots"><i /><i /><i /></span>
+      <span className="ai-spark"><LumiSpark size={22} state="thinking" /></span>
       <span>{eventLabel(t, state.event, state.stage)}</span>
       {state.partial?.length > 0 && (
         <blockquote className="ai-partial" dir="auto">

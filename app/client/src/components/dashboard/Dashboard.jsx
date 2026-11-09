@@ -19,6 +19,7 @@ import { initials } from "../../lib/format";
 import { ai, AI_LANGUAGES, replyLanguage, setReplyLanguage } from "../../lib/engine";
 import Diagrams from "./Diagrams";
 import "./dashboard.css";
+import { LumiLogo, LumiSpark } from "../LumiSpark";
 
 const NAV = {
   student: [
@@ -81,7 +82,7 @@ function Sidebar({ user, section, open, onClose, onCompanion, onSignOut }) {
     <>
       <div className={"d-scrim" + (open ? " open" : "")} onClick={onClose} aria-hidden="true" />
       <aside className={"d-sidebar" + (open ? " open" : "")} aria-label="Main menu">
-        <Link to="/" className="d-brand"><i>✧</i> Lumi</Link>
+        <Link to="/" className="d-brand"><LumiLogo height={26} /></Link>
         <p className="d-tagline">{t("tagline")}</p>
         <nav className="d-nav">
           {NAV[user.role].map((group) => (
@@ -106,7 +107,7 @@ function Sidebar({ user, section, open, onClose, onCompanion, onSignOut }) {
         </nav>
         <div className="d-side-bottom">
           <button className="d-companion-btn" onClick={onCompanion}>
-            <span className="d-ai-avatar small"><Icon name="sparkle" size={16} /></span>
+            <span className="d-ai-avatar small"><LumiSpark size={18} onDark /></span>
             <span>{t("nav.companion")}</span>
           </button>
           <Link to="/app/settings" className={"d-nav-item" + (section === "settings" ? " active" : "")} onClick={onClose}>
@@ -381,7 +382,7 @@ export default function Dashboard({ section }) {
       </div>
       {!aiOpen && (
         <button className="d-fab" onClick={() => openCompanion()} aria-label={t("nav.companion")}>
-          <Icon name="sparkle" size={22} />
+          <LumiSpark size={30} onDark />
         </button>
       )}
       <AICompanion open={aiOpen} onClose={() => setAiOpen(false)} user={user} seed={aiSeed} />

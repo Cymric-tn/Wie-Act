@@ -2,6 +2,7 @@ import { Fragment, memo, useEffect, useRef, useState } from "react";
 import { MASTERY, masteryLevel, courseMastery } from "../../lib/demoData";
 import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { useI18n } from "../../lib/i18n";
+import Icon from "../Icons";
 
 const W = 800;
 const H = 460;
@@ -255,9 +256,11 @@ function ProgressMap({ compact = false, initialCourse = null, onOpenFull }) {
         {unit && <Moons course={course} unit={unit} t={time} />}
       </svg>
       <div className="pm-legend">
-        {Object.entries(MASTERY).map(([level, { color, key }]) => (
+        {Object.entries(MASTERY).map(([level, { color, key }]) => (level === "mastered"
+          ? <span key={level} className="chip chip-mastered"><Icon name="check" size={13} /> {t(key)}</span>
+          : (
           <span key={level}><i style={{ background: color, color }} />{t(key)}</span>
-        ))}
+          )))}
         <span className="pm-hint">{t("map.sub")}</span>
       </div>
     </div>

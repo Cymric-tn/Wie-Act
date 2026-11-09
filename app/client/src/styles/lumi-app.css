@@ -9,7 +9,7 @@
   --lumi-shadow: rgb(16 17 36 / .10);
   --lumi-scrim: rgb(7 8 26 / .45);
 }
-.lumi-dark { --lumi-ok: #4FD6A8; --lumi-warn: #F2C572; --lumi-bad: #FF8FA8; color-scheme: dark; }
+.lumi-dark { --lumi-iris-soft: color-mix(in srgb, var(--lumi-iris) 30%, transparent); --lumi-iris-strong: #C3C3FF; --lumi-ok: #4FD6A8; --lumi-warn: #F2C572; --lumi-bad: #FF8FA8; color-scheme: dark; }
 :root, .lumi-dark {
   --lumi-ok-soft: color-mix(in srgb, var(--lumi-ok) 13%, transparent);
   --lumi-warn-soft: color-mix(in srgb, var(--lumi-warn) 13%, transparent);
@@ -33,7 +33,7 @@ textarea.input { height: auto; padding: var(--s3) var(--s4); }
 .lumi-dark .input { border-color: var(--lumi-line); }
 .chip { border: 0; background: var(--lumi-fill); color: var(--lumi-ink); cursor: pointer; }
 span.chip, .chip.chip-mastered { cursor: default; }
-.chip-mastered { background: var(--lumi-spark); color: var(--lumi-void); }
+.chip.chip-mastered, .pm-legend .chip.chip-mastered { background: var(--lumi-spark); color: var(--lumi-void); border: 0; }
 .progress { display: block; flex: 1; min-width: 40px; overflow: hidden; }
 
 /* Every tappable element is at least 44px. Zero specificity: a component can only make it bigger. */
@@ -47,3 +47,6 @@ span.chip, .chip.chip-mastered { cursor: default; }
 
 body { background: var(--lumi-mist); }
 .card > *, .d-card-head { min-width: 0; }
+.bai { border-radius: var(--r-card); padding: var(--s2); }
+.bai-name { display: inline-flex; align-items: center; gap: 6px; }
+.d-exams li { flex-wrap: wrap; }

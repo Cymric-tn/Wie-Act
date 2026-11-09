@@ -5,6 +5,7 @@ import { useI18n, LanguageSwitcher } from "../../lib/i18n";
 import { getUser, saveUser } from "../../lib/session";
 import "../dashboard/dashboard.css";
 import "../landing/landing.css";
+import { LumiLogo } from "../LumiSpark";
 
 function nameFromEmail(email) {
   const local = email.split("@")[0] || "";
@@ -52,7 +53,7 @@ export default function SignIn() {
         </div>
 
         <form className="auth-card" onSubmit={submit}>
-          <Link to="/" className="d-brand"><i>✧</i> Lumi</Link>
+          <Link to="/" className="d-brand"><LumiLogo height={26} /></Link>
           <h1>{signup ? t("auth.create") : t("auth.welcome")}</h1>
           <p className="auth-sub">{t("auth.sub")}</p>
 

@@ -1,7 +1,7 @@
 import { layoutGraph } from "./layout.js";
 
 const FALLBACK = { ink: "#e9e7ff", accent: "#a78bfa", muted: "#6b6fa8", f: "#8fb3ff", d: "#ffc15e", t: "#ff7aa8", asy: "#8a90d6",
-  grid: "#2b2e63", ok: "#2dd4bf", warn: "#fbbf24", bad: "#fb7185", new: "#a78bfa", req: "#9db4ff", rel: "#6b6fa8", panel: "#0f1230", neutral: "#8f98ff" };
+  grid: "#2b2e63", ok: "#2dd4bf", warn: "#fbbf24", bad: "#fb7185", new: "#a78bfa", mastered: "#FFCC55", req: "#9db4ff", rel: "#6b6fa8", panel: "#0f1230", neutral: "#8f98ff" };
 export const LABELS = {
   fr: { x: "x", d: "f′(x)", f: "f(x)", err: "Diagramme invalide", slope: "pente", check: "Vérifier", reveal: "Voir la réponse", reset: "Effacer", ok: "Correct !", bad: "{n} erreur(s)" },
   en: { x: "x", d: "f′(x)", f: "f(x)", err: "Invalid diagram", slope: "slope", check: "Check", reveal: "Reveal answer", reset: "Clear", ok: "Correct!", bad: "{n} mistake(s)" },
@@ -17,7 +17,7 @@ export const fmt = (v) => String(+v.toPrecision(10)).replace("-", "−");
 const nice = (r) => { const e = 10 ** Math.floor(Math.log10(r)), m = r / e; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * e; };
 const ticks = (a, b) => { const s = nice((b - a) / 8), o = []; for (let i = Math.ceil(a / s); i * s <= b + 1e-9; i++) o.push(+(i * s).toPrecision(10)); return o; };
 const wrap = (s, n = 16) => { const out = []; let cur = ""; for (const w of String(s).split(" ")) { if (cur && (cur + " " + w).length > n) { out.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; } return out.concat(cur ? [cur] : []); };
-const stateOf = (m) => (m == null || m <= 0 ? "new" : m < 0.4 ? "bad" : m < 0.8 ? "warn" : "ok");
+const stateOf = (m) => (m == null || m <= 0 ? "new" : m < 0.4 ? "bad" : m < 0.8 ? "warn" : "mastered");
 export const masteryState = stateOf;
 
 export function validate(spec) {
@@ -142,7 +142,9 @@ function mapScene(spec) {
   for (const n of nodes) {
     const c = P(n.id), st = hasM ? stateOf(n.mastery) : "neutral";
     it.push(dot(c.x, c.y, 24, "accent", { role: st, fill: true, opacity: 0.2, halo: true }));
-    it.push(dot(c.x, c.y, 13, "accent", { role: st, fill: true }), dot(c.x, c.y, 4.5, "ink", { fill: true }));
+    it.push(dot(c.x, c.y, 13, "accent", { role: st, fill: true }));
+    if (st === "mastered") it.push(text(c.x, c.y + 5, "✓", { anchor: "middle", size: 14, weight: 700, color: "ink" }));
+    else it.push(dot(c.x, c.y, 4.5, "ink", { fill: true }));
     if (n.id === spec.payload.focus) it.push(dot(c.x, c.y, 32, "ink", { dash: true, sw: 1.6 }));
     wrap(n.label).forEach((s, k) => it.push(text(c.x, c.y + 42 + k * 14, s, { anchor: "middle", size: 12, weight: 600 })));
   }

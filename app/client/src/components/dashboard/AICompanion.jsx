@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "../Icons";
 import { useI18n } from "../../lib/i18n";
 import { ai, AI_LANGUAGES, replyLanguage, setReplyLanguage } from "../../lib/engine";
+import { LumiSpark } from "../LumiSpark";
 import {
   AnswerText, Degraded, EngineBadge, ExerciseCard, Progress, ReportButton, ResultMeta, Sources,
   errorText, useAiStatus, useProgress
@@ -174,9 +175,9 @@ export default function AICompanion({ open, onClose, user, seed }) {
   return (
     <>
       <div className={"ai-scrim" + (open ? " open" : "")} onClick={onClose} aria-hidden="true" />
-      <aside className={"ai-panel" + (open ? " open" : "")} aria-label={t("ai.title")} aria-hidden={!open} inert={!open}>
+      <aside className={"ai-panel lumi-dark" + (open ? " open" : "")} aria-label={t("ai.title")} aria-hidden={!open} inert={!open}>
         <header className="ai-head">
-          <span className="d-ai-avatar"><Icon name="sparkle" size={20} /></span>
+          <span className="d-ai-avatar"><LumiSpark size={28} state={busy ? "thinking" : "rest"} onDark label={t("ai.title")} /></span>
           <div>
             <h2>{t("ai.title")}</h2>
             <p>{t("ai.scope")}</p>

@@ -88,7 +88,9 @@ export default function Diagrams() {
             {spec.warnings.map((w) => <p className="dg-warning" key={w} dir="auto">{w}</p>)}
             <div className="dg-foot">
               {hasMastery ? (
-                <div className="dg-legend">{LEGEND.map(([key, color]) => <span key={key}><i style={{ background: color }} />{t(`diagrams.legend.${key}`)}</span>)}</div>
+                <div className="dg-legend">{LEGEND.map(([key, color]) => (key === "ok"
+                  ? <span key={key} className="chip chip-mastered"><Icon name="check" size={13} /> {t(`diagrams.legend.${key}`)}</span>
+                  : <span key={key}><i style={{ background: color }} />{t(`diagrams.legend.${key}`)}</span>))}</div>
               ) : <span />}
               <button className="btn btn-secondary small" onClick={send}><Icon name="board" size={15} /> {t("diagrams.send")}</button>
             </div>

@@ -7,6 +7,7 @@ import { daysLeft, listExams } from "../../lib/exams";
 import { useCourses } from "../../lib/courseMap";
 import { initials } from "../../lib/format";
 import { store } from "../../lib/identity";
+import { LumiSpark } from "../LumiSpark";
 
 const courseById = (id) => (id === COURSE_ID ? { id: COURSE_ID, name: "Analyse", color: COURSE_COLOR } : null);
 const pct = (v) => Math.round(v * 100);
@@ -295,7 +296,7 @@ export function CompanionCard({ onOpen }) {
   return (
     <Card className="span-4 companion-card">
       <div className="d-companion-promo">
-        <span className="d-ai-avatar"><Icon name="sparkle" size={22} /></span>
+        <span className="d-ai-avatar"><LumiSpark size={26} onDark /></span>
         <h2>{t("ai.title")}</h2>
         <p>{t("feature.companion.desc")}</p>
         <div className="d-suggest">
@@ -402,7 +403,10 @@ export function Roster() {
               <tr key={s.name}>
                 <td><span className="d-avatar small" style={{ "--c": MASTERY[masteryLevel(s.mastery)].color }}>{initials(s.name)}</span>{s.name}</td>
                 <td>{s.group}</td>
-                <td><span className="d-cell-meter"><Meter value={s.mastery} /><small>{pct(s.mastery)}%</small></span></td>
+                <td>
+                  <span className="d-cell-meter"><Meter value={s.mastery} /><small>{pct(s.mastery)}%</small></span>
+                  {masteryLevel(s.mastery) === "mastered" && <span className="chip chip-mastered"><Icon name="check" size={13} /> {t("mastery.mastered")}</span>}
+                </td>
                 <td className={s.active === 0 ? "online" : ""}>{ago(s.active)}</td>
                 <td><span className="d-weak-tag">{s.weak}</span></td>
               </tr>

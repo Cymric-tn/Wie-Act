@@ -8,6 +8,7 @@ import { renderToCanvas } from "../lib/exporters";
 import { useI18n } from "../lib/i18n";
 import { AnswerText, Degraded, Progress, ReportButton, Sources, errorText, useAiStatus, useProgress } from "./ai/AIBits";
 import "./dashboard/dashboard.css";
+import { LumiSpark } from "./LumiSpark";
 
 const INK_TYPES = new Set(["path", "shape", "image"]);
 const VERDICTS = {
@@ -148,10 +149,10 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
         : out?.kind === "ocr" ? data.text || data.latex : null;
 
   return (
-    <div className="bai">
+    <div className="bai lumi-dark">
       <div className="card panel-card">
         <div className="bai-head">
-          <div className="eyebrow">LUMI</div>
+          <div className="eyebrow bai-name"><LumiSpark size={20} state={busy ? "thinking" : "rest"} onDark /> LUMI</div>
           <EngineLine />
         </div>
         <p className="panel-copy">

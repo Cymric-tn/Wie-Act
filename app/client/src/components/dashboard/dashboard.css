@@ -511,7 +511,7 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
 .d-plan li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--lumi-ink); line-height: 1.5; }
 .d-plan svg { color: var(--lumi-ok); flex: none; margin-top: 2px; }
 .dg-page { --dg-ink: var(--lumi-ink); --dg-accent: var(--lumi-iris); --dg-muted: var(--lumi-slate); --dg-grid: var(--lumi-line); --dg-asy: var(--lumi-slate); --dg-f: var(--lumi-iris); --dg-d: var(--lumi-warn); --dg-t: var(--lumi-bad);
-  --dg-req: var(--lumi-iris); --dg-rel: var(--lumi-slate); --dg-ok: var(--lumi-ok); --dg-warn: var(--lumi-warn); --dg-bad: var(--lumi-bad); --dg-new: var(--lumi-iris-soft); --dg-neutral: var(--lumi-iris); --dg-panel: var(--lumi-surface); }
+  --dg-req: var(--lumi-iris); --dg-rel: var(--lumi-slate); --dg-ok: var(--lumi-ok); --dg-warn: var(--lumi-warn); --dg-bad: var(--lumi-bad); --dg-new: var(--lumi-iris-soft); --dg-mastered: var(--lumi-spark); --dg-neutral: var(--lumi-iris); --dg-panel: var(--lumi-surface); }
 .dg-form { display: grid; gap: 10px; }
 .dg-form label.dg-field { font-weight: 600; }
 .dg-row { display: flex; gap: 10px; }

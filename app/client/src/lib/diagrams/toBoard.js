@@ -9,7 +9,7 @@ const MAX_ITEMS = 500; // the server's limit for one operation
 const DASH = 14, GAP = 10;
 const BASELINE = 0.8; // from a text's baseline up to its top, as a share of its size
 const MUTED = "#8a90b8";
-const ROLE = { d: "#ffc45c", t: "#ff7fa8", asy: MUTED, grid: "#8a90b855", ok: "#40d9be", warn: "#ffc45c", bad: "#ff7fa8", new: "#a279ff", neutral: "#75e8ff", req: "#75e8ff", rel: MUTED };
+const ROLE = { d: "#ffc45c", t: "#ff7fa8", asy: MUTED, grid: "#8a90b855", ok: "#40d9be", mastered: "#FFCC55", warn: "#ffc45c", bad: "#ff7fa8", new: "#a279ff", neutral: "#75e8ff", req: "#75e8ff", rel: MUTED };
 const round = (v) => Math.round(v * 100) / 100;
 
 function extent(p) {

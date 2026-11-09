@@ -16,6 +16,7 @@ import { texToSvg } from "../lib/math";
 import { imageFileToData, pdfFileToPages, isPdf, isImage } from "../lib/media";
 import { exportPng, exportSvg, exportPdf, copyPng } from "../lib/exporters";
 import { buildTemplate } from "../lib/templates";
+import { LumiSpark } from "./LumiSpark";
 import { toBoardItems } from "../lib/diagrams/toBoard";
 import { takePendingDiagram } from "../lib/diagrams/api";
 import { buildTimeline, stateAt, describeEntry } from "../lib/history";
@@ -1588,7 +1589,7 @@ export default function Board({ session, status, onLeave }) {
   return (
     <div className="app">
       <aside className="rail" aria-label="Lumi navigation">
-        <div className="logo">✧</div>
+        <div className="logo"><LumiSpark size={34} label="Lumi" /></div>
         <a className="nav" href="/app"><Icon name="home" /><small>Home</small></a>
         {/* The static Universe / Atlas pages (client/public/lumi/) still list the old example curriculum: no links to them in Phase 1. */}
         <span className="nav active" aria-current="page"><Icon name="board" /><small>Board</small></span>

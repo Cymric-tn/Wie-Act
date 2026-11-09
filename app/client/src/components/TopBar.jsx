@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import Icon from "./Icons";
 import { initials } from "../lib/format";
 import { courseColor } from "../lib/courses";
+import { LumiLogo } from "./LumiSpark";
 
 export function timerRemaining(timer, offset) {
   if (!timer) return 0;
@@ -90,7 +91,7 @@ function TopBar(props) {
   return (
     <header className="top">
       <div className="top-left">
-        <div className="brand"><i>✧</i> Lumi</div>
+        <div className="brand"><LumiLogo height={26} /></div>
         <button className="room-pill" onClick={onCopyInvite} aria-label="Copy invite link" title="Copy invite link">
           <span className="eyebrow">ROOM</span>
           <b>{room}</b>
