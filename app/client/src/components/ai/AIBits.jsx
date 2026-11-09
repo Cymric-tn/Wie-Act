@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "../Icons";
 import { useI18n } from "../../lib/i18n";
 import { ai } from "../../lib/engine";
+import { masteryLevel } from "../../lib/demoData";
 import "./ai.css";
 import { LumiSpark } from "../LumiSpark";
 
@@ -65,7 +66,7 @@ export function Progress({ state }) {
   return (
     <div className="ai-progress" role="status">
       <span className="ai-spark"><LumiSpark size={22} state="thinking" /></span>
-      <span>{eventLabel(t, state.event, state.stage)}</span>
+      <span>{eventLabel(t, state.event, state.stage)}<i className="ai-cursor" aria-hidden="true" /></span>
       {state.partial?.length > 0 && (
         <blockquote className="ai-partial" dir="auto">
           <small>{t("ev.partial_result")}</small>
@@ -77,18 +78,55 @@ export function Progress({ state }) {
 }
 
 // ---------- answers ----------
-export function AnswerText({ text }) {
+const prefersStill = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Counts words up to `total`, in about 1.4 s however long the answer is. The engine returns whole answers, so this is presentation only. */
+function useReveal(total, enabled) {
+  const [shown, setShown] = useState(enabled && !prefersStill() ? 0 : total);
+  useEffect(() => {
+    if (shown >= total) return undefined;
+    const id = setTimeout(() => setShown((n) => Math.min(total, n + Math.max(1, Math.ceil(total / 58)))), 24);
+    return () => clearTimeout(id);
+  }, [shown, total]);
+  return shown;
+}
+
+const wordsOf = (line) => line.match(/\s*\S+\s*/g) || [];
+const BULLET = /^\s*[•\-*]\s/;
+
+/**
+ * With `reveal`, the words appear progressively. The whole text is in the DOM from the start (the rest is only transparent),
+ * so nothing reflows and a screen reader hears the answer once.
+ */
+export function AnswerText({ text, reveal = false }) {
+  const blocks = String(text || "").split(/\n{2,}/).map((block) => {
+    const lines = block.split("\n");
+    const list = lines.every((l) => BULLET.test(l));
+    return { list, lines: list ? lines.map((l) => l.replace(BULLET, "")) : lines };
+  });
+  const total = blocks.flatMap((b) => b.lines).reduce((n, line) => n + wordsOf(line).length, 0);
+  const shown = useReveal(total, reveal);
   if (!text) return null;
-  const blocks = String(text).split(/\n{2,}/);
+  let seen = 0;
+  const paint = (line) => {
+    const words = wordsOf(line);
+    const start = seen;
+    seen += words.length;
+    if (shown >= total) return line;
+    const visible = Math.max(0, Math.min(words.length, shown - start));
+    return (
+      <>
+        {words.slice(0, visible).join("")}
+        {shown >= start && shown < seen && <i className="ai-cursor" aria-hidden="true" />}
+        <span className="ai-unrevealed">{words.slice(visible).join("")}</span>
+      </>
+    );
+  };
   return (
     <div className="ai-answer" dir="auto">
-      {blocks.map((block, i) => {
-        const lines = block.split("\n");
-        if (lines.every((l) => /^\s*[•\-*]\s/.test(l))) {
-          return <ul key={i}>{lines.map((l, k) => <li key={k}>{l.replace(/^\s*[•\-*]\s/, "")}</li>)}</ul>;
-        }
-        return <p key={i}>{lines.map((l, k) => <span key={k}>{l}{k < lines.length - 1 && <br />}</span>)}</p>;
-      })}
+      {blocks.map(({ list, lines }, i) => (list
+        ? <ul key={i}>{lines.map((l, k) => <li key={k}>{paint(l)}</li>)}</ul>
+        : <p key={i}>{lines.map((l, k) => <span key={k}>{paint(l)}{k < lines.length - 1 && <br />}</span>)}</p>))}
     </div>
   );
 }
@@ -227,7 +265,7 @@ export function ExerciseCard({ exercise, onGraded, context }) {
       } else if (action === "answer") {
         setGrade(out.result);
         if (out.mastery) setMastery(out.mastery);
-        onGraded?.(out.result);
+        onGraded?.(out.result, out.mastery);
       } else {
         setSolution(out.result?.data?.solution || "—");
         onGraded?.({ data: { verdict: "INCORRECT", exercise_id: exercise.id } });
@@ -268,6 +306,9 @@ export function ExerciseCard({ exercise, onGraded, context }) {
           <b>{t(`ex.${verdict}`)}</b>
           {grade.data.feedback && <span dir="auto">{grade.data.feedback}</span>}
           {mastery && <small>{t("ex.mastery", { p: Math.round(mastery.value * 100) })}</small>}
+          {verdict === "CORRECT" && mastery && masteryLevel(mastery.value) === "mastered" && (
+            <span className="chip chip-mastered lumi-burst"><Icon name="check" size={13} /> {t("mastery.mastered")}</span>
+          )}
         </div>
       )}
       {solution && <div className="ai-ex-verdict v-solution"><b>{t("ex.solution", { s: solution })}</b></div>}

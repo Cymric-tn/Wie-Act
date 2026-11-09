@@ -3,6 +3,7 @@ import Icon from "../Icons";
 import { useI18n } from "../../lib/i18n";
 import { ai, AI_LANGUAGES, replyLanguage, setReplyLanguage } from "../../lib/engine";
 import { LumiSpark } from "../LumiSpark";
+import { masteryLevel } from "../../lib/demoData";
 import {
   AnswerText, Degraded, EngineBadge, ExerciseCard, Progress, ReportButton, ResultMeta, Sources,
   errorText, useAiStatus, useProgress
@@ -20,13 +21,13 @@ function Reply({ msg, onRetry, onFull, onGraded }) {
 
   let body;
   if (!task) {
-    body = <AnswerText text={t(classification?.data?.intent === "OFF_TOPIC" ? "ai.offtopic" : "ai.chitchat")} />;
+    body = <AnswerText reveal text={t(classification?.data?.intent === "OFF_TOPIC" ? "ai.offtopic" : "ai.chitchat")} />;
   } else if (task === "explain" && data.body) {
-    body = <AnswerText text={`${data.opener || ""}\n\n${data.body}`} />;
+    body = <AnswerText reveal text={`${data.opener || ""}\n\n${data.body}`} />;
   } else if (task === "explain" && data.excerpts) {
-    body = <AnswerText text={[data.opener, data.framing, data.excerpts.map((e) => `• ${e.text}`).join("\n")].filter(Boolean).join("\n\n")} />;
+    body = <AnswerText reveal text={[data.opener, data.framing, data.excerpts.map((e) => `• ${e.text}`).join("\n")].filter(Boolean).join("\n\n")} />;
   } else if (task === "quiz") {
-    body = data.intro ? <AnswerText text={data.intro} /> : null;
+    body = data.intro ? <AnswerText reveal text={data.intro} /> : null;
   } else if (task === "grade") {
     body = (
       <div className={`ai-ex-verdict v-${String(data.verdict || "unknown").toLowerCase()}`}>
@@ -41,7 +42,7 @@ function Reply({ msg, onRetry, onFull, onGraded }) {
       </p>
     );
   } else {
-    body = <AnswerText text={result?.text} />;
+    body = <AnswerText reveal text={result?.text} />;
   }
 
   const exercises = task === "quiz" ? data.exercises || [] : data.exercise ? [data.exercise] : [];
@@ -72,6 +73,7 @@ export default function AICompanion({ open, onClose, user, seed }) {
   const [busy, setBusy] = useState(false);
   const [replyLang, setReplyLang] = useState(replyLanguage);
   const [progress, onEvent, resetProgress] = useProgress();
+  const [justMastered, setJustMastered] = useState(false);
   const listRef = useRef(null);
   const inputRef = useRef(null);
   const handledSeed = useRef(null);
@@ -170,14 +172,21 @@ export default function AICompanion({ open, onClose, user, seed }) {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, progress, busy]);
 
+  // The companion turns gold for a moment when an answer brings a concept to mastered.
+  useEffect(() => {
+    if (!justMastered) return undefined;
+    const id = setTimeout(() => setJustMastered(false), 2400);
+    return () => clearTimeout(id);
+  }, [justMastered]);
+
   const langLabel = (id) => (id === "auto" ? t("lang.auto") : t(`lang.${id}`));
 
   return (
     <>
       <div className={"ai-scrim" + (open ? " open" : "")} onClick={onClose} aria-hidden="true" />
-      <aside className={"ai-panel lumi-dark" + (open ? " open" : "")} aria-label={t("ai.title")} aria-hidden={!open} inert={!open}>
+      <aside className={"ai-panel lumi-dark glass-ai" + (open ? " open" : "")} aria-label={t("ai.title")} aria-hidden={!open} inert={!open}>
         <header className="ai-head">
-          <span className="d-ai-avatar"><LumiSpark size={28} state={busy ? "thinking" : "rest"} label={t("ai.title")} /></span>
+          <LumiSpark size={44} halo={96} state={justMastered ? "mastered" : busy ? "thinking" : "rest"} label={t("ai.title")} />
           <div>
             <h2>{t("ai.title")}</h2>
             <p>{t("ai.scope")}</p>
@@ -215,7 +224,10 @@ export default function AICompanion({ open, onClose, user, seed }) {
                         msg={m}
                         onRetry={() => send(m.question, { echo: false })}
                         onFull={() => fullExplanation(m)}
-                        onGraded={(r) => { if (r?.data?.verdict === "CORRECT" && openExercise.current?.id === r.data.exercise_id) openExercise.current = null; }}
+                        onGraded={(r, mastery) => {
+                          if (r?.data?.verdict === "CORRECT" && openExercise.current?.id === r.data.exercise_id) openExercise.current = null;
+                          if (r?.data?.verdict === "CORRECT" && mastery && masteryLevel(mastery.value) === "mastered") setJustMastered(true);
+                        }}
                       />
                     )}
                 </div>

@@ -186,3 +186,29 @@ span.chip { cursor: default; }
 @media (max-width: 760px) { .d-continue { flex-direction: column; align-items: stretch; padding: 20px; } }
 .d-exams li { border-radius: var(--r-control); }
 .d-exam-main { flex: 1 1 150px; }
+
+/* ---------- AI assistant ---------- */
+.lumi-halo { position: relative; display: inline-grid; place-items: center; flex: none; width: var(--halo); height: var(--halo); }
+.lumi-halo::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, rgba(34, 195, 230, .6), transparent 70%); opacity: .6; }
+.lumi-halo svg { position: relative; }
+.lumi-halo-thinking::before { animation: lumi-halo-pulse var(--t-breathe) ease-in-out infinite; }
+.lumi-halo-mastered::before { background: radial-gradient(circle, rgba(255, 204, 85, .6), transparent 70%); opacity: 1; }
+@keyframes lumi-halo-pulse { 0%, 100% { transform: scale(1); opacity: .6; } 50% { transform: scale(1.08); opacity: 1; } }
+
+.ai-panel.glass-ai { border-radius: var(--r-panel); background-color: rgba(8, 9, 30, .55); box-shadow: var(--ai-shadow), 0 30px 90px var(--lumi-shadow); }
+.ai-head { position: relative; flex-direction: column; gap: 2px; padding: 14px 18px 12px; text-align: center; border-bottom-color: var(--ai-border); }
+.ai-head div { flex: none; }
+.ai-head h2 { font: 600 19px var(--font-display); }
+.ai-head .d-icon-btn { position: absolute; top: 12px; inset-inline-end: 12px; }
+.ai-tools { border-bottom-color: var(--glass-border); }
+.ai-tools select.input { width: auto; height: 44px; padding-block: 0; padding-inline: 12px 6px; font-size: 12.5px; }
+.ai-msg { border-radius: 18px; }
+.ai-msg.me { background: rgba(255, 255, 255, .92); color: var(--void); }
+.ai-input input { flex: 1; min-width: 0; }
+.ai-input { border-top-color: var(--glass-border); align-items: center; }
+.ai-spark { background: none; padding: 0; }
+.ai-exercise { border-radius: 16px; }
+.ai-cursor { display: inline-block; width: 2px; height: 1em; margin-inline-start: 3px; vertical-align: -.15em; background: var(--glow); box-shadow: 0 0 8px var(--glow); animation: ai-cursor-blink 1s steps(2, jump-none) infinite; }
+@keyframes ai-cursor-blink { 50% { opacity: 0; } }
+.ai-unrevealed { opacity: 0; }
+@media (max-height: 640px) { .ai-head .lumi-halo { --halo: 64px !important; } }
