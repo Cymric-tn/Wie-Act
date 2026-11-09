@@ -81,7 +81,7 @@ function Sidebar({ user, section, open, onClose, onCompanion, onSignOut }) {
   return (
     <>
       <div className={"d-scrim" + (open ? " open" : "")} onClick={onClose} aria-hidden="true" />
-      <aside className={"d-sidebar" + (open ? " open" : "")} aria-label="Main menu">
+      <aside className={"d-sidebar glass" + (open ? " open" : "")} aria-label="Main menu">
         <Link to="/" className="d-brand"><LumiLogo height={26} /></Link>
         <p className="d-tagline">{t("tagline")}</p>
         <nav className="d-nav">
@@ -107,7 +107,7 @@ function Sidebar({ user, section, open, onClose, onCompanion, onSignOut }) {
         </nav>
         <div className="d-side-bottom">
           <button className="d-companion-btn" onClick={onCompanion}>
-            <span className="d-ai-avatar small"><LumiSpark size={18} onDark /></span>
+            <span className="d-ai-avatar small"><LumiSpark size={18} /></span>
             <span>{t("nav.companion")}</span>
           </button>
           <Link to="/app/settings" className={"d-nav-item" + (section === "settings" ? " active" : "")} onClick={onClose}>
@@ -130,7 +130,7 @@ function Sidebar({ user, section, open, onClose, onCompanion, onSignOut }) {
 function TopBar({ user, section, onMenu, onRole, onCompanion }) {
   const { t } = useI18n();
   return (
-    <header className="d-top">
+    <header className="d-top glass">
       <button className="d-icon-btn d-menu" onClick={onMenu} aria-label="Menu"><Icon name="menu" size={20} /></button>
       <h1 className="d-top-title">{t(titleKey(user.role, section))}</h1>
       <div className="d-top-right">
@@ -381,8 +381,8 @@ export default function Dashboard({ section }) {
         </main>
       </div>
       {!aiOpen && (
-        <button className="d-fab" onClick={() => openCompanion()} aria-label={t("nav.companion")}>
-          <LumiSpark size={30} onDark />
+        <button className="d-fab glass-ai" onClick={() => openCompanion()} aria-label={t("nav.companion")}>
+          <LumiSpark size={30} />
         </button>
       )}
       <AICompanion open={aiOpen} onClose={() => setAiOpen(false)} user={user} seed={aiSeed} />

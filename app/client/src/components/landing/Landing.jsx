@@ -56,7 +56,7 @@ function HeroVisual() {
         <ProgressMap compact />
       </div>
       <div className="lp-float lp-float-chat" dir="auto">
-        <span className="d-ai-avatar small"><LumiSpark size={18} onDark /></span>
+        <span className="d-ai-avatar small"><LumiSpark size={18} /></span>
         <p>{t("chat.ai2")}</p>
       </div>
       <div className="lp-float lp-float-fact">
@@ -147,14 +147,14 @@ export default function Landing() {
             <small>Darija</small>
           </div>
           <div className="lp-bubble ai">
-            <span className="d-ai-avatar small"><LumiSpark size={18} onDark /></span>
+            <span className="d-ai-avatar small"><LumiSpark size={18} /></span>
             <div>
               <p>{t("chat.ai")}</p>
               <span className="lp-verified"><Icon name="shield" size={13} /> {t("chat.badge")}</span>
             </div>
           </div>
           <div className="lp-bubble ai">
-            <span className="d-ai-avatar small"><LumiSpark size={18} onDark /></span>
+            <span className="d-ai-avatar small"><LumiSpark size={18} /></span>
             <p>{t("chat.ai2")}</p>
           </div>
         </div>

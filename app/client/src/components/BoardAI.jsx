@@ -154,7 +154,7 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
     <div className="bai lumi-dark">
       <div className="card panel-card">
         <div className="bai-head">
-          <div className="eyebrow bai-name"><LumiSpark size={20} state={busy ? "thinking" : "rest"} onDark /> LUMI</div>
+          <div className="eyebrow bai-name"><LumiSpark size={20} state={busy ? "thinking" : "rest"} /> LUMI</div>
           <EngineLine />
         </div>
         <p className="panel-copy">

@@ -177,7 +177,7 @@ export default function AICompanion({ open, onClose, user, seed }) {
       <div className={"ai-scrim" + (open ? " open" : "")} onClick={onClose} aria-hidden="true" />
       <aside className={"ai-panel lumi-dark" + (open ? " open" : "")} aria-label={t("ai.title")} aria-hidden={!open} inert={!open}>
         <header className="ai-head">
-          <span className="d-ai-avatar"><LumiSpark size={28} state={busy ? "thinking" : "rest"} onDark label={t("ai.title")} /></span>
+          <span className="d-ai-avatar"><LumiSpark size={28} state={busy ? "thinking" : "rest"} label={t("ai.title")} /></span>
           <div>
             <h2>{t("ai.title")}</h2>
             <p>{t("ai.scope")}</p>

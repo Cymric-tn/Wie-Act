@@ -58,8 +58,7 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
 }
 .d-nav-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .d-nav-item:hover { background: var(--lumi-fill); color: var(--lumi-ink); }
-.d-nav-item.active { background: var(--lumi-iris-soft); border-color: var(--lumi-line); color: var(--lumi-ink); box-shadow: inset 3px 0 0 var(--lumi-shadow); }
-[dir="rtl"] .d-nav-item.active { box-shadow: inset -3px 0 0 var(--lumi-shadow); background: var(--lumi-iris-soft); }
+.d-nav-item.active { background: rgba(255, 255, 255, .14); color: var(--lumi-ink); }
 
 .d-badge {
   display: inline-flex;
@@ -286,7 +285,7 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
   display: grid;
   place-content: center;
   text-align: center;
-  background: radial-gradient(closest-side, var(--lumi-surface) 80%, transparent 82%), conic-gradient(var(--lumi-spark) calc(var(--p, 0) * 100%), var(--lumi-line) 0); color: var(--lumi-ink); }
+  background: radial-gradient(closest-side, var(--lumi-surface-solid) 80%, transparent 82%), conic-gradient(var(--lumi-spark) calc(var(--p, 0) * 100%), var(--lumi-line) 0); color: var(--lumi-ink); }
 .d-ring b { font-size: 17px; }
 .d-ring small { font-size: 9px; color: var(--lumi-slate); }
 .d-select { display: grid; gap: 4px; font-size: 11px; color: var(--lumi-slate); }
