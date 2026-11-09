@@ -17,6 +17,7 @@ import { daysLeft, listExams } from "../../lib/exams";
 import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { initials } from "../../lib/format";
 import { ai, AI_LANGUAGES, replyLanguage, setReplyLanguage } from "../../lib/engine";
+import { isLowPower, setLowPower } from "../../lib/lowPower";
 import Diagrams from "./Diagrams";
 import "./dashboard.css";
 import { LumiLogo, LumiSpark } from "../LumiSpark";
@@ -264,6 +265,25 @@ function AiLanguageCard() {
   );
 }
 
+function LowPowerCard() {
+  const { t } = useI18n();
+  const [on, setOn] = useState(isLowPower);
+  return (
+    <Card icon="bolt" title={t("settings.display")} className="span-7">
+      <button
+        className={"toggle-row" + (on ? " on" : "")}
+        role="switch"
+        aria-checked={on}
+        onClick={() => { setLowPower(!on); setOn(!on); }}
+      >
+        <Icon name="bolt" size={18} />
+        <span><b>{t("settings.lowPower")}</b><small>{t("settings.lowPowerHint")}</small></span>
+        <i className="switch" />
+      </button>
+    </Card>
+  );
+}
+
 function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
   const { t, lang, setLang } = useI18n();
   const isProf = user.role === "professor";
@@ -355,6 +375,7 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
               </div>
             </dl>
           </Card>
+          <LowPowerCard />
         </div>
       );
 

@@ -212,6 +212,9 @@ const en = {
   "settings.sub": "Language, profile and notifications.",
   "settings.language": "Interface language",
   "settings.languageHint": "The AI companion replies in this language and also understands Tunisian Darija.",
+  "settings.display": "Display",
+  "settings.lowPower": "Low-power mode",
+  "settings.lowPowerHint": "Turns off the blur and the moving light. On by default on machines with 4 cores or fewer.",
   "settings.profile": "Profile",
   "settings.role": "Role",
 
@@ -473,6 +476,9 @@ const fr = {
   "settings.sub": "Langue, profil et notifications.",
   "settings.language": "Langue de l’interface",
   "settings.languageHint": "Le compagnon IA répond dans cette langue et comprend aussi le darija tunisien.",
+  "settings.display": "Affichage",
+  "settings.lowPower": "Mode économie",
+  "settings.lowPowerHint": "Désactive le flou et la lumière animée. Activé par défaut sur les machines de 4 cœurs ou moins.",
   "settings.profile": "Profil",
   "settings.role": "Rôle",
 
@@ -734,6 +740,9 @@ const ar = {
   "settings.sub": "اللغة والملف الشخصي والإشعارات.",
   "settings.language": "لغة الواجهة",
   "settings.languageHint": "يردّ الرفيق الذكي بهذه اللغة، ويفهم الدارجة التونسية أيضًا.",
+  "settings.display": "العرض",
+  "settings.lowPower": "وضع توفير الطاقة",
+  "settings.lowPowerHint": "يوقف الضبابية والضوء المتحرك. يُفعَّل تلقائيًا على الأجهزة ذات 4 أنوية أو أقل.",
   "settings.profile": "الملف الشخصي",
   "settings.role": "الدور",
 

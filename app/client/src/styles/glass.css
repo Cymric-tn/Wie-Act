@@ -298,3 +298,16 @@ span.chip { cursor: default; }
 .pn-callout { border-radius: var(--r-control); }
 .pn-dot.mastered { background: var(--spark); }
 @media (max-width: 640px) { .pn.glass { padding: 22px 18px; } }
+
+/* ---------- professor: tables and lists ---------- */
+.d-table th { border-bottom: 1px solid var(--glass-border); }
+.d-table td { border-bottom: 1px solid var(--glass-border); }
+.d-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, .04); }
+:where(.d-table) td:not(:first-child) { color: var(--text-2); }
+.d-cell-meter small, .d-table td:first-child { color: var(--text); }
+.d-table .chip { margin-block-start: 4px; }
+
+/* ---------- settings ---------- */
+.d-card > .toggle-row { width: 100%; min-height: 64px; border-radius: var(--r-control); }
+.d-card > .toggle-row > span { min-width: 0; }
+.dg-note { opacity: 1; color: var(--text-2); }
