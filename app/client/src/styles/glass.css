@@ -291,3 +291,10 @@ span.chip { cursor: default; }
   .app { grid-template-columns: 1fr; }
   .top.glass { border-radius: var(--r-card); }
 }
+
+/* ---------- assessment prep ---------- */
+.pn.glass { padding: 36px 40px; }
+.pn h1, .pn h2 { font-family: var(--font-display); font-weight: 500; }
+.pn-callout { border-radius: var(--r-control); }
+.pn-dot.mastered { background: var(--spark); }
+@media (max-width: 640px) { .pn.glass { padding: 22px 18px; } }

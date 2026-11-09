@@ -99,7 +99,7 @@ function PrepHome({ readiness, onOpen }) {
     setArmed(null);
   };
   return (
-    <div className="pn">
+    <div className="pn glass">
       <h1>{t("prep.title")}</h1>
       <p className="pn-lead">{t("prep.sub")}</p>
       {exams.length > 0 ? (
@@ -148,7 +148,7 @@ function ExamPage({ examId, readiness, conceptName, masteryOf, context, onBack, 
   const active = [...all, FINAL].find((key) => !exam.done[key]);
 
   return (
-    <div className="pn">
+    <div className="pn glass">
       <BackLink onClick={onBack}>{t("prep.title")}</BackLink>
       <h1 dir="auto">{exam.title}</h1>
       <p className="pn-props">
@@ -304,7 +304,7 @@ function StudyPage({ concept, title, context, onBack, onGraded }) {
 
   const data = page.result?.data;
   return (
-    <div className="pn">
+    <div className="pn glass">
       <BackLink onClick={onBack}>{t("prep.back")}</BackLink>
       <h1 dir="auto">{title || data?.title || t("prep.page")}</h1>
       <Status task={page} onRetry={load} />
@@ -382,7 +382,7 @@ function TestPage({ kind, exam, context, masteryOf, onBack, onGraded, onDone }) 
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="pn">
+    <div className="pn glass">
       <BackLink onClick={onBack}>{t("prep.back")}</BackLink>
       <h1>{t(final ? "prep.final" : "prep.diag")}</h1>
       <p className="pn-lead">{t(final ? "prep.finalSub" : "prep.diagSub")}</p>
