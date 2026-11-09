@@ -30,3 +30,17 @@ async def test_statements_are_rendered_from_the_bank_never_the_id(fake, concept)
 async def test_statements_follow_the_language(fake, language, word):
     page = await fake.generate_page({}, {"concept_id": "polynôme"}, {"language": language, "course_id": "analyse"})
     assert word in page["quiz"][0]["statement"].lower()
+
+
+@pytest.mark.parametrize("concept", ["puissance", *CONCEPTS])
+async def test_the_practice_item_is_never_the_worked_example(fake, concept):
+    page = await fake.generate_page({}, {"concept_id": concept}, {"language": "FRENCH", "course_id": "analyse"})
+    worked = page["worked_example"]
+    exercise = (page["explanation_sections"] or {}).get("exercise")
+    assert worked["statement"] not in page["explanation"]
+    assert exercise is None or exercise["id"] not in {worked["exercise_id"], *(q["id"] for q in page["quiz"])}
+
+
+async def test_a_plain_explain_still_ends_with_its_practice_item(fake):
+    result = await fake.run("explain", {"question": "dérivée"}, {"language": "FRENCH"})
+    assert "À toi :" in result.text and result.data["exercise"]["id"] == "d01"

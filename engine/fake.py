@@ -220,9 +220,11 @@ class FakeEngine:
                             context: Mapping[str, Any] | None = None, on_event=None) -> dict:
         """Same contract as Engine.generate_page: one prep page (explanation, worked example, 3 quiz items)."""
         context = dict(context or {})
-        explain = await self.run("explain", {"question": f"{focus_point['concept_id']}"}, context,
+        worked, quiz = self._page_exercises(focus_point, context)
+        taken = [x["exercise_id"] for x in [worked] if x] + [q["id"] for q in quiz if q["source"] == "bank"]
+        explain = await self.run("explain", {"question": f"{focus_point['concept_id']}", "exclude_exercises": taken}, context,
                                  Priority.BACKGROUND, on_event)
-        return _page(focus_point, explain, *self._page_exercises(focus_point, context))
+        return _page(focus_point, explain, worked, quiz)
 
     def _page_exercises(self, focus_point: Mapping[str, Any], context: Mapping[str, Any]) -> tuple[dict | None, list[dict]]:
         """The real engine's selection on the real bank: statements rendered from each exercise's template and expression."""
@@ -372,12 +374,26 @@ def _hint(outcome, inputs, lang, k, ctx) -> _Plan:
                   "tokens_in": 260, "tokens_out": 38, "route_reason": "compact by table"})
 
 
-def _explain_body(lang: str) -> dict:
-    return {"text": f"{OPENER}\n\n{EXPLAIN_BODY}\n\nÀ toi : {EXERCISE['statement']}",
-            "data": {"body": EXPLAIN_BODY, "opener": OPENER, "exercise": EXERCISE}}
+def _practice_item(inputs: Mapping, lang: str) -> dict | None:
+    """As in the real explain: the practice item is never an exercise already on the page (exclude_exercises)."""
+    exclude = tuple(inputs.get("exclude_exercises") or ())
+    if EXERCISE["id"] not in exclude:
+        return EXERCISE
+    from engine.exercises import ExerciseBank, phrase_language
+    bank = ExerciseBank.load("data/exercises/derivees.yaml", "data/templates.yaml")
+    ex = bank.pick([str(inputs.get("question"))], 1, exclude, strict=True)
+    return ex.public(phrase_language(lang)) if ex is not None else None
+
+
+def _explain_body(exercise: dict | None) -> dict:
+    if exercise is None:
+        return {"text": f"{OPENER}\n\n{EXPLAIN_BODY}", "data": {"body": EXPLAIN_BODY, "opener": OPENER}}
+    return {"text": f"{OPENER}\n\n{EXPLAIN_BODY}\n\nÀ toi : {exercise['statement']}",
+            "data": {"body": EXPLAIN_BODY, "opener": OPENER, "exercise": exercise}}
 
 
 def _explain(outcome, inputs, lang, k, ctx) -> _Plan:
+    practice = _practice_item(inputs, lang)
     retr = [(0.0, "retrieving", None), (0.04, "expanding_query", {"glossary": ["nombre dérivé"]}),
             (0.05, "checking_cache", None)]
     if outcome == "not_in_course":
@@ -387,14 +403,14 @@ def _explain(outcome, inputs, lang, k, ctx) -> _Plan:
                       "notes": {"retrieval": "no_relevant_chunks", "nearest_concept": "nombre dérivé"}})
     if outcome == "cache_hit":
         return _Plan(_ev(*retr, (0.06, "cache_hit", None)), 0.06,
-                     {**_explain_body(lang), "from_cache": True, "model_class_used": "midsize", "model": "mid-a",
+                     {**_explain_body(practice), "from_cache": True, "model_class_used": "midsize", "model": "mid-a",
                       "route_reason": "mid-size by table", "notes": {"sources": [EXCERPTS[0]["chunk_id"]]}})
     partial = (0.06, "partial_result", {"excerpts": EXCERPTS[:2]})
     gen = [(0.07, "queued", {"position": 0, "eta_s": 6.0}), (0.08, "generating", {"attempt": 1, "model_class": "midsize"})]
     if outcome == "wrong_math":       # generated, then refuted by sympy: the text is still returned, flagged
         bad = "f'(x) = 5x"
         return _Plan(_ev(*retr, partial, *gen, (9.5 * k, "guarded", {"reason": "wrong_math", "spans": [bad]})), 9.5 * k,
-                     {**_explain_body(lang), "model_class_used": "midsize", "model": "mid-a", "tokens_in": 1150,
+                     {**_explain_body(practice), "model_class_used": "midsize", "model": "mid-a", "tokens_in": 1150,
                       "tokens_out": 214, "route_reason": "mid-size by table", "degraded": True,
                       "degrade_reason": "wrong_math",
                       "notes": {"sources": [EXCERPTS[0]["chunk_id"]], "formulas_verified": 0, "wrong_math": [bad]}})
@@ -402,16 +418,16 @@ def _explain(outcome, inputs, lang, k, ctx) -> _Plan:
         t = 15.5 * k
         return _Plan(_ev(*retr, partial, (0.065, "queued", {"position": 0, "eta_s": 6.0, "reason": "quota_window"}),
                          (6.07, "queued", {"position": 0, "eta_s": 6.0}), (6.08 * 1, "generating", {"attempt": 1, "model_class": "midsize"})),
-                     t, {**_explain_body(lang), "model_class_used": "midsize", "model": "mid-a", "tokens_in": 1150,
+                     t, {**_explain_body(practice), "model_class_used": "midsize", "model": "mid-a", "tokens_in": 1150,
                          "tokens_out": 214, "route_reason": "mid-size by table",
                          "notes": {"sources": [EXCERPTS[0]["chunk_id"]], "formulas_verified": 1}})
     if outcome == "ok":
         t = 9.5 * k
         return _Plan(_ev(*retr, partial, *gen), t,
-                     {**_explain_body(lang), "model_class_used": "midsize", "model": "mid-a", "tokens_in": 1150,
+                     {**_explain_body(practice), "model_class_used": "midsize", "model": "mid-a", "tokens_in": 1150,
                       "tokens_out": 214, "route_reason": "mid-size by table",
                       "notes": {"sources": [EXCERPTS[0]["chunk_id"]], "formulas_verified": 1}})
-    fast_data = {"framing": FRAMING, "excerpts": EXCERPTS, "exercise": EXERCISE, "opener": OPENER}
+    fast_data = {"framing": FRAMING, "excerpts": EXCERPTS, "exercise": practice, "opener": OPENER}
     fast_text = FRAMING + "\n\n" + "\n".join(f"- {e['text']}" for e in EXCERPTS)
     base = {"text": fast_text, "data": fast_data, "degraded": True, "mode": "fast_extractive",
             "followup_available": True, "model_class_used": "compact", "model": "compact-a",
