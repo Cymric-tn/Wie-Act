@@ -57,19 +57,9 @@ h1, h2, h3, .lumi-display { font-family: var(--lumi-font-display); font-weight: 
 :lang(ar), [dir="rtl"] { font-family: var(--lumi-font-arabic); line-height: 1.75; }
 
 /* Focus — never remove */
-:focus-visible { outline: 3px solid var(--lumi-ink); outline-offset: 3px; }
+:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 
-/* Components */
-.btn { height: 48px; padding: 0 22px; border-radius: var(--r-control); border: 0; font: 600 15px var(--lumi-font-body); cursor: pointer; display: inline-flex; align-items: center; gap: var(--s2); }
-.btn-primary { background: var(--lumi-iris); color: #fff; }
-.btn-secondary { background: var(--lumi-surface); color: var(--lumi-ink); border: 1.5px solid #D4D6E6; }
-.btn-ai { background: var(--lumi-void); color: #fff; }
-.card { background: var(--lumi-surface); border-radius: var(--r-card); padding: var(--s6); box-shadow: 0 1px 2px rgba(16,17,36,.06); animation: lumi-rise var(--t-card) var(--ease-out); }
-.input { height: 48px; border: 1.5px solid #D4D6E6; border-radius: var(--r-control); padding: 0 var(--s4); font: 400 15px var(--lumi-font-body); }
-.chip { height: 32px; padding: 0 14px; border-radius: var(--r-chip); display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
-.chip-mastered { background: var(--lumi-spark); color: var(--lumi-void); } /* always pair with a check icon */
-.progress { height: 8px; border-radius: 4px; background: var(--lumi-line); }
-.progress > span { display: block; height: 100%; border-radius: 4px; background: var(--lumi-iris); }
+.card { animation: lumi-rise var(--t-card) var(--ease-out) backwards; }
 
 /* Motion */
 @keyframes lumi-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

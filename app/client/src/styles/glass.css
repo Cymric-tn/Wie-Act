@@ -34,3 +34,90 @@ html[data-aurora="full"] { --glass-scrim: rgb(5 6 26 / .54); }
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+
+/* ---------- controls ---------- */
+.btn {
+  height: 46px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--r-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  font: 600 15px var(--font-body);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 150ms, box-shadow 150ms, border-color 150ms;
+}
+.btn.small { height: 44px; padding: 0 18px; font-size: 14px; }
+.btn.icon { width: 46px; padding: 0; flex: none; }
+.btn-primary { background: rgba(255, 255, 255, .92); color: var(--void); }
+.btn-primary:hover:not(:disabled) { background: #fff; box-shadow: 0 0 24px rgba(255, 255, 255, .35); }
+.btn-secondary { background: transparent; border: 1px solid rgba(255, 255, 255, .35); color: var(--text); }
+.btn-secondary:hover:not(:disabled) { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .6); }
+.btn-ai { background: var(--glow); color: var(--void); }
+.btn-ai:hover:not(:disabled) { box-shadow: var(--ai-shadow), 0 0 22px rgba(34, 195, 230, .45); }
+.btn.danger { background: var(--lumi-bad); color: var(--void); }
+.btn.r-reject { background: var(--lumi-bad-soft); border: 1px solid var(--lumi-bad); color: var(--lumi-bad); }
+.btn.r-reject:hover:not(:disabled) { background: var(--lumi-bad-soft); box-shadow: none; }
+
+.input,
+:is(.lobby-form, .auth-field, .ai-input, .dg-row) input,
+.m-upload .d-select input,
+.d-select select {
+  height: 46px;
+  max-width: 100%;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  font: 400 15px var(--font-body);
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.input:focus,
+:is(.lobby-form, .auth-field, .ai-input, .dg-row) input:focus,
+.m-upload .d-select input:focus,
+.d-select select:focus { border-color: var(--glow); box-shadow: 0 0 0 4px rgba(34, 195, 230, .2); }
+:is(.input, input, textarea)::placeholder { color: var(--text-3); }
+textarea.input { height: auto; padding: var(--s3) var(--s4); border-radius: var(--r-control); }
+select option { background: var(--surface-solid); color: var(--text); }
+:lang(ar) :is(.btn, .input) { font-family: var(--font-arabic); }
+
+/* a field and its button inside one pill */
+.d-join input.input { height: 44px; padding: 0 6px; border: 0; background: none; }
+.d-join input.input:focus { box-shadow: none; }
+.d-join { border-radius: var(--r-pill); background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .25); }
+.d-join:focus-within { border-color: var(--glow); box-shadow: 0 0 0 4px rgba(34, 195, 230, .2); }
+
+.chip {
+  height: 32px; /* buttons are lifted to 44px by the tap-target rule */
+  padding: 0 14px;
+  border: 1px solid var(--lumi-line);
+  border-radius: var(--r-pill);
+  background: var(--lumi-fill);
+  color: var(--lumi-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, color 150ms;
+}
+.chip:hover:not(:disabled) { border-color: rgba(255, 255, 255, .35); background: var(--lumi-fill-strong); }
+.chip.active { border-color: var(--lumi-iris-strong); background: var(--lumi-iris-soft); }
+.chip:disabled { opacity: .45; }
+.chip.danger:hover:not(:disabled) { border-color: var(--lumi-bad); color: var(--lumi-bad); background: var(--lumi-bad-soft); }
+span.chip { cursor: default; }
+/* Gold is mastery and nothing else, always with its check icon and label. */
+.chip.chip-mastered, .pm-legend .chip.chip-mastered { border: 0; background: var(--spark); color: var(--void); cursor: default; }
+
+.progress { display: block; flex: 1; min-width: 40px; height: 6px; border-radius: var(--r-pill); background: rgba(255, 255, 255, .15); }
+.progress > span { display: block; height: 100%; border-radius: var(--r-pill); background: #fff; box-shadow: 0 0 14px var(--glow); }
+.progress > span.mastered { background: var(--spark); box-shadow: 0 0 14px rgba(255, 204, 85, .55); }
+.d-bar { height: 6px; background: rgba(255, 255, 255, .15); overflow: visible; }
+.d-bar i, [dir="rtl"] .d-bar i { background: #fff; box-shadow: 0 0 14px var(--glow); }

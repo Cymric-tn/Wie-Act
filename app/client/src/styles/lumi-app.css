@@ -13,24 +13,10 @@
 }
 
 /* Size variants of the design system's components. */
-.btn { justify-content: center; white-space: nowrap; transition: filter .15s, background .15s; text-decoration: none; }
-.btn:hover:not(:disabled) { filter: brightness(1.08); }
 .btn:disabled { opacity: .5; cursor: default; }
-.btn.small { height: 44px; padding: 0 16px; font-size: 14px; }
 .btn.full { width: 100%; }
-.btn.danger { background: var(--lumi-bad); color: #fff; }
 .btn.danger-outline { background: none; border: 1.5px solid var(--lumi-bad); color: var(--lumi-bad); }
 .btn.danger-outline:hover:not(:disabled) { background: var(--lumi-bad-soft); filter: none; }
-.btn-secondary:hover:not(:disabled) { background: var(--lumi-fill); filter: none; }
-.lumi-dark .btn-secondary { border-color: var(--lumi-line); }
-.lumi-dark .btn-ai { background: var(--lumi-surface); }
-.input { background: var(--lumi-surface); color: var(--lumi-ink); max-width: 100%; }
-textarea.input { height: auto; padding: var(--s3) var(--s4); }
-.lumi-dark .input { border-color: var(--lumi-line); }
-.chip { border: 0; background: var(--lumi-fill); color: var(--lumi-ink); cursor: pointer; }
-span.chip, .chip.chip-mastered { cursor: default; }
-.chip.chip-mastered, .pm-legend .chip.chip-mastered { background: var(--lumi-spark); color: var(--lumi-void); border: 0; }
-.progress { display: block; flex: 1; min-width: 40px; overflow: hidden; }
 
 /* Every tappable element is at least 44px. Zero specificity: a component can only make it bigger. */
 :where(button, [role="button"], summary, select) { min-height: 44px; }

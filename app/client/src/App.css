@@ -18,11 +18,6 @@ body {
 button, input, textarea, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: default; }
-button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible {
-  outline: 2px solid var(--lumi-iris);
-  outline-offset: 3px;
-}
-
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 .eyebrow {
@@ -83,24 +78,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 .iconbtn:hover { background: var(--lumi-iris-soft); border-color: var(--lumi-line); color: var(--lumi-ink); }
 .iconbtn[aria-pressed="true"], .iconbtn[aria-expanded="true"] { border-color: var(--lumi-line); color: var(--lumi-ink); background: var(--lumi-iris-soft); }
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid var(--lumi-line);
-  background: var(--lumi-surface);
-  color: var(--lumi-slate);
-  border-radius: 11px;
-  padding: 7px 11px;
-  font-size: 12px;
-  white-space: nowrap;
-  transition: background .2s, border-color .2s, color .2s;
-}
-.chip:hover:not(:disabled) { color: var(--lumi-ink); background: var(--lumi-surface); }
-.chip.active { border-color: var(--lumi-iris); color: var(--lumi-ink); background: var(--lumi-iris-soft); }
-.chip:disabled { opacity: .4; }
-.chip.danger:hover:not(:disabled) { border-color: var(--lumi-bad); color: var(--lumi-bad); background: var(--lumi-bad-soft); }
 
 .icon-chip {
   width: 32px;
@@ -1264,10 +1241,6 @@ kbd {
   .lobby-card { padding: 26px 20px 20px; }
   .course-grid { grid-template-columns: repeat(2, 1fr); }
   .equation-editor { width: min(360px, calc(100vw - 48px)); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
 /* Directional icons mirror in right-to-left layouts. */

@@ -52,7 +52,7 @@ html[lang="ar"] .lp-hero h1 { letter-spacing: 0; line-height: 1.25; }
 }
 .lp-lead { font-size: clamp(15px, 1.4vw, 17px); line-height: 1.7; color: var(--lumi-slate); margin: 0; max-width: 560px; }
 .lp-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 18px; }
-.lp-big { padding: 14px 22px; font-size: 14.5px; border-radius: 14px; }
+.lp-big { font-size: 14.5px; }
 .lp-langs { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--lumi-slate); margin: 0; }
 .lp-langs svg { color: var(--lumi-iris-strong); flex: none; }
 .lp-stats { display: flex; gap: 28px; margin: 34px 0 0; padding-top: 24px; border-top: 1px solid var(--lumi-line); flex-wrap: wrap; }
@@ -281,7 +281,7 @@ html[lang="ar"] .lp-head h2, html[lang="ar"] .lp-chat-copy h2, html[lang="ar"] .
 }
 .auth-role input { position: absolute; opacity: 0; pointer-events: none; }
 .auth-role.active { border-color: var(--lumi-iris); background: var(--lumi-iris-soft); color: var(--lumi-ink); box-shadow: 0 0 22px var(--lumi-shadow); }
-.auth-role:focus-within { outline: 2px solid var(--lumi-iris); outline-offset: 2px; }
+.auth-role:focus-within { outline: 3px solid #fff; outline-offset: 3px; }
 .auth-role b { font-size: 14px; }
 .auth-field { display: grid; gap: 7px; }
 .auth-field span { font-size: 12px; color: var(--lumi-slate); font-weight: 600; }

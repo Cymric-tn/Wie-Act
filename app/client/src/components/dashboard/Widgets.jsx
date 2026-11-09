@@ -51,10 +51,10 @@ export function Avatars({ ids, max = 4 }) {
   );
 }
 
-export function Meter({ value, color }) {
+export function Meter({ value }) {
   return (
     <span className="progress" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct(value)}>
-      <span style={{ width: `${Math.max(3, pct(value))}%`, background: color || MASTERY[masteryLevel(value)].color }} />
+      <span className={masteryLevel(value) === "mastered" ? "mastered" : undefined} style={{ width: `${Math.max(3, pct(value))}%` }} />
     </span>
   );
 }
