@@ -38,11 +38,6 @@ export function Card({ icon, title, sub, actions, example, className = "", child
   );
 }
 
-export function SoonBadge() {
-  const { t } = useI18n();
-  return <span className="d-badge soon">{t("badge.soon")}</span>;
-}
-
 export function Avatars({ ids, max = 4 }) {
   return (
     <span className="d-avatars">
@@ -157,7 +152,7 @@ export function AiBoardChips() {
 export function BoardCard({ onSoon }) {
   const { t } = useI18n();
   return (
-    <Card icon="board" title={t("board.title")} sub={t("board.sub")} className="span-4" actions={<span className="d-badge live">{t("badge.live")}</span>}>
+    <Card icon="board" title={t("board.title")} sub={t("board.sub")} className="span-7" actions={<span className="d-badge live">{t("badge.live")}</span>}>
       <BoardPreview />
       <AiBoardChips onSoon={onSoon} />
       <button className="d-btn primary full" onClick={() => openBoard()}>
@@ -182,16 +177,6 @@ export function VoicePreview() {
       </div>
       <small>{t("voice.peer")}</small>
     </div>
-  );
-}
-
-export function VoiceCard({ onSoon }) {
-  const { t } = useI18n();
-  return (
-    <Card icon="mic" title={t("voice.title")} className="span-3" actions={<SoonBadge />}>
-      <VoicePreview />
-      <button className="d-btn ghost full" onClick={onSoon}><Icon name="mic" size={16} /> {t("voice.start")}</button>
-    </Card>
   );
 }
 
@@ -313,14 +298,13 @@ export function CompanionCard({ onOpen }) {
 }
 
 // ---------- planned feature slot ----------
-export function SlotPage({ icon, title, sub, plans, children, onSoon }) {
+export function SlotPage({ icon, title, sub, plans, children }) {
   const { t } = useI18n();
   return (
     <div className="d-slot">
       <div className="d-slot-hero">
         <span className="d-slot-icon"><Icon name={icon} size={30} /></span>
         <div>
-          <span className="d-badge soon">{t("common.soon")}</span>
           <h1>{title}</h1>
           <p>{sub}</p>
         </div>
@@ -330,7 +314,6 @@ export function SlotPage({ icon, title, sub, plans, children, onSoon }) {
           <ul className="d-plan">
             {plans.map((key) => <li key={key}><Icon name="check" size={16} /> {t(key)}</li>)}
           </ul>
-          <button className="d-btn ghost" onClick={onSoon}>{t("slot.notify")}</button>
         </Card>
         {children}
       </div>
@@ -437,21 +420,19 @@ export function WeakPoints({ className = "span-5" }) {
   );
 }
 
-export function ProfActions({ onSoon }) {
+export function ProfActions() {
   const { t } = useI18n();
   return (
     <Card className="span-12 prof-actions">
       <div className="d-actions-row">
         {[
-          ["users", "prof.create", onSoon, true],
           ["upload", "prof.upload", () => navigate("/app/materials")],
           ["shield", "nav.review", () => navigate("/app/review")],
           ["sparkle", "prof.practice", () => navigate("/app/prep")]
-        ].map(([icon, key, run, soon]) => (
+        ].map(([icon, key, run]) => (
           <button key={key} className="d-action" onClick={run}>
             <span className="d-action-icon"><Icon name={icon} size={20} /></span>
             <b>{t(key)}</b>
-            {soon && <SoonBadge />}
           </button>
         ))}
       </div>

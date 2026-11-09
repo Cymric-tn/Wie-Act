@@ -6,9 +6,9 @@ import Prep from "./Prep";
 import Materials from "./Materials";
 import Review, { EngineStatusCard } from "./Review";
 import {
-  Card, SoonBadge, RoomsCard, BoardCard, VoiceCard, PrepCard, MaterialsCard, CompanionCard,
-  JoinRoom, RoomList, BoardPreview, AiBoardChips, VoicePreview,
-  SlotPage, ClassKpis, GroupProgress, Roster, WeakPoints, ProfActions, openBoard
+  Card, RoomsCard, BoardCard, PrepCard, MaterialsCard, CompanionCard, JoinRoom, RoomList,
+  BoardPreview, AiBoardChips, SlotPage, ClassKpis, GroupProgress, Roster, WeakPoints, ProfActions,
+  openBoard
 } from "./Widgets";
 import { useI18n, LanguageSwitcher, LANGUAGES } from "../../lib/i18n";
 import { Link, navigate } from "../../lib/router";
@@ -26,26 +26,22 @@ const NAV = {
       { id: "map", icon: "planet", key: "nav.map" },
       { id: "prep", icon: "exam", key: "nav.prep" },
       { id: "materials", icon: "book", key: "nav.materials" },
-      { id: "diagrams", icon: "diagram", key: "nav.diagrams", badge: "soon" }
+      { id: "diagrams", icon: "diagram", key: "nav.diagrams" }
     ] },
     { group: "nav.together", items: [
       { id: "rooms", icon: "users", key: "nav.rooms" },
-      { id: "board", icon: "board", key: "nav.board", badge: "live" },
-      { id: "voice", icon: "mic", key: "nav.voice", badge: "soon" }
+      { id: "board", icon: "board", key: "nav.board", badge: "live" }
     ] }
   ],
   professor: [
     { group: "nav.teach", items: [
       { id: "home", icon: "home", key: "nav.overview" },
-      { id: "groups", icon: "users", key: "nav.groups" },
-      { id: "insights", icon: "chart", key: "nav.insights" },
       { id: "review", icon: "shield", key: "nav.review", count: "flags" },
       { id: "materials", icon: "book", key: "nav.materials" }
     ] },
     { group: "nav.together", items: [
       { id: "rooms", icon: "door", key: "nav.rooms" },
-      { id: "board", icon: "board", key: "nav.board", badge: "live" },
-      { id: "voice", icon: "mic", key: "nav.voice", badge: "soon" }
+      { id: "board", icon: "board", key: "nav.board", badge: "live" }
     ] }
   ]
 };
@@ -129,16 +125,12 @@ function Sidebar({ user, section, open, onClose, onCompanion, onSignOut }) {
   );
 }
 
-function TopBar({ user, section, onMenu, onRole, onCompanion, onSoon }) {
+function TopBar({ user, section, onMenu, onRole, onCompanion }) {
   const { t } = useI18n();
   return (
     <header className="d-top">
       <button className="d-icon-btn d-menu" onClick={onMenu} aria-label="Menu"><Icon name="menu" size={20} /></button>
       <h1 className="d-top-title">{t(titleKey(user.role, section))}</h1>
-      <label className="d-search">
-        <Icon name="search" size={17} />
-        <input placeholder={t("top.search")} aria-label={t("top.search")} onKeyDown={(e) => e.key === "Enter" && onSoon()} />
-      </label>
       <div className="d-top-right">
         <div className="d-role" role="radiogroup" aria-label={t("top.viewAs")}>
           <span>{t("top.viewAs")}</span>
@@ -149,9 +141,6 @@ function TopBar({ user, section, onMenu, onRole, onCompanion, onSoon }) {
           ))}
         </div>
         <LanguageSwitcher />
-        <button className="d-icon-btn bell" onClick={onSoon} aria-label={t("top.notifications")} title={t("top.notifications")}>
-          <Icon name="bell" size={18} /><i />
-        </button>
         <button className="d-btn ai small d-top-ai" onClick={onCompanion}><Icon name="sparkle" size={16} /> <span>{t("nav.companion")}</span></button>
       </div>
     </header>
@@ -207,7 +196,6 @@ function StudentHome({ user, onSoon, onCompanion }) {
       <PrepCard onSoon={onSoon} />
       <RoomsCard onSoon={onSoon} />
       <BoardCard onSoon={onSoon} />
-      <VoiceCard onSoon={onSoon} />
       <MaterialsCard onSoon={onSoon} />
       <CompanionCard onOpen={onCompanion} />
     </div>
@@ -250,6 +238,9 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
   const isProf = user.role === "professor";
 
   switch (section) {
+    case "voice": // not built: hidden from the menu, old links land on the home page
+    case "groups":
+    case "insights":
     case "home":
       return isProf
         ? <ProfessorHome user={user} onSoon={onSoon} onCompanion={onCompanion} />
@@ -290,13 +281,6 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
         </div>
       );
 
-    case "voice":
-      return (
-        <SlotPage icon="mic" title={t("voice.title")} sub={t("voice.sub")} plans={["plan.voice.1", "plan.voice.2", "plan.voice.3"]} onSoon={onSoon}>
-          <Card title={t("voice.title")} actions={<SoonBadge />}><VoicePreview /></Card>
-        </SlotPage>
-      );
-
     case "prep":
       return <Prep onToast={onToast} />;
 
@@ -309,25 +293,11 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
     case "diagrams":
       return (
         <SlotPage icon="diagram" title={t("diagrams.title")} sub={t("diagrams.sub")} plans={["plan.diagrams.1", "plan.diagrams.2"]} onSoon={onSoon}>
-          <Card title={t("diagrams.title")} actions={<SoonBadge />}>
+          <Card title={t("diagrams.title")}>
             <div className="d-diagram-preview" aria-hidden="true">
               <span>f(x)</span><i /><span>f′(x)</span><i /><span>∫ f′ = f</span>
             </div>
           </Card>
-        </SlotPage>
-      );
-
-    case "groups":
-      return (
-        <SlotPage icon="users" title={t("nav.groups")} sub={t("prof.create")} plans={["plan.groups.1", "plan.groups.2", "plan.groups.3"]} onSoon={onSoon}>
-          <GroupProgress className="" />
-        </SlotPage>
-      );
-
-    case "insights":
-      return (
-        <SlotPage icon="chart" title={t("nav.insights")} sub={t("prof.weakSub")} plans={["plan.insights.1", "plan.insights.2", "plan.insights.3"]} onSoon={onSoon}>
-          <WeakPoints className="" />
         </SlotPage>
       );
 
