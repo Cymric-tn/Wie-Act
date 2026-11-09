@@ -22,7 +22,7 @@ function Nav() {
   const { t } = useI18n();
   const user = getUser();
   return (
-    <header className="lp-nav">
+    <header className="lp-nav glass">
       <Link to="/" className="d-brand"><LumiLogo height={26} /></Link>
       <nav className="lp-links">
         <a href="#features">{t("nav.features")}</a>
@@ -48,23 +48,23 @@ function HeroVisual() {
   const { t } = useI18n();
   return (
     <div className="lp-visual">
-      <div className="lp-window">
+      <div className="lp-window glass-strong">
         <div className="lp-window-bar">
           <i /><i /><i />
           <span>Lumi · {t("map.title")}</span>
         </div>
         <ProgressMap compact />
       </div>
-      <div className="lp-float lp-float-chat" dir="auto">
+      <div className="lp-float lp-float-chat glass" dir="auto">
         <span className="d-ai-avatar small"><LumiSpark size={18} /></span>
         <p>{t("chat.ai2")}</p>
       </div>
-      <div className="lp-float lp-float-fact">
+      <div className="lp-float lp-float-fact glass">
         <Icon name="shield" size={16} />
         <span>{t("board.fact")}</span>
         <Icon name="check" size={16} />
       </div>
-      <div className="lp-float lp-float-room">
+      <div className="lp-float lp-float-room glass">
         <span className="d-live on" />
         <b>Analyse · Dérivées</b>
         <span className="d-avatars">
@@ -110,7 +110,7 @@ export default function Landing() {
         </div>
         <div className="lp-features">
           {FEATURES.map((f) => (
-            <article key={f.id} className="lp-feature" style={{ "--c": f.color }}>
+            <article key={f.id} className="lp-feature glass glass-hover" style={{ "--c": f.color }}>
               <span className="lp-feature-icon"><Icon name={f.icon} size={22} /></span>
               <h3>{t(`feature.${f.id}.title`)}</h3>
               <p>{t(`feature.${f.id}.desc`)}</p>
@@ -141,7 +141,7 @@ export default function Landing() {
           <h2>{t("chat.title")}</h2>
           <p className="lp-lead">{t("chat.sub")}</p>
         </div>
-        <div className="lp-chat">
+        <div className="lp-chat glass-ai">
           <div className="lp-bubble me" dir="ltr" lang="aeb-Latn">
             {t("chat.user")}
             <small>Darija</small>
@@ -169,7 +169,7 @@ export default function Landing() {
             ["student", "users", "var(--lumi-iris)", "/login?mode=signup"],
             ["prof", "chart", "var(--lumi-iris-strong)", "/login?mode=signup&role=professor"]
           ].map(([role, icon, color, to]) => (
-            <article key={role} className="lp-role" style={{ "--c": color }}>
+            <article key={role} className="lp-role glass" style={{ "--c": color }}>
               <span className="lp-feature-icon"><Icon name={icon} size={22} /></span>
               <h3>{t(`roles.${role}.title`)}</h3>
               <ul>
@@ -181,7 +181,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="lp-cta">
+      <section className="lp-cta glass-strong">
         <h2>{t("cta.title")}</h2>
         <p>{t("cta.sub")}</p>
         <Link to="/login?mode=signup" className="btn btn-primary lp-big">{t("cta.button")} <Icon name="right" size={17} /></Link>

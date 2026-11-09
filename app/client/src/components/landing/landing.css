@@ -226,26 +226,6 @@ html[lang="ar"] .lp-head h2, html[lang="ar"] .lp-chat-copy h2, html[lang="ar"] .
 .lp-footer .lang-switch { margin-inline-start: auto; }
 
 /* ---------- sign in ---------- */
-.auth { display: grid; grid-template-columns: minmax(0, 1fr) minmax(420px, 560px); }
-.auth-art { position: relative; display: grid; place-content: center; justify-items: center; gap: 40px; padding: 40px; overflow: hidden; }
-.auth-orbits { position: relative; width: min(440px, 70vw); aspect-ratio: 1; }
-.auth-sun {
-  position: absolute;
-  inset: 38%;
-  border-radius: 50%;
-  background: var(--lumi-iris);
-  box-shadow: 0 0 80px var(--lumi-shadow), 0 0 160px var(--lumi-shadow); color: #fff; }
-.auth-orbit { position: absolute; border-radius: 50%; border: 1px dashed var(--lumi-line); animation: spin linear infinite; }
-.auth-orbit i { position: absolute; top: -9px; inset-inline-start:  50%; width: 18px; height: 18px; margin-inline-start: -9px; border-radius: 50%; }
-.auth-orbit.o0 { inset: 24%; animation-duration: 14s; }
-.auth-orbit.o0 i { background: var(--lumi-iris); box-shadow: 0 0 20px var(--lumi-shadow); color: #fff; }
-.auth-orbit.o1 { inset: 11%; animation-duration: 24s; animation-direction: reverse; }
-.auth-orbit.o1 i { background: var(--lumi-iris-strong); box-shadow: 0 0 20px var(--lumi-shadow); width: 22px; height: 22px; top: -11px; }
-.auth-orbit.o2 { inset: 0; animation-duration: 38s; }
-.auth-orbit.o2 i { background: var(--lumi-iris); box-shadow: 0 0 20px var(--lumi-shadow); width: 14px; height: 14px; top: -7px; color: #fff; }
-.auth-quote { font-size: clamp(22px, 2.4vw, 32px); font-weight: 750; letter-spacing: -.8px; text-align: center; max-width: 460px; line-height: 1.25; margin: 0; }
-.auth-quote em { display: block; font-style: normal; color: var(--lumi-iris-strong); }
-
 .auth-main {
   position: relative;
   display: flex;
@@ -306,9 +286,6 @@ html[lang="ar"] .lp-head h2, html[lang="ar"] .lp-chat-copy h2, html[lang="ar"] .
   .lp-hero { grid-template-columns: 1fr; }
   .lp-visual { max-width: 720px; width: 100%; margin: 0 auto; }
   .lp-window, [dir="rtl"] .lp-window { transform: none; }
-  .auth { grid-template-columns: 1fr; }
-  .auth-art { display: none; }
-  .auth-main { border: 0; min-height: 100vh; }
 }
 
 @media (max-width: 760px) {

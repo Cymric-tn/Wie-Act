@@ -311,3 +311,30 @@ span.chip { cursor: default; }
 .d-card > .toggle-row { width: 100%; min-height: 64px; border-radius: var(--r-control); }
 .d-card > .toggle-row > span { min-width: 0; }
 .dg-note { opacity: 1; color: var(--text-2); }
+
+/* ---------- sign-in and landing: full aurora ---------- */
+/* Text that sits straight on the bright sky, with no glass under it. */
+.lp, .auth { --lumi-slate: #D6D9FF; }
+.auth { display: block; }
+.auth-main { align-items: center; min-height: 100vh; padding: 24px 16px 40px; border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.auth-top { width: 100%; max-width: 960px; }
+.auth-brand { margin-block: auto 18px; }
+.auth-card { width: min(440px, 100%); max-width: none; margin: 0 0 auto; padding: 30px 32px; border-radius: var(--r-panel); }
+.auth-card h1 { margin: 0; font-family: var(--font-display); font-weight: 500; }
+.auth-tabs { border-radius: var(--r-pill); background: var(--lumi-fill); }
+.auth-tabs button { border-radius: var(--r-pill); }
+.auth-tabs button.active { background: rgba(255, 255, 255, .92); color: var(--void); box-shadow: none; }
+.auth-role { border-radius: var(--r-control); }
+.auth-role.active { border-color: #fff; background: rgba(255, 255, 255, .14); box-shadow: none; }
+.link-btn { color: var(--text); text-decoration-color: rgba(255, 255, 255, .45); }
+.auth-note { border-radius: var(--r-control); }
+
+.lp-nav.glass { border-width: 0 0 1px; border-radius: 0; }
+.lp-hero h1, .lp-head h2, .lp-chat-copy h2, .lp-cta h2 { font-family: var(--font-display); font-weight: 500; }
+.lp-hero h1 em { color: var(--text-2); }
+.lp-window.glass-strong { border-radius: var(--r-card); }
+.lp-float.glass, .lp-feature.glass, .lp-role.glass { border-radius: var(--r-card); }
+.lp-feature.glass:hover { transform: translateY(-2px); }
+.lp-chat.glass-ai, .lp-cta.glass-strong { border-radius: var(--r-panel); }
+.lp-step-num { font-family: var(--font-display); }
+.lp-bubble.me { background: rgba(255, 255, 255, .92); color: var(--void); }

@@ -37,22 +37,15 @@ export default function SignIn() {
 
   return (
     <div className="auth">
-      <aside className="auth-art" aria-hidden="true">
-        <div className="auth-orbits">
-          <span className="auth-sun" />
-          {[0, 1, 2].map((i) => <span key={i} className={`auth-orbit o${i}`}><i /></span>)}
-        </div>
-        <p className="auth-quote">{t("hero.title1")} <em>{t("hero.title2")}</em></p>
-      </aside>
-
       <main className="auth-main">
         <div className="auth-top">
           <Link to="/" className="auth-back"><Icon name="left" size={16} /> {t("auth.back")}</Link>
           <LanguageSwitcher />
         </div>
 
-        <form className="auth-card" onSubmit={submit}>
-          <Link to="/" className="d-brand"><LumiLogo height={26} /></Link>
+        <Link to="/" className="d-brand auth-brand"><LumiLogo height={46} /></Link>
+
+        <form className="auth-card glass-strong" onSubmit={submit}>
           <h1>{signup ? t("auth.create") : t("auth.welcome")}</h1>
           <p className="auth-sub">{t("auth.sub")}</p>
 
