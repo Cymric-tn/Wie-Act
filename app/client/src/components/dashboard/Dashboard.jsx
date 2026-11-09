@@ -13,7 +13,8 @@ import {
 import { useI18n, LanguageSwitcher, LANGUAGES } from "../../lib/i18n";
 import { Link, navigate } from "../../lib/router";
 import { getUser, saveUser, signOut } from "../../lib/session";
-import { ROOMS, EXAMS, CLASS, courseMastery } from "../../lib/demoData";
+import { ROOMS, CLASS, courseMastery } from "../../lib/demoData";
+import { listExams } from "../../lib/exams";
 import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { initials } from "../../lib/format";
 import { ai, AI_LANGUAGES, replyLanguage, setReplyLanguage } from "../../lib/engine";
@@ -160,7 +161,7 @@ function Greeting({ user, onCompanion }) {
       <div>
         <span className="eyebrow">{new Date().toLocaleDateString(lang === "ar" ? "ar-TN" : lang, { weekday: "long", day: "numeric", month: "long" }).toUpperCase()}</span>
         <h1>{t(greetingKey(), { name: user.name.split(" ")[0] })}</h1>
-        <p>{isProf ? t("home.prof.sub", { course: `${course.id} · ${course.name}` }) : t("home.student.sub", { exams: EXAMS.length, rooms: live })}</p>
+        <p>{isProf ? t("home.prof.sub", { course: `${course.id} · ${course.name}` }) : t("home.student.sub", { exams: listExams().length, rooms: live })}</p>
       </div>
       {isProf ? (
         <div className="d-greet-side">
@@ -282,7 +283,7 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
       );
 
     case "prep":
-      return <Prep onToast={onToast} />;
+      return <Prep />;
 
     case "materials":
       return <Materials user={user} />;

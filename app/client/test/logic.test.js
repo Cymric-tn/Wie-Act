@@ -8,6 +8,7 @@ import { BoardStore, UndoHistory } from "../src/lib/store.js";
 import { buildTimeline, stateAt } from "../src/lib/history.js";
 import { buildTemplate, TEMPLATES } from "../src/lib/templates.js";
 import { courseForRoom } from "../src/lib/courses.js";
+import { daysLeft, inDays } from "../src/lib/exams.js";
 
 const rect = (extra = {}) => ({
   id: "r1", type: "shape", shape: "rect", page: "p1", z: 1,
@@ -188,5 +189,19 @@ describe("engine-backed UI strings", () => {
       assert.equal(vars(ai.fr[key]), vars(ai.en[key]), `fr ${key}`);
       assert.equal(vars(ai.ar[key]), vars(ai.en[key]), `ar ${key}`);
     }
+  });
+});
+
+describe("exam dates", () => {
+  const noon = new Date(2026, 10, 9, 12, 30);
+  test("whole days from today, whatever the hour", () => {
+    assert.equal(daysLeft("2026-11-09", noon), 0);
+    assert.equal(daysLeft("2026-11-10", noon), 1);
+    assert.equal(daysLeft("2026-12-09", noon), 30);
+    assert.equal(daysLeft("2026-11-08", noon), -1);
+  });
+  test("inDays is the inverse of daysLeft, across a month end", () => {
+    assert.equal(inDays(22, noon), "2026-12-01");
+    assert.equal(daysLeft(inDays(22, noon), noon), 22);
   });
 });

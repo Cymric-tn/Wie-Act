@@ -1,5 +1,5 @@
 // The course graph is the engine's (generated from data/courses/analyse.yaml); mastery is the learner's real practice
-// results (/api/ai/mastery). The rooms, exams, materials and class lists below are still example data for the preview
+// results (/api/ai/mastery). The rooms, materials and class lists below are still example data for the preview
 // dashboards, all about the one course the engine has content for: analyse.
 import { ANALYSE } from "./analyse.generated.js";
 
@@ -70,12 +70,6 @@ export const ROOMS = [
   { code: "analyse", name: "Analyse · Atelier dérivées", course: COURSE_ID, assignedBy: "Dr. Ben Salah", online: ["amira", "youssef", "salma"], live: true },
   { code: "derivees-soir", name: "Dérivées · Révision du soir", course: COURSE_ID, online: ["karim", "ines"], live: true },
   { code: "analyse-tp", name: "Analyse · TD produit et quotient", course: COURSE_ID, assignedBy: "Dr. Ben Salah", online: [], live: false }
-];
-
-export const EXAMS = [
-  { title: "Quiz 1 · Dérivées de base", course: COURSE_ID, inDays: 1, readiness: 0.38 },
-  { title: "Test · Produit, quotient, racine", course: COURSE_ID, inDays: 6, readiness: 0.57 },
-  { title: "Examen · Variations et extremum", course: COURSE_ID, inDays: 11, readiness: 0.71 }
 ];
 
 export const MATERIALS = [

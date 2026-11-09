@@ -3,11 +3,11 @@ import Icon from "../Icons";
 import { Card, Meter } from "./Widgets";
 import { useI18n } from "../../lib/i18n";
 import { ai, ENGINE_COURSE, engineLanguage, replyLanguage } from "../../lib/engine";
-import { COURSE_COLOR, COURSE_ID, EXAMS } from "../../lib/demoData";
-import { refreshCourseMap } from "../../lib/courseMap";
+import { COURSE_COLOR, courseMastery } from "../../lib/demoData";
+import { refreshCourseMap, useCourses } from "../../lib/courseMap";
+import { addExam, daysLeft, inDays, listExams } from "../../lib/exams";
 import { AnswerText, Degraded, ExerciseCard, Progress, errorText, useProgress } from "../ai/AIBits";
 
-const courseById = (id) => (id === COURSE_ID ? { color: COURSE_COLOR } : null);
 const pct = (v) => Math.round(v * 100);
 
 /** Context for prep calls: the learner's reply language, else the UI language. */
@@ -107,7 +107,7 @@ function StudyPage({ concept, context, onClose, onGraded }) {
   );
 }
 
-export default function Prep({ onToast }) {
+export default function Prep() {
   const { t, lang } = useI18n();
   const context = usePrepContext();
   const [course, setCourse] = useState(null);
@@ -127,7 +127,17 @@ export default function Prep({ onToast }) {
   }, []);
 
   const buildPlan = (d = days) => plan.run("prep_plan", { course_id: ENGINE_COURSE, days_left: d, minutes_per_day: minutes }, { context });
-  const exams = [{ title: `Quiz · ${course?.title?.[l] || "Analyse"}`, course: ENGINE_COURSE, inDays: 3, readiness: 0.52 }, ...EXAMS];
+  const courses = useCourses();
+  const readiness = courseMastery(courses[0]);
+  const [exams, setExams] = useState(listExams);
+  const [draft, setDraft] = useState(null); // the "new exam" form: { title, date }
+  const saveDraft = (e) => {
+    e.preventDefault();
+    if (!draft.title.trim() || !draft.date) return;
+    addExam(draft);
+    setExams(listExams());
+    setDraft(null);
+  };
 
   async function anotherExercise() {
     const mastery = (await ai.mastery().catch(() => ({ mastery: {} }))).mastery;
@@ -141,38 +151,43 @@ export default function Prep({ onToast }) {
   return (
     <div className="d-grid">
       <Card icon="exam" title={t("prep.title")} sub={t("prep.sub")} className="span-7 d-card-top">
-        <ul className="d-exams">
-          {exams.map((exam) => {
-            const c = courseById(exam.course);
-            const live = exam.course === ENGINE_COURSE;
-            return (
-              <li key={exam.title} style={{ "--c": c?.color }}>
-                <div className="d-exam-date">
-                  <b>{exam.inDays === 1 ? t("prep.tomorrow") : t("prep.inDays", { n: exam.inDays })}</b>
-                  <small>{exam.course}</small>
-                </div>
-                <div className="d-exam-main">
-                  <b>{exam.title}</b>
-                  <span className="d-exam-ready">
-                    <small>{t("prep.readiness")}</small>
-                    <Meter value={exam.readiness} />
-                    <small>{pct(exam.readiness)}%</small>
-                  </span>
-                </div>
-                <button
-                  className={"d-btn small " + (live ? "ai" : "ghost")}
-                  onClick={() => {
-                    if (!live) return onToast(t("prep.engineOnly", { course: `${ENGINE_COURSE} · ${course?.title?.[l] || "Analyse"}` }));
-                    setDays(exam.inDays);
-                    buildPlan(exam.inDays);
-                  }}
-                >
-                  {live && <Icon name="sparkle" size={14} />} {t("prep.practice")}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        {exams.length === 0 && !draft && <p className="d-exam-empty">{t("prep.noExam")}</p>}
+        {exams.length > 0 && (
+          <ul className="d-exams">
+            {exams.map((exam) => {
+              const left = Math.max(1, daysLeft(exam.date));
+              return (
+                <li key={exam.id} style={{ "--c": COURSE_COLOR }}>
+                  <div className="d-exam-date">
+                    <b>{left === 1 ? t("prep.tomorrow") : t("prep.inDays", { n: left })}</b>
+                    <small>{exam.date}</small>
+                  </div>
+                  <div className="d-exam-main">
+                    <b>{exam.title}</b>
+                    <span className="d-exam-ready">
+                      <small>{t("prep.readiness")}</small>
+                      <Meter value={readiness} />
+                      <small>{pct(readiness)}%</small>
+                    </span>
+                  </div>
+                  <button className="d-btn small ai" onClick={() => { setDays(left); buildPlan(left); }}>
+                    <Icon name="sparkle" size={14} /> {t("prep.practice")}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {draft ? (
+          <form className="p-plan-form" onSubmit={saveDraft}>
+            <label className="d-select grow"><span>{t("prep.examTitle")}</span><input autoFocus maxLength={80} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></label>
+            <label className="d-select"><span>{t("prep.examDate")}</span><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></label>
+            <button className="d-btn ai" disabled={!draft.title.trim() || !draft.date}>{t("prep.create")}</button>
+            <button type="button" className="d-btn ghost" onClick={() => setDraft(null)}>{t("prep.cancel")}</button>
+          </form>
+        ) : (
+          <button className="d-btn ghost p-more" onClick={() => setDraft({ title: "", date: inDays(7) })}><Icon name="plus" size={15} /> {t("prep.newExam")}</button>
+        )}
       </Card>
 
       <MasteryCard course={course} version={version} />

@@ -2,7 +2,8 @@ import { useState } from "react";
 import Icon from "../Icons";
 import { useI18n } from "../../lib/i18n";
 import { navigate } from "../../lib/router";
-import { COURSE_COLOR, COURSE_ID, ROOMS, EXAMS, MATERIALS, PEOPLE, CLASS, MASTERY, masteryLevel, weakTopics } from "../../lib/demoData";
+import { COURSE_COLOR, COURSE_ID, ROOMS, MATERIALS, PEOPLE, CLASS, MASTERY, courseMastery, masteryLevel, weakTopics } from "../../lib/demoData";
+import { daysLeft, listExams } from "../../lib/exams";
 import { useCourses } from "../../lib/courseMap";
 import { initials } from "../../lib/format";
 import { store } from "../../lib/identity";
@@ -181,27 +182,37 @@ export function VoicePreview() {
 }
 
 // ---------- assessment prep ----------
-export function ExamList({ onSoon }) {
+export function ExamList({ onOpen }) {
   const { t } = useI18n();
+  const courses = useCourses();
+  const exams = listExams();
+  const readiness = courseMastery(courses[0]);
+  if (!exams.length) {
+    return (
+      <p className="d-exam-empty">
+        {t("prep.noExam")} <button className="d-chip" onClick={onOpen}><Icon name="plus" size={13} /> {t("prep.newExam")}</button>
+      </p>
+    );
+  }
   return (
     <ul className="d-exams">
-      {EXAMS.map((exam) => {
-        const course = courseById(exam.course);
+      {exams.map((exam) => {
+        const left = Math.max(0, daysLeft(exam.date));
         return (
-          <li key={exam.title} style={{ "--c": course.color }}>
+          <li key={exam.id} style={{ "--c": COURSE_COLOR }}>
             <div className="d-exam-date">
-              <b>{exam.inDays === 1 ? t("prep.tomorrow") : t("prep.inDays", { n: exam.inDays })}</b>
-              <small>{course.id}</small>
+              <b>{left === 1 ? t("prep.tomorrow") : t("prep.inDays", { n: left })}</b>
+              <small>{exam.date}</small>
             </div>
             <div className="d-exam-main">
               <b>{exam.title}</b>
               <span className="d-exam-ready">
                 <small>{t("prep.readiness")}</small>
-                <Meter value={exam.readiness} />
-                <small>{pct(exam.readiness)}%</small>
+                <Meter value={readiness} />
+                <small>{pct(readiness)}%</small>
               </span>
             </div>
-            <button className="d-btn ghost small" onClick={onSoon}>{t("prep.practice")}</button>
+            <button className="d-btn ghost small" onClick={onOpen}>{t("prep.practice")}</button>
           </li>
         );
       })}
@@ -230,8 +241,8 @@ export function PrepCard() {
   const { t } = useI18n();
   const toPrep = () => navigate("/app/prep");
   return (
-    <Card icon="exam" title={t("prep.title")} example className="span-4 prep-card">
-      <ExamList onSoon={toPrep} />
+    <Card icon="exam" title={t("prep.title")} className="span-4 prep-card">
+      <ExamList onOpen={toPrep} />
       <WeakTopics onSoon={toPrep} limit={3} />
       <button className="d-btn ai full" onClick={toPrep}><Icon name="sparkle" size={16} /> {t("prep.generate")}</button>
     </Card>
