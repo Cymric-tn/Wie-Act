@@ -1,5 +1,6 @@
 // A tiny History-API router: enough for a handful of top-level screens.
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 
 const EVENT = "lumi:navigate";
 
@@ -10,7 +11,14 @@ function current() {
 export function navigate(to, { replace = false } = {}) {
   const before = window.location.pathname;
   window.history[replace ? "replaceState" : "pushState"](null, "", to);
-  window.dispatchEvent(new Event(EVENT));
+  const announce = () => window.dispatchEvent(new Event(EVENT));
+  const changesPage = !replace && window.location.pathname !== before;
+  // A cross-fade between screens where the browser can do it; the aurora is outside the routes and simply carries on.
+  if (changesPage && document.startViewTransition && !document.documentElement.classList.contains("low-power")) {
+    document.startViewTransition(() => flushSync(announce));
+  } else {
+    announce();
+  }
   if (window.location.pathname !== before) window.scrollTo(0, 0);
 }
 

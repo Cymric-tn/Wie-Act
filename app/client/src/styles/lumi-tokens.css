@@ -63,10 +63,7 @@ h1, h2, h3, .lumi-display { font-family: var(--lumi-font-display); font-weight: 
 
 /* Motion */
 @keyframes lumi-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes lumi-fade { from { opacity: 0; } }
 @keyframes lumi-breathe { 50% { transform: scale(1.04); } }
 @keyframes lumi-burst { from { opacity: .9; transform: scale(.6); } to { opacity: 0; transform: scale(1.6); } }
 .lumi-thinking { animation: lumi-breathe var(--t-breathe) ease-in-out infinite; }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
-}
