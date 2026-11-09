@@ -52,7 +52,7 @@ function ToolDock({ tool, shapeKind, onTool, onImage, onUndo, onRedo, canUndo, c
                   aria-pressed={tool === "shape"}
                   aria-haspopup="true"
                   aria-expanded={flyout}
-                  title={`${shapeLabel} — click again for more shapes`}
+                  aria-label={`${shapeLabel} — click again for more shapes`} title={`${shapeLabel} — click again for more shapes`}
                   onClick={() => {
                     if (tool === "shape") setFlyout((f) => !f);
                     else onTool("shape", shapeKind);
@@ -69,7 +69,7 @@ function ToolDock({ tool, shapeKind, onTool, onImage, onUndo, onRedo, canUndo, c
                         role="menuitemradio"
                         aria-checked={shapeKind === s.id}
                         className={"tool" + (shapeKind === s.id ? " active" : "")}
-                        title={`${s.label} (${s.key})`}
+                        aria-label={`${s.label} (${s.key})`} title={`${s.label} (${s.key})`}
                         onClick={() => {
                           onTool("shape", s.id);
                           setFlyout(false);
@@ -92,14 +92,14 @@ function ToolDock({ tool, shapeKind, onTool, onImage, onUndo, onRedo, canUndo, c
               onClick={() => onTool(t.id)}
               disabled={disabled}
               aria-pressed={tool === t.id}
-              title={`${t.label} (${t.key})`}
+              aria-label={`${t.label} (${t.key})`} title={`${t.label} (${t.key})`}
             >
               <Icon name={t.id} />
             </button>
           </span>
         );
       })}
-      <button className="tool" onClick={() => fileRef.current?.click()} disabled={readOnly} title="Insert image or PDF">
+      <button className="tool" onClick={() => fileRef.current?.click()} disabled={readOnly} aria-label="Insert image or PDF" title="Insert image or PDF">
         <Icon name="image" />
       </button>
       <input
@@ -114,10 +114,10 @@ function ToolDock({ tool, shapeKind, onTool, onImage, onUndo, onRedo, canUndo, c
         }}
       />
       <span className="dock-sep" />
-      <button className="tool" onClick={onUndo} disabled={!canUndo || readOnly} title="Undo (Ctrl+Z)">
+      <button className="tool" onClick={onUndo} disabled={!canUndo || readOnly} aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)">
         <Icon name="undo" />
       </button>
-      <button className="tool" onClick={onRedo} disabled={!canRedo || readOnly} title="Redo (Ctrl+Shift+Z)">
+      <button className="tool" onClick={onRedo} disabled={!canRedo || readOnly} aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)">
         <Icon name="redo" />
       </button>
     </nav>

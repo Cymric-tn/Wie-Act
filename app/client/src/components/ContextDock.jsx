@@ -13,7 +13,7 @@ function Swatches({ colors, value, onChange, custom = true, label = "Color" }) {
           onClick={() => onChange(p.value)}
           role="radio"
           aria-checked={value === p.value}
-          title={p.name}
+          aria-label={p.name} title={p.name}
         />
       ))}
       {custom && (
@@ -73,10 +73,10 @@ function ContextDock(props) {
           </button>
         )}
         <Sep />
-        <button className="icon-chip" onClick={onDuplicate} title="Duplicate (Ctrl+D)"><Icon name="duplicate" size={18} /></button>
-        <button className="icon-chip" onClick={onFront} title="Bring to front"><Icon name="front" size={18} /></button>
-        <button className="icon-chip" onClick={onBack} title="Send to back"><Icon name="back" size={18} /></button>
-        <button className="icon-chip danger" onClick={onDelete} title="Delete (Del)"><Icon name="trash" size={18} /></button>
+        <button className="icon-chip" onClick={onDuplicate} aria-label="Duplicate (Ctrl+D)" title="Duplicate (Ctrl+D)"><Icon name="duplicate" size={18} /></button>
+        <button className="icon-chip" onClick={onFront} aria-label="Bring to front" title="Bring to front"><Icon name="front" size={18} /></button>
+        <button className="icon-chip" onClick={onBack} aria-label="Send to back" title="Send to back"><Icon name="back" size={18} /></button>
+        <button className="icon-chip danger" onClick={onDelete} aria-label="Delete (Del)" title="Delete (Del)"><Icon name="trash" size={18} /></button>
       </div>
     );
   }
@@ -134,7 +134,7 @@ function ContextDock(props) {
           className={"chip" + (shapeAssist ? " active" : "")}
           onClick={() => setShapeAssist((s) => !s)}
           aria-pressed={shapeAssist}
-          title="Turn rough lines, boxes and circles into clean shapes"
+          aria-label="Turn rough lines, boxes and circles into clean shapes" title="Turn rough lines, boxes and circles into clean shapes"
         >
           <Icon name="magic" size={16} /> Shape assist
         </button>

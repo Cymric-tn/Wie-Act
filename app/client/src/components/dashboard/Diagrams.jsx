@@ -9,7 +9,7 @@ import { toBoardPrimitives } from "../../lib/diagrams/primitives";
 import { buildDiagram, checkDiagram, setPendingDiagram } from "../../lib/diagrams/api";
 
 const EXAMPLES = ["diagrams.ex.graph", "diagrams.ex.table", "diagrams.ex.map"];
-const LEGEND = [["new", "#a78bfa"], ["bad", "#fb7185"], ["warn", "#fbbf24"], ["ok", "#2dd4bf"]];
+const LEGEND = [["new", "var(--lumi-iris)"], ["bad", "var(--lumi-bad)"], ["warn", "var(--lumi-warn)"], ["ok", "var(--lumi-spark)"]];
 
 function messageOf(t, error) {
   return error.message === "diagram_timeout" ? t("diagrams.timeout") : errorText(t, error);
@@ -66,8 +66,8 @@ export default function Diagrams() {
         <form className="dg-form" onSubmit={(e) => { e.preventDefault(); draw(); }}>
           <label className="dg-field" htmlFor="dg-request">{t("diagrams.input")}</label>
           <div className="dg-row">
-            <input id="dg-request" value={text} onChange={(e) => setText(e.target.value)} maxLength={300} dir="auto" autoComplete="off" placeholder={t("diagrams.placeholder")} />
-            <button className="d-btn primary" disabled={!text.trim() || busy}>{busy ? t("diagrams.drawing") : t("diagrams.draw")}</button>
+            <input className="input" id="dg-request" value={text} onChange={(e) => setText(e.target.value)} maxLength={300} dir="auto" autoComplete="off" placeholder={t("diagrams.placeholder")} />
+            <button className="btn btn-primary" disabled={!text.trim() || busy}>{busy ? t("diagrams.drawing") : t("diagrams.draw")}</button>
           </div>
           <label className="dg-check"><input type="checkbox" checked={practice} onChange={(e) => setPractice(e.target.checked)} /> {t("diagrams.practice")}</label>
           <div className="dg-examples">
@@ -90,7 +90,7 @@ export default function Diagrams() {
               {hasMastery ? (
                 <div className="dg-legend">{LEGEND.map(([key, color]) => <span key={key}><i style={{ background: color }} />{t(`diagrams.legend.${key}`)}</span>)}</div>
               ) : <span />}
-              <button className="d-btn ghost small" onClick={send}><Icon name="board" size={15} /> {t("diagrams.send")}</button>
+              <button className="btn btn-secondary small" onClick={send}><Icon name="board" size={15} /> {t("diagrams.send")}</button>
             </div>
           </div>
         </Card>

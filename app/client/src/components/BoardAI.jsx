@@ -149,7 +149,7 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
 
   return (
     <div className="bai">
-      <div className="panel-card">
+      <div className="card panel-card">
         <div className="bai-head">
           <div className="eyebrow">LUMI</div>
           <EngineLine />
@@ -160,20 +160,20 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
             : "Select notes, text, equations or handwriting to use them. Questions also read the text on this page."}
         </p>
         <form className="bai-ask" onSubmit={(e) => { e.preventDefault(); ask(); }}>
-          <textarea value={question} onChange={(e) => setQuestion(e.target.value)} rows={2} maxLength={2000} dir="auto"
+          <textarea className="input" value={question} onChange={(e) => setQuestion(e.target.value)} rows={2} maxLength={2000} dir="auto"
             placeholder={selectionText ? "Ask about the selection…" : "Ask the AI about this board…"}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); } e.stopPropagation(); }} />
-          <button className="cta small" disabled={!question.trim() || Boolean(busy)}><Icon name="send" size={14} /> Ask</button>
+          <button className="btn btn-primary small" disabled={!question.trim() || Boolean(busy)}><Icon name="send" size={14} /> Ask</button>
         </form>
         <div className="bai-actions">
-          <button className="chip" disabled={!selectionText || Boolean(busy)} onClick={() => factCheck()} title="Is this claim true in the course?"><Icon name="shield" size={14} /> Fact-check</button>
-          <button className="chip" disabled={!selectionLines.length || Boolean(busy)} onClick={checkWork} title="First line: the problem, e.g. f(x) = 3x^2 + 5x. Next lines: your steps."><Icon name="check" size={14} /> Check my work</button>
-          <button className="chip" disabled={!hasInk || Boolean(busy)} onClick={readHandwriting} title="Turn the selected handwriting or photo into text"><Icon name="edit" size={14} /> Read handwriting</button>
+          <button className="chip" disabled={!selectionText || Boolean(busy)} onClick={() => factCheck()} aria-label="Is this claim true in the course?" title="Is this claim true in the course?"><Icon name="shield" size={14} /> Fact-check</button>
+          <button className="chip" disabled={!selectionLines.length || Boolean(busy)} onClick={checkWork} aria-label="First line: the problem, e.g. f(x) = 3x^2 + 5x. Next lines: your steps." title="First line: the problem, e.g. f(x) = 3x^2 + 5x. Next lines: your steps."><Icon name="check" size={14} /> Check my work</button>
+          <button className="chip" disabled={!hasInk || Boolean(busy)} onClick={readHandwriting} aria-label="Turn the selected handwriting or photo into text" title="Turn the selected handwriting or photo into text"><Icon name="edit" size={14} /> Read handwriting</button>
         </div>
       </div>
 
       {(busy || out || error) && (
-        <div className="panel-card bai-result" aria-live="polite">
+        <div className="card panel-card bai-result" aria-live="polite">
           {busy && <Progress state={progress} />}
           {error && <div className="ai-notice bad"><span>{error}</span></div>}
           {out && (

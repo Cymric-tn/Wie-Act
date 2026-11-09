@@ -61,16 +61,16 @@ function UploadForm({ user, onUploaded }) {
       </label>
       <label className="d-select">
         <span>{t("mat.titleField")}</span>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} dir="auto" />
+        <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} dir="auto" />
       </label>
       <label className="d-select">
         <span>{t("mat.visibility")}</span>
-        <select value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+        <select className="input" value={visibility} onChange={(e) => setVisibility(e.target.value)}>
           {(professor ? ["public", "class"] : ["private", "class"]).map((v) => <option key={v} value={v}>{t(`mat.vis.${v}`)}</option>)}
         </select>
       </label>
       {error && <div className="ai-notice bad"><span>{error}</span></div>}
-      <button className="d-btn primary full" disabled={!file || busy}><Icon name="upload" size={15} /> {busy ? t("mat.uploading") : t("mat.send")}</button>
+      <button className="btn btn-primary full" disabled={!file || busy}><Icon name="upload" size={15} /> {busy ? t("mat.uploading") : t("mat.send")}</button>
     </form>
   );
 }
@@ -99,7 +99,7 @@ function MaterialRow({ m, user, concepts, onChange }) {
             {m.chunks.slice(0, 12).map((c) => (
               professor && concepts
                 ? (
-                  <select
+                  <select className="input"
                     key={c.id}
                     className={"m-tag" + (c.confirmed ? " ok" : c.confidence < 0.7 ? " low" : "")}
                     value={c.concept || ""}
@@ -116,7 +116,7 @@ function MaterialRow({ m, user, concepts, onChange }) {
         )}
       </div>
       <div className="m-actions">
-        <a className="d-btn ghost small" href={api.fileUrl(m, user)} target="_blank" rel="noreferrer">{t("mat.open")}</a>
+        <a className="btn btn-secondary small" href={api.fileUrl(m, user)} target="_blank" rel="noreferrer">{t("mat.open")}</a>
         {canRemove && <button className="d-icon-btn" title={t("mat.delete")} aria-label={t("mat.delete")} onClick={() => api.remove(m.id, user).then(onChange).catch(() => {})}><Icon name="trash" size={16} /></button>}
       </div>
     </li>

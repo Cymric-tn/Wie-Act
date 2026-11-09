@@ -4,13 +4,13 @@
 import { ANALYSE } from "./analyse.generated.js";
 
 export const COURSE_ID = ANALYSE.id;
-export const COURSE_COLOR = "#a68bff";
+export const COURSE_COLOR = "var(--lumi-iris)";
 
 export const MASTERY = {
-  mastered: { color: "#40d9be", key: "mastery.mastered" },
-  learning: { color: "#ffc45c", key: "mastery.learning" },
-  weak: { color: "#ff7fa8", key: "mastery.weak" },
-  new: { color: "#6f7ea8", key: "mastery.new" }
+  mastered: { color: "var(--lumi-spark)", key: "mastery.mastered" },
+  learning: { color: "var(--lumi-iris)", key: "mastery.learning" },
+  weak: { color: "var(--lumi-bad)", key: "mastery.weak" },
+  new: { color: "var(--lumi-slate)", key: "mastery.new" }
 };
 
 export function masteryLevel(value) {
@@ -58,12 +58,12 @@ export function weakTopics(courses, limit = 5) {
 }
 
 export const PEOPLE = {
-  amira: { name: "Amira K.", color: "#a279ff" },
-  youssef: { name: "Youssef B.", color: "#75e8ff" },
-  salma: { name: "Salma T.", color: "#40d9be" },
-  nour: { name: "Nour H.", color: "#ffc45c" },
-  karim: { name: "Karim M.", color: "#ff7fa8" },
-  ines: { name: "Inès D.", color: "#8dbdff" }
+  amira: { name: "Amira K.", color: "var(--lumi-iris)" },
+  youssef: { name: "Youssef B.", color: "var(--lumi-iris-strong)" },
+  salma: { name: "Salma T.", color: "var(--lumi-slate)" },
+  nour: { name: "Nour H.", color: "var(--lumi-iris)" },
+  karim: { name: "Karim M.", color: "var(--lumi-iris-strong)" },
+  ines: { name: "Inès D.", color: "var(--lumi-slate)" }
 };
 
 export const ROOMS = [

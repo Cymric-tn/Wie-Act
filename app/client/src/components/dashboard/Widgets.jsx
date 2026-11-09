@@ -20,7 +20,7 @@ export const openBoardAi = () => {
 export function Card({ icon, title, sub, actions, example, className = "", children, accent }) {
   const { t } = useI18n();
   return (
-    <section className={`d-card ${className}`} style={accent ? { "--accent": accent } : undefined}>
+    <section className={`card d-card ${className}`} style={accent ? { "--accent": accent } : undefined}>
       {(title || actions) && (
         <header className="d-card-head">
           {icon && <span className="d-card-icon"><Icon name={icon} size={18} /></span>}
@@ -52,8 +52,8 @@ export function Avatars({ ids, max = 4 }) {
 
 export function Meter({ value, color }) {
   return (
-    <span className="d-meter" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct(value)}>
-      <i style={{ width: `${Math.max(3, pct(value))}%`, background: color || MASTERY[masteryLevel(value)].color }} />
+    <span className="progress" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct(value)}>
+      <span style={{ width: `${Math.max(3, pct(value))}%`, background: color || MASTERY[masteryLevel(value)].color }} />
     </span>
   );
 }
@@ -71,8 +71,8 @@ export function JoinRoom({ big = false }) {
       }}
     >
       <Icon name="door" size={18} />
-      <input value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("rooms.code")} maxLength={80} aria-label={t("rooms.code")} />
-      <button className="d-btn primary small" type="submit" disabled={!code.trim()}>{t("rooms.join")}</button>
+      <input className="input" value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("rooms.code")} maxLength={80} aria-label={t("rooms.code")} />
+      <button className="btn btn-primary small" type="submit" disabled={!code.trim()}>{t("rooms.join")}</button>
     </form>
   );
 }
@@ -97,7 +97,7 @@ export function RoomList() {
               {room.online.length > 0 ? <Avatars ids={room.online} max={3} /> : null}
               <small>{t("rooms.online", { n: room.online.length })}</small>
             </div>
-            <button className="d-btn ghost small" onClick={() => openBoard(room.code)}>{t("common.open")}</button>
+            <button className="btn btn-secondary small" onClick={() => openBoard(room.code)}>{t("common.open")}</button>
           </li>
         );
       })}
@@ -114,7 +114,7 @@ export function RoomsCard({ onSoon }) {
       sub={t("rooms.sub")}
       example
       className="span-5"
-      actions={<button className="d-icon-btn" onClick={() => openBoard(`room-${Math.random().toString(36).slice(2, 7)}`)} title={t("rooms.new")}><Icon name="plus" size={17} /></button>}
+      actions={<button className="d-icon-btn" onClick={() => openBoard(`room-${Math.random().toString(36).slice(2, 7)}`)} aria-label={t("rooms.new")} title={t("rooms.new")}><Icon name="plus" size={17} /></button>}
     >
       <JoinRoom />
       <RoomList onSoon={onSoon} />
@@ -127,13 +127,13 @@ export function BoardPreview() {
   return (
     <div className="d-board-preview" aria-hidden="true">
       <svg viewBox="0 0 320 150">
-        <path d="M24 110 C60 40, 100 40, 130 90 S 190 140, 230 60" fill="none" stroke="#75e8ff" strokeWidth="3.5" strokeLinecap="round" />
-        <rect x="180" y="18" width="96" height="58" rx="9" fill="#ffd98a" />
-        <rect x="190" y="30" width="60" height="6" rx="3" fill="#1a1f3a55" />
-        <rect x="190" y="42" width="44" height="6" rx="3" fill="#1a1f3a55" />
-        <ellipse cx="88" cy="118" rx="44" ry="16" fill="none" stroke="#ff7fa8" strokeWidth="2.5" />
-        <text x="40" y="38" fill="#f5f5ff" fontSize="17" fontFamily="serif" fontStyle="italic">∫ u dv = uv − ∫ v du</text>
-        <g transform="translate(248 100)"><path d="M0 0l9 22 3.5-9 9-3.5z" fill="#a279ff" stroke="#050b1a" /><rect x="12" y="20" width="44" height="15" rx="5" fill="#a279ff" /><text x="17" y="31" fontSize="9" fill="#050b1a" fontWeight="700">Youssef</text></g>
+        <path d="M24 110 C60 40, 100 40, 130 90 S 190 140, 230 60" fill="none" stroke="var(--lumi-iris)" strokeWidth="3.5" strokeLinecap="round" />
+        <rect x="180" y="18" width="96" height="58" rx="9" fill="var(--lumi-iris-soft)" />
+        <rect x="190" y="30" width="60" height="6" rx="3" fill="var(--lumi-line)" />
+        <rect x="190" y="42" width="44" height="6" rx="3" fill="var(--lumi-line)" />
+        <ellipse cx="88" cy="118" rx="44" ry="16" fill="none" stroke="var(--lumi-slate)" strokeWidth="2.5" />
+        <text x="40" y="38" fill="var(--lumi-ink)" fontSize="17" fontFamily="serif" fontStyle="italic">∫ u dv = uv − ∫ v du</text>
+        <g transform="translate(248 100)"><path d="M0 0l9 22 3.5-9 9-3.5z" fill="var(--lumi-iris)" stroke="var(--lumi-void)" /><rect x="12" y="20" width="44" height="15" rx="5" fill="#a279ff" /><text x="17" y="31" fontSize="9" fill="#050b1a" fontWeight="700">Youssef</text></g>
       </svg>
     </div>
   );
@@ -144,8 +144,8 @@ export function AiBoardChips() {
   return (
     <div className="d-ai-chips">
       <span className="d-ai-label"><Icon name="sparkle" size={14} /> {t("board.ai")}</span>
-      <button className="d-chip" onClick={openBoardAi}><Icon name="shield" size={14} /> {t("board.fact")}</button>
-      <button className="d-chip" onClick={openBoardAi}><Icon name="help" size={14} /> {t("board.ask")}</button>
+      <button className="chip d-chip" onClick={openBoardAi}><Icon name="shield" size={14} /> {t("board.fact")}</button>
+      <button className="chip d-chip" onClick={openBoardAi}><Icon name="help" size={14} /> {t("board.ask")}</button>
     </div>
   );
 }
@@ -156,7 +156,7 @@ export function BoardCard({ onSoon }) {
     <Card icon="board" title={t("board.title")} sub={t("board.sub")} className="span-7" actions={<span className="d-badge live">{t("badge.live")}</span>}>
       <BoardPreview />
       <AiBoardChips onSoon={onSoon} />
-      <button className="d-btn primary full" onClick={() => openBoard()}>
+      <button className="btn btn-primary full" onClick={() => openBoard()}>
         <Icon name="board" size={17} /> {t("board.open")}
       </button>
     </Card>
@@ -190,7 +190,7 @@ export function ExamList({ onOpen }) {
   if (!exams.length) {
     return (
       <p className="d-exam-empty">
-        {t("prep.noExam")} <button className="d-chip" onClick={onOpen}><Icon name="plus" size={13} /> {t("prep.newExam")}</button>
+        {t("prep.noExam")} <button className="chip d-chip" onClick={onOpen}><Icon name="plus" size={13} /> {t("prep.newExam")}</button>
       </p>
     );
   }
@@ -212,7 +212,7 @@ export function ExamList({ onOpen }) {
                 <small>{pct(readiness)}%</small>
               </span>
             </div>
-            <button className="d-btn ghost small" onClick={onOpen}>{t("prep.practice")}</button>
+            <button className="btn btn-secondary small" onClick={onOpen}>{t("prep.practice")}</button>
           </li>
         );
       })}
@@ -228,7 +228,7 @@ export function WeakTopics({ onSoon, limit = 4 }) {
       <h3>{t("prep.weak")}</h3>
       <div className="d-weak-chips">
         {weakTopics(courses, limit).map((l) => (
-          <button key={l.course.id + l.name} className="d-chip weak" onClick={onSoon} style={{ "--c": l.course.color }}>
+          <button key={l.course.id + l.name} className="chip d-chip weak" onClick={onSoon} style={{ "--c": l.course.color }}>
             <i />{l.name}<small>{pct(l.mastery)}%</small>
           </button>
         ))}
@@ -244,7 +244,7 @@ export function PrepCard() {
     <Card icon="exam" title={t("prep.title")} className="span-4 prep-card">
       <ExamList onOpen={toPrep} />
       <WeakTopics onSoon={toPrep} limit={3} />
-      <button className="d-btn ai full" onClick={toPrep}><Icon name="sparkle" size={16} /> {t("prep.generate")}</button>
+      <button className="btn btn-ai full" onClick={toPrep}><Icon name="sparkle" size={16} /> {t("prep.generate")}</button>
     </Card>
   );
 }
@@ -282,7 +282,7 @@ export function MaterialsCard() {
       sub={t("materials.sub")}
       example
       className="span-8"
-      actions={<button className="d-btn ghost small" onClick={() => navigate("/app/materials")}><Icon name="upload" size={15} /> {t("materials.upload")}</button>}
+      actions={<button className="btn btn-secondary small" onClick={() => navigate("/app/materials")}><Icon name="upload" size={15} /> {t("materials.upload")}</button>}
     >
       <MaterialList items={MATERIALS.slice(0, 4)} />
     </Card>
@@ -300,7 +300,7 @@ export function CompanionCard({ onOpen }) {
         <p>{t("feature.companion.desc")}</p>
         <div className="d-suggest">
           {["ai.s1", "ai.s2", "ai.s3"].map((k) => (
-            <button key={k} className="d-chip" onClick={() => onOpen(t(k))}>{t(k)}</button>
+            <button key={k} className="chip d-chip" onClick={() => onOpen(t(k))}>{t(k)}</button>
           ))}
         </div>
       </div>
@@ -338,10 +338,10 @@ export function ClassKpis() {
   const avg = CLASS.groups.reduce((s, g) => s + g.mastery, 0) / CLASS.groups.length;
   const attention = CLASS.roster.filter((s) => s.mastery < 0.4).length;
   const kpis = [
-    { icon: "chart", label: t("prof.kpi.mastery"), value: `${pct(avg)}%`, color: "#a279ff" },
-    { icon: "users", label: t("prof.kpi.groups"), value: CLASS.groups.length, color: "#75e8ff" },
-    { icon: "bolt", label: t("prof.kpi.attention"), value: attention, color: "#ff7fa8" },
-    { icon: "shield", label: t("prof.kpi.materials"), value: CLASS.materials, color: "#40d9be" }
+    { icon: "chart", label: t("prof.kpi.mastery"), value: `${pct(avg)}%`, color: "var(--lumi-iris)" },
+    { icon: "users", label: t("prof.kpi.groups"), value: CLASS.groups.length, color: "var(--lumi-iris-strong)" },
+    { icon: "bolt", label: t("prof.kpi.attention"), value: attention, color: "var(--lumi-bad)" },
+    { icon: "shield", label: t("prof.kpi.materials"), value: CLASS.materials, color: "var(--lumi-ok)" }
   ];
   return (
     <div className="d-kpis span-12">

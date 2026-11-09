@@ -38,7 +38,7 @@ function AccessCode({ hasCode, onSetCode }) {
       }}
     >
       <Icon name="key" size={17} />
-      <input
+      <input className="input"
         value={code}
         onChange={(e) => setCode(e.target.value)}
         placeholder={hasCode ? "Change access code" : "Set an access code"}
@@ -56,7 +56,7 @@ function PeopleTab(p) {
   return (
     <>
       {isHost && (
-        <div className="panel-card">
+        <div className="card panel-card">
           <div className="eyebrow">TEACHER CONTROLS</div>
           <div className="toggles">
             <Toggle icon={meta.locked ? "lock" : "unlock"} on={meta.locked} onChange={p.onLock} label="Lock board" hint="Only you can draw. Others can still vote and react." />
@@ -67,7 +67,7 @@ function PeopleTab(p) {
         </div>
       )}
 
-      <div className="panel-card">
+      <div className="card panel-card">
         <div className="eyebrow">IN THIS ROOM · {users.length}</div>
         <ul className="people">
           {users.map((u) => {
@@ -83,10 +83,10 @@ function PeopleTab(p) {
                 </span>
                 {isHost && u.id !== me.id ? (
                   <span className="person-actions">
-                    <button className={"icon-chip" + (spot ? " active" : "")} onClick={() => p.onSpotlight(u.clientId)} title={spot ? "Remove spotlight" : "Spotlight"}>
+                    <button className={"icon-chip" + (spot ? " active" : "")} onClick={() => p.onSpotlight(u.clientId)} aria-label={spot ? "Remove spotlight" : "Spotlight"} title={spot ? "Remove spotlight" : "Spotlight"}>
                       <Icon name="spotlight" size={15} filled={spot} />
                     </button>
-                    <button className="icon-chip" onClick={() => p.onTransfer(u.clientId)} title="Make host">
+                    <button className="icon-chip" onClick={() => p.onTransfer(u.clientId)} aria-label="Make host" title="Make host">
                       <Icon name="crown" size={15} />
                     </button>
                   </span>
@@ -97,12 +97,12 @@ function PeopleTab(p) {
             );
           })}
         </ul>
-        <button className="cta secondary small" onClick={p.onCopyInvite}>
+        <button className="btn btn-secondary small" onClick={p.onCopyInvite}>
           <Icon name="link" size={15} /> Copy invite link
         </button>
       </div>
 
-      <div className="panel-card">
+      <div className="card panel-card">
         <div className="eyebrow">REACT</div>
         <div className="reaction-row">
           {REACTIONS.map((e) => (
@@ -128,7 +128,7 @@ function PageRow({ page, index, active, count, canEdit, canDelete, onPage, onRen
             setEditing(false);
           }}
         >
-          <input autoFocus value={name} maxLength={40} onChange={(e) => setName(e.target.value)} onBlur={() => setEditing(false)} aria-label="Page name" />
+          <input className="input" autoFocus value={name} maxLength={40} onChange={(e) => setName(e.target.value)} onBlur={() => setEditing(false)} aria-label="Page name" />
         </form>
       </li>
     );
@@ -141,10 +141,10 @@ function PageRow({ page, index, active, count, canEdit, canDelete, onPage, onRen
         <small>{count}</small>
       </button>
       {canEdit && (
-        <button className="icon-chip" onClick={() => (setName(page.name), setEditing(true))} title="Rename"><Icon name="edit" size={14} /></button>
+        <button className="icon-chip" onClick={() => (setName(page.name), setEditing(true))} aria-label="Rename" title="Rename"><Icon name="edit" size={14} /></button>
       )}
       {canDelete && (
-        <button className="icon-chip danger" onClick={() => onDelete(page.id)} title="Delete page"><Icon name="trash" size={14} /></button>
+        <button className="icon-chip danger" onClick={() => onDelete(page.id)} aria-label="Delete page" title="Delete page"><Icon name="trash" size={14} /></button>
       )}
     </li>
   );
@@ -153,7 +153,7 @@ function PageRow({ page, index, active, count, canEdit, canDelete, onPage, onRen
 function TimerCard({ timer, offset, isHost, onTimer }) {
   const running = Boolean(timer.endsAt);
   return (
-    <div className="panel-card">
+    <div className="card panel-card">
       <div className="eyebrow">CLASS TIMER</div>
       <div className="timer-readout">
         <TimerBadge timer={timer} offset={offset} compact />
@@ -170,13 +170,13 @@ function TimerCard({ timer, offset, isHost, onTimer }) {
           </div>
           <div className="timer-actions">
             {running ? (
-              <button className="cta secondary small" onClick={() => onTimer("pause")}><Icon name="pause" size={15} /> Pause</button>
+              <button className="btn btn-secondary small" onClick={() => onTimer("pause")}><Icon name="pause" size={15} /> Pause</button>
             ) : (
-              <button className="cta small" onClick={() => onTimer("start")} disabled={timerRemaining(timer, offset) <= 0}>
+              <button className="btn btn-primary small" onClick={() => onTimer("start")} disabled={timerRemaining(timer, offset) <= 0}>
                 <Icon name="play" size={15} /> Start {formatClock(timer.remaining)}
               </button>
             )}
-            <button className="cta secondary small" onClick={() => onTimer("reset")}>Reset</button>
+            <button className="btn btn-secondary small" onClick={() => onTimer("reset")}>Reset</button>
           </div>
         </>
       )}
@@ -187,7 +187,7 @@ function TimerCard({ timer, offset, isHost, onTimer }) {
 function RoomTab(p) {
   return (
     <>
-      <div className="panel-card">
+      <div className="card panel-card">
         <div className="eyebrow">PAGES · {p.pages.length}</div>
         <ul className="pages">
           {p.pages.map((page, i) => (
@@ -206,18 +206,18 @@ function RoomTab(p) {
           ))}
         </ul>
         <div className="row-actions">
-          <button className="cta secondary small" onClick={p.onAddPage} disabled={!p.canEdit}><Icon name="plus" size={15} /> Add page</button>
-          {p.isHost && <button className="cta secondary small danger-outline" onClick={p.onClearPage}><Icon name="trash" size={15} /> Clear page</button>}
+          <button className="btn btn-secondary small" onClick={p.onAddPage} disabled={!p.canEdit}><Icon name="plus" size={15} /> Add page</button>
+          {p.isHost && <button className="btn btn-secondary small danger-outline" onClick={p.onClearPage}><Icon name="trash" size={15} /> Clear page</button>}
         </div>
       </div>
 
       <TimerCard timer={p.meta.timer} offset={p.timerOffset} isHost={p.isHost} onTimer={p.onTimer} />
 
-      <div className="panel-card">
+      <div className="card panel-card">
         <div className="eyebrow">TEMPLATES</div>
         <div className="template-grid">
           {TEMPLATES.map((t) => (
-            <button key={t.id} className={`template-btn tpl-${t.id}`} onClick={() => p.onTemplate(t.id)} disabled={!p.canEdit} title={t.hint}>
+            <button key={t.id} className={`template-btn tpl-${t.id}`} onClick={() => p.onTemplate(t.id)} disabled={!p.canEdit} aria-label={t.hint} title={t.hint}>
               <span className="tpl-thumb" />
               {t.label}
             </button>
@@ -225,7 +225,7 @@ function RoomTab(p) {
         </div>
       </div>
 
-      <div className="panel-card">
+      <div className="card panel-card">
         <div className="eyebrow">BOARD STYLE</div>
         <div className="bg-options">
           {BACKGROUNDS.map((b) => (
@@ -242,7 +242,7 @@ function RoomTab(p) {
         </div>
       </div>
 
-      <div className="panel-card">
+      <div className="card panel-card">
         <div className="eyebrow">TOP IDEAS</div>
         {p.topNotes.length ? (
           <ol className="top-notes">
@@ -266,10 +266,10 @@ function RoomTab(p) {
 function HistoryTab({ history, onLoad, onScrub, onPlay, onExit }) {
   if (history.state !== "ready") {
     return (
-      <div className="panel-card">
+      <div className="card panel-card">
         <div className="eyebrow">BOARD HISTORY</div>
         <p className="panel-copy">Scrub through every change made in this room and watch the board being built, step by step.</p>
-        <button className="cta small" onClick={onLoad} disabled={history.state === "loading"}>
+        <button className="btn btn-primary small" onClick={onLoad} disabled={history.state === "loading"}>
           <Icon name="history" size={15} /> {history.state === "loading" ? "Loading…" : "Open timeline"}
         </button>
       </div>
@@ -277,7 +277,7 @@ function HistoryTab({ history, onLoad, onScrub, onPlay, onExit }) {
   }
   const { count, index, entry } = history;
   return (
-    <div className="panel-card">
+    <div className="card panel-card">
       <div className="eyebrow">BOARD HISTORY</div>
       {count === 0 ? (
         <p className="panel-copy">Nothing has been drawn in this room yet.</p>
@@ -287,7 +287,7 @@ function HistoryTab({ history, onLoad, onScrub, onPlay, onExit }) {
             <b>{entry ? formatTime(entry.ts) : "Start"}</b>
             <span>{entry ? entry.label : "Before the first change"}</span>
           </div>
-          <input
+          <input className="input"
             type="range"
             min="0"
             max={count}
@@ -298,15 +298,15 @@ function HistoryTab({ history, onLoad, onScrub, onPlay, onExit }) {
           />
           <div className="history-meta"><span>{index} / {count} changes</span></div>
           <div className="timer-actions">
-            <button className="cta small" onClick={onPlay}>
+            <button className="btn btn-primary small" onClick={onPlay}>
               <Icon name={history.playing ? "pause" : "play"} size={15} /> {history.playing ? "Pause" : "Replay"}
             </button>
-            <button className="icon-chip" onClick={() => onScrub(Math.max(0, index - 1))} title="Step back"><Icon name="left" size={16} /></button>
-            <button className="icon-chip" onClick={() => onScrub(Math.min(count, index + 1))} title="Step forward"><Icon name="right" size={16} /></button>
+            <button className="icon-chip" onClick={() => onScrub(Math.max(0, index - 1))} aria-label="Step back" title="Step back"><Icon name="left" size={16} /></button>
+            <button className="icon-chip" onClick={() => onScrub(Math.min(count, index + 1))} aria-label="Step forward" title="Step forward"><Icon name="right" size={16} /></button>
           </div>
         </>
       )}
-      <button className="cta secondary small" onClick={onExit}>Back to the live board</button>
+      <button className="btn btn-secondary small" onClick={onExit}>Back to the live board</button>
     </div>
   );
 }
@@ -321,7 +321,7 @@ function HelpTab() {
   return (
     <>
       {SHORTCUTS.map(([group, rows]) => (
-        <div className="panel-card shortcuts" key={group}>
+        <div className="card panel-card shortcuts" key={group}>
           <div className="eyebrow">{group.toUpperCase()}</div>
           <dl>
             {rows.map(([keys, what]) => (
@@ -330,7 +330,7 @@ function HelpTab() {
           </dl>
         </div>
       ))}
-      <div className="panel-card">
+      <div className="card panel-card">
         <div className="eyebrow">TIPS</div>
         <p className="panel-copy">Drop or paste images and PDFs onto the board — each PDF page becomes a board page you can annotate. Turn on Shape assist with the pen to straighten rough boxes, circles and lines.</p>
       </div>

@@ -79,9 +79,9 @@ function NewExam({ onAdd }) {
   const ready = draft.title.trim() && draft.date;
   return (
     <form className="pn-new" onSubmit={(e) => { e.preventDefault(); if (ready) onAdd(draft); }}>
-      <input autoFocus dir="auto" maxLength={80} placeholder={t("prep.examTitle")} aria-label={t("prep.examTitle")} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-      <input type="date" dir="ltr" aria-label={t("prep.examDate")} value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
-      <button className="d-btn primary small" disabled={!ready}>{t("prep.create")}</button>
+      <input className="input" autoFocus dir="auto" maxLength={80} placeholder={t("prep.examTitle")} aria-label={t("prep.examTitle")} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+      <input className="input" type="date" dir="ltr" aria-label={t("prep.examDate")} value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
+      <button className="btn btn-primary small" disabled={!ready}>{t("prep.create")}</button>
       <button type="button" className="pn-quiet" onClick={() => setDraft(null)}>{t("prep.cancel")}</button>
     </form>
   );
@@ -164,7 +164,7 @@ function ExamPage({ examId, readiness, conceptName, masteryOf, context, onBack, 
             <b>{t("prep.diag")}</b>
             <p>{t("prep.diagSub")}</p>
           </div>
-          <button className="d-btn primary small" onClick={() => onTest("level", exam)}>{t("prep.startDiag")}</button>
+          <button className="btn btn-primary small" onClick={() => onTest("level", exam)}>{t("prep.startDiag")}</button>
         </aside>
       )}
 
@@ -193,7 +193,7 @@ function ExamPage({ examId, readiness, conceptName, masteryOf, context, onBack, 
                   const level = masteryLevel(masteryOf(item.concept));
                   return (
                     <li key={key} className={(key === active ? "active " : "") + (exam.done[key] ? "done" : "")}>
-                      <input type="checkbox" checked={Boolean(exam.done[key])} onChange={() => toggle(key)} aria-label={conceptName(item.concept)} />
+                      <label className="pn-tick"><input type="checkbox" checked={Boolean(exam.done[key])} onChange={() => toggle(key)} aria-label={conceptName(item.concept)} /></label>
                       <button className="pn-item" onClick={() => onStudy(item.concept)}>
                         <span dir="auto">{conceptName(item.concept) || item.title}</span>
                       </button>
@@ -212,7 +212,7 @@ function ExamPage({ examId, readiness, conceptName, masteryOf, context, onBack, 
       {sessions.length > 0 && (
         <ul className="pn-items pn-final">
           <li className={(active === FINAL ? "active " : "") + (exam.done[FINAL] ? "done" : "")}>
-            <input type="checkbox" checked={Boolean(exam.done[FINAL])} onChange={() => toggle(FINAL)} aria-label={t("prep.final")} />
+            <label className="pn-tick"><input type="checkbox" checked={Boolean(exam.done[FINAL])} onChange={() => toggle(FINAL)} aria-label={t("prep.final")} /></label>
             <button className="pn-item" onClick={() => onTest("final", exam)}><span>{t("prep.final")}</span></button>
             <span className="pn-reveal label" aria-hidden="true">{t("prep.study")}</span>
           </li>
@@ -250,7 +250,7 @@ function Practice({ items, setItems, concept, context, onGraded, onFinish }) {
       {ended ? <p className="pn-lead small">{t("prep.noMore")}</p> : (
         <div className="pn-next">
           {!concept && <small>{index + 1} / {items.length}</small>}
-          <button className="d-btn ghost small" disabled={more.busy} onClick={next}>{t(last ? "prep.finish" : "prep.next")}</button>
+          <button className="btn btn-secondary small" disabled={more.busy} onClick={next}>{t(last ? "prep.finish" : "prep.next")}</button>
         </div>
       )}
     </div>

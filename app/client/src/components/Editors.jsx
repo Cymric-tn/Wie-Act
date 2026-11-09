@@ -141,8 +141,8 @@ export function EquationEditor({ left, top, color, initial = "", onCommit, onCan
         ))}
       </div>
       <div className="review-actions">
-        <button className="cta secondary" onClick={onCancel}>Cancel</button>
-        <button className="cta" onClick={submit} disabled={!value.trim() || Boolean(error)}>
+        <button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+        <button className="btn btn-primary" onClick={submit} disabled={!value.trim() || Boolean(error)}>
           {initial ? "Update" : "Insert"} equation
         </button>
       </div>

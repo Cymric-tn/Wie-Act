@@ -240,7 +240,7 @@ function ProgressMap({ compact = false, initialCourse = null, onOpenFull }) {
           ))}
         </nav>
         <div className="pm-actions">
-          {onOpenFull && <button className="d-btn ghost small" onClick={onOpenFull}>{t("map.open")}</button>}
+          {onOpenFull && <button className="btn btn-secondary small" onClick={onOpenFull}>{t("map.open")}</button>}
           {/* "Enter 3D universe" is hidden: the static page behind it still lists MATH102 / CS201 / PHYS101 (Phase 1 has one course) */}
         </div>
       </div>

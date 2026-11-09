@@ -1,10 +1,10 @@
 // The courses with a study room. Phase 1 has one: analyse, the course the engine has content for.
 
 export const STATUS = {
-  completed: { label: "Completed", color: "#40d9be" },
-  progress: { label: "In progress", color: "#ffc45c" },
-  new: { label: "Not started", color: "#a279ff" },
-  attention: { label: "Needs attention", color: "#ff7fa8" }
+  completed: { label: "Completed", color: "var(--lumi-ok)" },
+  progress: { label: "In progress", color: "var(--lumi-warn)" },
+  new: { label: "Not started", color: "var(--lumi-iris)" },
+  attention: { label: "Needs attention", color: "var(--lumi-bad)" }
 };
 
 export const COURSES = [

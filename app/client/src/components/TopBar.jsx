@@ -91,7 +91,7 @@ function TopBar(props) {
     <header className="top">
       <div className="top-left">
         <div className="brand"><i>✧</i> Lumi</div>
-        <button className="room-pill" onClick={onCopyInvite} title="Copy invite link">
+        <button className="room-pill" onClick={onCopyInvite} aria-label="Copy invite link" title="Copy invite link">
           <span className="eyebrow">ROOM</span>
           <b>{room}</b>
           {hasCode && <Icon name="lock" size={14} />}
@@ -130,7 +130,7 @@ function TopBar(props) {
           {users.length > 5 && <span className="avatar more">+{users.length - 5}</span>}
         </div>
         <ExportMenu onExport={onExport} />
-        <button className="iconbtn panel-toggle" onClick={onTogglePanel} aria-pressed={panelOpen} title="Room panel">
+        <button className="iconbtn panel-toggle" onClick={onTogglePanel} aria-pressed={panelOpen} aria-label="Room panel" title="Room panel">
           <Icon name="users" size={17} />
         </button>
         <button className="iconbtn" onClick={onLeave}><Icon name="exit" size={17} /> <span>Leave</span></button>

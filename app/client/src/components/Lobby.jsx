@@ -42,11 +42,11 @@ export default function Lobby({ status, initialName, initialRoom, error, onJoin 
         <form onSubmit={submit} className="lobby-form">
           <label>
             <span>Your name</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} placeholder="e.g. Amira" autoFocus={!initialName} />
+            <input className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={24} placeholder="e.g. Amira" autoFocus={!initialName} />
           </label>
           <label>
             <span>Room</span>
-            <input value={room} onChange={(e) => setRoom(e.target.value)} maxLength={80} placeholder="Enter a room name" autoFocus={Boolean(initialName)} />
+            <input className="input" value={room} onChange={(e) => setRoom(e.target.value)} maxLength={80} placeholder="Enter a room name" autoFocus={Boolean(initialName)} />
           </label>
           {course && (
             <div className="course-hint" style={{ "--c": STATUS[course.status].color }}>
@@ -69,7 +69,7 @@ export default function Lobby({ status, initialName, initialRoom, error, onJoin 
                   className={"course-btn" + (room === c.id ? " active" : "")}
                   style={{ "--c": STATUS[c.status].color }}
                   onClick={() => setRoom(c.id)}
-                  title={`${c.name} · ${STATUS[c.status].label}`}
+                  aria-label={`${c.name} · ${STATUS[c.status].label}`} title={`${c.name} · ${STATUS[c.status].label}`}
                 >
                   <i className="orb-mini" />
                   <b>{c.id}</b>
@@ -82,7 +82,7 @@ export default function Lobby({ status, initialName, initialRoom, error, onJoin 
           {showCode ? (
             <label>
               <span>Access code {needsCode ? "" : "(optional — makes a new room private)"}</span>
-              <input ref={codeRef} value={code} onChange={(e) => setCode(e.target.value)} maxLength={64} placeholder="Room access code" type="password" autoComplete="off" />
+              <input className="input" ref={codeRef} value={code} onChange={(e) => setCode(e.target.value)} maxLength={64} placeholder="Room access code" type="password" autoComplete="off" />
             </label>
           ) : (
             <button type="button" className="link-btn" onClick={() => setShowCode(true)}>
@@ -92,7 +92,7 @@ export default function Lobby({ status, initialName, initialRoom, error, onJoin 
 
           {error && <p className="form-error" role="alert">{error.message}</p>}
 
-          <button className="cta" type="submit" disabled={!online || !name.trim() || !room.trim()}>
+          <button className="btn btn-primary" type="submit" disabled={!online || !name.trim() || !room.trim()}>
             ✧ Enter the board
           </button>
         </form>

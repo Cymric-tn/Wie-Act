@@ -1,0 +1,49 @@
+/* The app's layer on top of the Lumi tokens: what the tokens file does not define.
+   Status colours pass 4.5:1 on white. Glow and Spark are not used here: they are for AI activity and mastery only. */
+:root, .lumi-dark {
+  --lumi-fill: color-mix(in srgb, var(--lumi-ink) 6%, transparent);   /* hover and quiet backgrounds, on light and dark */
+  --lumi-fill-strong: color-mix(in srgb, var(--lumi-ink) 11%, transparent);
+}
+:root {
+  --lumi-ok: #1B7F5C; --lumi-warn: #8A5A00; --lumi-bad: #C2334D;
+  --lumi-shadow: rgb(16 17 36 / .10);
+  --lumi-scrim: rgb(7 8 26 / .45);
+}
+.lumi-dark { --lumi-ok: #4FD6A8; --lumi-warn: #F2C572; --lumi-bad: #FF8FA8; color-scheme: dark; }
+:root, .lumi-dark {
+  --lumi-ok-soft: color-mix(in srgb, var(--lumi-ok) 13%, transparent);
+  --lumi-warn-soft: color-mix(in srgb, var(--lumi-warn) 13%, transparent);
+  --lumi-bad-soft: color-mix(in srgb, var(--lumi-bad) 12%, transparent);
+}
+
+/* Size variants of the design system's components. */
+.btn { justify-content: center; white-space: nowrap; transition: filter .15s, background .15s; text-decoration: none; }
+.btn:hover:not(:disabled) { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.small { height: 44px; padding: 0 16px; font-size: 14px; }
+.btn.full { width: 100%; }
+.btn.danger { background: var(--lumi-bad); color: #fff; }
+.btn.danger-outline { background: none; border: 1.5px solid var(--lumi-bad); color: var(--lumi-bad); }
+.btn.danger-outline:hover:not(:disabled) { background: var(--lumi-bad-soft); filter: none; }
+.btn-secondary:hover:not(:disabled) { background: var(--lumi-fill); filter: none; }
+.lumi-dark .btn-secondary { border-color: var(--lumi-line); }
+.lumi-dark .btn-ai { background: var(--lumi-surface); }
+.input { background: var(--lumi-surface); color: var(--lumi-ink); max-width: 100%; }
+textarea.input { height: auto; padding: var(--s3) var(--s4); }
+.lumi-dark .input { border-color: var(--lumi-line); }
+.chip { border: 0; background: var(--lumi-fill); color: var(--lumi-ink); cursor: pointer; }
+span.chip, .chip.chip-mastered { cursor: default; }
+.chip-mastered { background: var(--lumi-spark); color: var(--lumi-void); }
+.progress { display: block; flex: 1; min-width: 40px; overflow: hidden; }
+
+/* Every tappable element is at least 44px. Zero specificity: a component can only make it bigger. */
+:where(button, [role="button"], summary, select) { min-height: 44px; }
+:where(button) { min-width: 44px; }
+:where(input[type="range"]) { min-height: 44px; }
+.d-nav-item, .d-brand, .auth-back, .lp-links a, .lp-nav a { min-height: 44px; display: inline-flex; align-items: center; }
+.d-nav-item { display: flex; }
+.lang-switch button { min-height: 44px; }
+.ai-spark { display: inline-flex; flex: none; align-items: center; justify-content: center; border-radius: 50%; background: var(--lumi-void); padding: 3px; }
+
+body { background: var(--lumi-mist); }
+.card > *, .d-card-head { min-width: 0; }

@@ -121,7 +121,7 @@ export function Degraded({ result, onRetry, onFull }) {
       <div className="ai-notice fast">
         <Icon name="bolt" size={14} />
         <span>{t("deg.fast")}</span>
-        {result.followup_available && onFull && <button className="d-chip" onClick={onFull}>{t("deg.full")}</button>}
+        {result.followup_available && onFull && <button className="chip d-chip" onClick={onFull}>{t("deg.full")}</button>}
       </div>
     );
   }
@@ -130,7 +130,7 @@ export function Degraded({ result, onRetry, onFull }) {
       <div className="ai-notice wait">
         <Icon name="timer" size={14} />
         <span>{t(WAIT_REASONS[reason], { s: left })}</span>
-        {onRetry && <button className="d-chip" disabled={left > 0} onClick={onRetry}>{t("deg.retry")}</button>}
+        {onRetry && <button className="chip d-chip" disabled={left > 0} onClick={onRetry}>{t("deg.retry")}</button>}
       </div>
     );
   }
@@ -188,7 +188,7 @@ export function ReportButton({ requestId }) {
   const [done, setDone] = useState(false);
   if (!requestId) return null;
   return (
-    <button className="ai-report" disabled={done} onClick={() => ai.report(requestId).then(() => setDone(true)).catch(() => {})} title={t("ai.report")}>
+    <button className="ai-report" disabled={done} onClick={() => ai.report(requestId).then(() => setDone(true)).catch(() => {})} aria-label={t("ai.report")} title={t("ai.report")}>
       <Icon name="shield" size={12} /> {done ? t("ai.reported") : t("ai.report")}
     </button>
   );
@@ -258,8 +258,8 @@ export function ExerciseCard({ exercise, onGraded, context }) {
             if (answer.trim()) act("answer", { attempt: answer, hints_used: hints.length });
           }}
         >
-          <input ref={inputRef} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={t("ex.placeholder")} aria-label={t("ex.answer")} dir="ltr" maxLength={200} />
-          <button className="d-btn primary small" disabled={!answer.trim() || busy}>{busy === "answer" ? "…" : t("ex.check")}</button>
+          <input className="input" ref={inputRef} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={t("ex.placeholder")} aria-label={t("ex.answer")} dir="ltr" maxLength={200} />
+          <button className="btn btn-primary small" disabled={!answer.trim() || busy}>{busy === "answer" ? "…" : t("ex.check")}</button>
         </form>
       )}
       {verdict && (
@@ -273,11 +273,11 @@ export function ExerciseCard({ exercise, onGraded, context }) {
       {error && <div className="ai-notice bad"><span>{error}</span></div>}
       {!solved && (
         <div className="ai-ex-actions">
-          <button className="d-chip" disabled={Boolean(busy) || hints.length >= hintsTotal} onClick={() => act("hint", { level: hints.length + 1 })}>
+          <button className="chip d-chip" disabled={Boolean(busy) || hints.length >= hintsTotal} onClick={() => act("hint", { level: hints.length + 1 })}>
             <Icon name="help" size={13} /> {busy === "hint" ? "…" : t("ex.hint")}
           </button>
           {(hints.length >= 2 || verdict === "INCORRECT") && (
-            <button className="d-chip" disabled={Boolean(busy)} onClick={() => act("reveal")}>{t("ex.giveUp")}</button>
+            <button className="chip d-chip" disabled={Boolean(busy)} onClick={() => act("reveal")}>{t("ex.giveUp")}</button>
           )}
         </div>
       )}

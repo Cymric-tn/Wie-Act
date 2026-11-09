@@ -11,7 +11,7 @@ function PageBar({ pages, pageId, onPage, onAddPage, canAdd, zoom, onZoomIn, onZ
   return (
     <div className="page-bar">
       <div className="pager" role="group" aria-label="Pages">
-        <button className="icon-chip" onClick={() => go(-1)} disabled={index === 0} title="Previous page (Page Up)">
+        <button className="icon-chip" onClick={() => go(-1)} disabled={index === 0} aria-label="Previous page (Page Up)" title="Previous page (Page Up)">
           <Icon name="left" size={16} />
         </button>
         <select value={pageId} onChange={(e) => onPage(e.target.value)} aria-label="Current page">
@@ -19,18 +19,18 @@ function PageBar({ pages, pageId, onPage, onAddPage, canAdd, zoom, onZoomIn, onZ
             <option key={p.id} value={p.id}>{i + 1}. {p.name}</option>
           ))}
         </select>
-        <button className="icon-chip" onClick={() => go(1)} disabled={index === pages.length - 1} title="Next page (Page Down)">
+        <button className="icon-chip" onClick={() => go(1)} disabled={index === pages.length - 1} aria-label="Next page (Page Down)" title="Next page (Page Down)">
           <Icon name="right" size={16} />
         </button>
-        <button className="icon-chip" onClick={onAddPage} disabled={!canAdd} title="Add page">
+        <button className="icon-chip" onClick={onAddPage} disabled={!canAdd} aria-label="Add page" title="Add page">
           <Icon name="plus" size={16} />
         </button>
       </div>
       <div className="zoomer" role="group" aria-label="Zoom">
-        <button className="icon-chip" onClick={onZoomOut} title="Zoom out (−)"><Icon name="minus" size={16} /></button>
-        <button className="zoom-readout" onClick={onResetZoom} title="Reset to 100% (Shift+0)">{Math.round(zoom * 100)}%</button>
-        <button className="icon-chip" onClick={onZoomIn} title="Zoom in (+)"><Icon name="plus" size={16} /></button>
-        <button className="icon-chip" onClick={onFit} title="Zoom to fit (Shift+1)"><Icon name="fit" size={16} /></button>
+        <button className="icon-chip" onClick={onZoomOut} aria-label="Zoom out (−)" title="Zoom out (−)"><Icon name="minus" size={16} /></button>
+        <button className="zoom-readout" onClick={onResetZoom} aria-label="Reset to 100% (Shift+0)" title="Reset to 100% (Shift+0)">{Math.round(zoom * 100)}%</button>
+        <button className="icon-chip" onClick={onZoomIn} aria-label="Zoom in (+)" title="Zoom in (+)"><Icon name="plus" size={16} /></button>
+        <button className="icon-chip" onClick={onFit} aria-label="Zoom to fit (Shift+1)" title="Zoom to fit (Shift+1)"><Icon name="fit" size={16} /></button>
       </div>
     </div>
   );

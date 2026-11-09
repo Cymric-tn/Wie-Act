@@ -81,20 +81,20 @@ export default function SignIn() {
           {signup && (
             <label className="auth-field">
               <span>{t("auth.name")}</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={40} required />
+              <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={40} required />
             </label>
           )}
           <label className="auth-field">
             <span>{t("auth.email")}</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="name@university.tn" dir="ltr" required />
+            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="name@university.tn" dir="ltr" required />
           </label>
           <label className="auth-field">
             <span>{t("auth.password")}</span>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={signup ? "new-password" : "current-password"} minLength={4} required dir="ltr" />
+            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={signup ? "new-password" : "current-password"} minLength={4} required dir="ltr" />
           </label>
           {!signup && <button type="button" className="link-btn auth-forgot" onClick={() => setMode("signup")}>{t("auth.forgot")}</button>}
 
-          <button className="d-btn primary full lp-big" type="submit" disabled={!valid}>
+          <button className="btn btn-primary full lp-big" type="submit" disabled={!valid}>
             {signup ? t("auth.signup") : t("auth.signin")} <Icon name="right" size={17} />
           </button>
           <button

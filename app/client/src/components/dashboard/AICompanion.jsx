@@ -187,11 +187,11 @@ export default function AICompanion({ open, onClose, user, seed }) {
         <div className="ai-tools">
           <label>
             {t("ai.replyIn")}{" "}
-            <select value={replyLang} onChange={(e) => { setReplyLang(e.target.value); setReplyLanguage(e.target.value); }}>
+            <select className="input" value={replyLang} onChange={(e) => { setReplyLang(e.target.value); setReplyLanguage(e.target.value); }}>
               {AI_LANGUAGES.map((id) => <option key={id} value={id}>{langLabel(id)}</option>)}
             </select>
           </label>
-          {messages.length > 0 && <button className="d-chip" onClick={newChat}>{t("ai.newChat")}</button>}
+          {messages.length > 0 && <button className="chip d-chip" onClick={newChat}>{t("ai.newChat")}</button>}
           <EngineBadge status={status} />
         </div>
 
@@ -206,7 +206,7 @@ export default function AICompanion({ open, onClose, user, seed }) {
                     ? (
                       <div className="ai-notice bad">
                         <Icon name="bolt" size={14} /><span>{m.text}</span>
-                        <button className="d-chip" onClick={() => send(m.question, { echo: false })}>{t("deg.retry")}</button>
+                        <button className="chip d-chip" onClick={() => send(m.question, { echo: false })}>{t("deg.retry")}</button>
                       </div>
                     )
                     : (
@@ -226,7 +226,7 @@ export default function AICompanion({ open, onClose, user, seed }) {
         {messages.length === 0 && (
           <div className="ai-suggest">
             {["ai.s1", "ai.s2", "ai.s3", "ai.s4"].map((k) => (
-              <button key={k} className="d-chip" onClick={() => send(t(k))} dir="auto">{t(k)}</button>
+              <button key={k} className="chip d-chip" onClick={() => send(t(k))} dir="auto">{t(k)}</button>
             ))}
           </div>
         )}
@@ -238,7 +238,7 @@ export default function AICompanion({ open, onClose, user, seed }) {
             send(draft);
           }}
         >
-          <input
+          <input className="input"
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -248,7 +248,7 @@ export default function AICompanion({ open, onClose, user, seed }) {
             lang={lang}
             maxLength={2000}
           />
-          <button className="d-btn primary icon" type="submit" disabled={!draft.trim()} aria-label={t("common.send")}>
+          <button className="btn btn-primary icon" type="submit" disabled={!draft.trim()} aria-label={t("common.send")}>
             <Icon name="send" size={17} />
           </button>
         </form>

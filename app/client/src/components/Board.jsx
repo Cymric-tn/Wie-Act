@@ -1825,8 +1825,8 @@ export default function Board({ session, status, onLeave }) {
               <h3 id="confirmTitle">{confirm.title}</h3>
               <p>{confirm.body}</p>
               <div className="review-actions">
-                <button className="cta secondary" onClick={() => setConfirm(null)}>Cancel</button>
-                <button className="cta danger" onClick={() => { confirm.run(); setConfirm(null); }}>{confirm.label}</button>
+                <button className="btn btn-secondary" onClick={() => setConfirm(null)}>Cancel</button>
+                <button className="btn btn-primary danger" onClick={() => { confirm.run(); setConfirm(null); }}>{confirm.label}</button>
               </div>
             </div>
           </div>

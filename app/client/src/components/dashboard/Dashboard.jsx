@@ -113,7 +113,7 @@ function Sidebar({ user, section, open, onClose, onCompanion, onSignOut }) {
             <Icon name="settings" size={19} /><span>{t("nav.settings")}</span>
           </Link>
           <div className="d-user">
-            <span className="d-avatar" style={{ "--c": user.role === "professor" ? "#ffc45c" : "#a279ff" }}>{initials(user.name)}</span>
+            <span className="d-avatar" style={{ "--c": user.role === "professor" ? "var(--lumi-iris-strong)" : "var(--lumi-iris)" }}>{initials(user.name)}</span>
             <div>
               <b>{user.name}</b>
               <small>{t(`role.${user.role}`)}</small>
@@ -142,7 +142,7 @@ function TopBar({ user, section, onMenu, onRole, onCompanion }) {
           ))}
         </div>
         <LanguageSwitcher />
-        <button className="d-btn ai small d-top-ai" onClick={onCompanion}><Icon name="sparkle" size={16} /> <span>{t("nav.companion")}</span></button>
+        <button className="btn btn-ai small d-top-ai" onClick={onCompanion}><Icon name="sparkle" size={16} /> <span>{t("nav.companion")}</span></button>
       </div>
     </header>
   );
@@ -167,7 +167,7 @@ function Greeting({ user, onCompanion }) {
         <div className="d-greet-side">
           <label className="d-select">
             <span>{t("prof.course")}</span>
-            <select defaultValue={CLASS.course}>
+            <select className="input" defaultValue={CLASS.course}>
               {COURSES.map((c) => <option key={c.id} value={c.id}>{c.id} · {c.name}</option>)}
             </select>
           </label>
@@ -179,7 +179,7 @@ function Greeting({ user, onCompanion }) {
             <b>{Math.round(overall * 100)}%</b>
             <small>{t("mastery.mastered")}</small>
           </div>
-          <button className="d-btn ai" onClick={onCompanion}><Icon name="sparkle" size={16} /> {t("nav.companion")}</button>
+          <button className="btn btn-ai" onClick={onCompanion}><Icon name="sparkle" size={16} /> {t("nav.companion")}</button>
         </div>
       )}
     </div>
@@ -260,7 +260,7 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
       return (
         <div className="d-grid">
           <Card icon="door" title={t("rooms.title")} sub={t("rooms.sub")} className="span-12" example
-            actions={<button className="d-btn primary small" onClick={() => openBoard(`room-${Math.random().toString(36).slice(2, 7)}`)}><Icon name="plus" size={15} /> {t("rooms.new")}</button>}>
+            actions={<button className="btn btn-primary small" onClick={() => openBoard(`room-${Math.random().toString(36).slice(2, 7)}`)}><Icon name="plus" size={15} /> {t("rooms.new")}</button>}>
             <JoinRoom big />
             <h3 className="d-subhead">{t("rooms.active")}</h3>
             <RoomList />
@@ -274,7 +274,7 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
           <Card icon="board" title={t("board.title")} sub={t("board.sub")} className="span-7" actions={<span className="d-badge live">{t("badge.live")}</span>}>
             <BoardPreview />
             <AiBoardChips onSoon={onSoon} />
-            <button className="d-btn primary full" onClick={() => openBoard()}><Icon name="board" size={17} /> {t("board.open")}</button>
+            <button className="btn btn-primary full" onClick={() => openBoard()}><Icon name="board" size={17} /> {t("board.open")}</button>
           </Card>
           <Card icon="history" title={t("board.recent")} className="span-5" example>
             <RoomList />

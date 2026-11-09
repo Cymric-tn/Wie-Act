@@ -7,14 +7,14 @@ import "../dashboard/dashboard.css";
 import "./landing.css";
 
 const FEATURES = [
-  { id: "map", icon: "planet", color: "#a279ff" },
-  { id: "rooms", icon: "users", color: "#75e8ff" },
-  { id: "board", icon: "board", color: "#40d9be" },
-  { id: "voice", icon: "mic", color: "#ffc45c" },
-  { id: "prep", icon: "exam", color: "#ff7fa8" },
-  { id: "materials", icon: "book", color: "#8dbdff" },
-  { id: "companion", icon: "sparkle", color: "#c6a0ff" },
-  { id: "language", icon: "globe", color: "#8affd3" }
+  { id: "map", icon: "planet", color: "var(--lumi-iris)" },
+  { id: "rooms", icon: "users", color: "var(--lumi-iris)" },
+  { id: "board", icon: "board", color: "var(--lumi-iris)" },
+  { id: "voice", icon: "mic", color: "var(--lumi-iris)" },
+  { id: "prep", icon: "exam", color: "var(--lumi-iris)" },
+  { id: "materials", icon: "book", color: "var(--lumi-iris)" },
+  { id: "companion", icon: "sparkle", color: "var(--lumi-iris)" },
+  { id: "language", icon: "globe", color: "var(--lumi-iris)" }
 ];
 
 function Nav() {
@@ -31,11 +31,11 @@ function Nav() {
       <div className="lp-nav-right">
         <LanguageSwitcher />
         {user ? (
-          <Link to="/app" className="d-btn primary small">{t("nav.home")} <Icon name="right" size={15} /></Link>
+          <Link to="/app" className="btn btn-primary small">{t("nav.home")} <Icon name="right" size={15} /></Link>
         ) : (
           <>
             <Link to="/login" className="lp-login">{t("nav.login")}</Link>
-            <Link to="/login?mode=signup" className="d-btn primary small">{t("nav.start")}</Link>
+            <Link to="/login?mode=signup" className="btn btn-primary small">{t("nav.start")}</Link>
           </>
         )}
       </div>
@@ -67,7 +67,7 @@ function HeroVisual() {
         <span className="d-live on" />
         <b>Analyse · Dérivées</b>
         <span className="d-avatars">
-          {["#a279ff", "#75e8ff", "#40d9be"].map((c, i) => <span key={c} className="d-avatar" style={{ "--c": c }}>{["AK", "YB", "ST"][i]}</span>)}
+          {["var(--lumi-iris)", "var(--lumi-iris-strong)", "var(--lumi-slate)"].map((c, i) => <span key={c} className="d-avatar" style={{ "--c": c }}>{["AK", "YB", "ST"][i]}</span>)}
         </span>
       </div>
     </div>
@@ -90,8 +90,8 @@ export default function Landing() {
           </h1>
           <p className="lp-lead">{t("hero.sub")}</p>
           <div className="lp-ctas">
-            <Link to="/login?mode=signup" className="d-btn primary lp-big">{t("hero.ctaStudent")} <Icon name="right" size={17} /></Link>
-            <Link to="/login?mode=signup&role=professor" className="d-btn ghost lp-big">{t("hero.ctaProf")}</Link>
+            <Link to="/login?mode=signup" className="btn btn-primary lp-big">{t("hero.ctaStudent")} <Icon name="right" size={17} /></Link>
+            <Link to="/login?mode=signup&role=professor" className="btn btn-secondary lp-big">{t("hero.ctaProf")}</Link>
           </div>
           <p className="lp-langs"><Icon name="globe" size={16} /> {t("hero.langs")}</p>
           <dl className="lp-stats">
@@ -166,8 +166,8 @@ export default function Landing() {
         </div>
         <div className="lp-roles">
           {[
-            ["student", "users", "#a279ff", "/login?mode=signup"],
-            ["prof", "chart", "#ffc45c", "/login?mode=signup&role=professor"]
+            ["student", "users", "var(--lumi-iris)", "/login?mode=signup"],
+            ["prof", "chart", "var(--lumi-iris-strong)", "/login?mode=signup&role=professor"]
           ].map(([role, icon, color, to]) => (
             <article key={role} className="lp-role" style={{ "--c": color }}>
               <span className="lp-feature-icon"><Icon name={icon} size={22} /></span>
@@ -175,7 +175,7 @@ export default function Landing() {
               <ul>
                 {[1, 2, 3, 4].map((n) => <li key={n}><Icon name="check" size={16} /> {t(`roles.${role}.${n}`)}</li>)}
               </ul>
-              <Link to={to} className="d-btn ghost">{role === "prof" ? t("hero.ctaProf") : t("hero.ctaStudent")} <Icon name="right" size={16} /></Link>
+              <Link to={to} className="btn btn-secondary">{role === "prof" ? t("hero.ctaProf") : t("hero.ctaStudent")} <Icon name="right" size={16} /></Link>
             </article>
           ))}
         </div>
@@ -184,7 +184,7 @@ export default function Landing() {
       <section className="lp-cta">
         <h2>{t("cta.title")}</h2>
         <p>{t("cta.sub")}</p>
-        <Link to="/login?mode=signup" className="d-btn primary lp-big">{t("cta.button")} <Icon name="right" size={17} /></Link>
+        <Link to="/login?mode=signup" className="btn btn-primary lp-big">{t("cta.button")} <Icon name="right" size={17} /></Link>
       </section>
 
       <footer className="lp-footer">

@@ -1,0 +1,70 @@
+/* Lumi design tokens — import once at the app root (e.g. src/main.jsx: import './lumi-tokens.css') */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&display=swap');
+
+:root {
+  /* Color roles */
+  --lumi-iris: #5B5BD6;        /* primary: nav, buttons, selected, links */
+  --lumi-iris-strong: #3B3BA8; /* text on iris-soft */
+  --lumi-iris-soft: #E6E6FA;   /* selected backgrounds */
+  --lumi-glow: #22C3E6;        /* AI activity only — never small text on white */
+  --lumi-spark: #FFCC55;       /* mastery only — never small text on white */
+  --lumi-mist: #F4F4FA;        /* light base */
+  --lumi-void: #07081A;        /* universe / dark base */
+  --lumi-ink: #101124;         /* body text */
+  --lumi-slate: #5A6275;       /* secondary text (passes 4.5:1 on mist) */
+  --lumi-line: #E4E5EF;
+  --lumi-surface: #FFFFFF;
+  --lumi-room: #ECEBFF;        /* study rooms */
+
+  /* Type */
+  --lumi-font-display: 'Outfit', system-ui, sans-serif;
+  --lumi-font-body: 'Inter', system-ui, sans-serif;
+  --lumi-font-arabic: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
+
+  /* Spacing (4px base) and radii */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px; --s8: 32px; --s12: 48px;
+  --r-chip: 16px; --r-control: 14px; --r-card: 20px; --r-panel: 32px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --t-card: 220ms; --t-glow: 320ms; --t-burst: 600ms; --t-breathe: 2.4s;
+}
+
+/* Dark surfaces (Knowledge Universe, AI panel) */
+.lumi-dark {
+  --lumi-surface: #11132B;
+  --lumi-ink: #EEF0FF;
+  --lumi-slate: #A6A9D6;
+  --lumi-line: #2C2F57;
+  background: var(--lumi-void);
+  color: var(--lumi-ink);
+}
+
+html { font-family: var(--lumi-font-body); color: var(--lumi-ink); background: var(--lumi-mist); }
+h1, h2, h3, .lumi-display { font-family: var(--lumi-font-display); font-weight: 600; letter-spacing: -0.01em; }
+:lang(ar), [dir="rtl"] { font-family: var(--lumi-font-arabic); line-height: 1.75; }
+
+/* Focus — never remove */
+:focus-visible { outline: 3px solid var(--lumi-ink); outline-offset: 3px; }
+
+/* Components */
+.btn { height: 48px; padding: 0 22px; border-radius: var(--r-control); border: 0; font: 600 15px var(--lumi-font-body); cursor: pointer; display: inline-flex; align-items: center; gap: var(--s2); }
+.btn-primary { background: var(--lumi-iris); color: #fff; }
+.btn-secondary { background: var(--lumi-surface); color: var(--lumi-ink); border: 1.5px solid #D4D6E6; }
+.btn-ai { background: var(--lumi-void); color: #fff; }
+.card { background: var(--lumi-surface); border-radius: var(--r-card); padding: var(--s6); box-shadow: 0 1px 2px rgba(16,17,36,.06); animation: lumi-rise var(--t-card) var(--ease-out); }
+.input { height: 48px; border: 1.5px solid #D4D6E6; border-radius: var(--r-control); padding: 0 var(--s4); font: 400 15px var(--lumi-font-body); }
+.chip { height: 32px; padding: 0 14px; border-radius: var(--r-chip); display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.chip-mastered { background: var(--lumi-spark); color: var(--lumi-void); } /* always pair with a check icon */
+.progress { height: 8px; border-radius: 4px; background: var(--lumi-line); }
+.progress > span { display: block; height: 100%; border-radius: 4px; background: var(--lumi-iris); }
+
+/* Motion */
+@keyframes lumi-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes lumi-breathe { 50% { transform: scale(1.04); } }
+@keyframes lumi-burst { from { opacity: .9; transform: scale(.6); } to { opacity: 0; transform: scale(1.6); } }
+.lumi-thinking { animation: lumi-breathe var(--t-breathe) ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}

@@ -31,7 +31,7 @@ export function mountDraggable(el, spec, opts = {}) {
   const panel = mk("rect", { x: rtl ? m.W - m.R - 226 : m.L + 4, y: m.T + 6, width: 222, height: 66, rx: 8, fill: v("panel", "#0f1230"), opacity: 0.82, "pointer-events": "none" });
   const line = mk("polyline", { fill: "none", stroke: v("t", "#ff7aa8"), "stroke-width": 2.2, "stroke-linecap": "round", "pointer-events": "none" });
   const dot = mk("circle", { r: 6.5, fill: v("t", "#ff7aa8"), stroke: v("ink", "#eceaff"), "stroke-width": 2, "pointer-events": "none" });
-  const hit = mk("circle", { r: 16, fill: "transparent", tabindex: 0, role: "slider", "aria-label": "tangent point", style: "cursor:grab;touch-action:none;outline:none" });
+  const hit = mk("circle", { r: 16, fill: "transparent", tabindex: 0, role: "slider", "aria-label": "tangent point", style: "cursor:grab;touch-action:none" });
   const T = [0, 1, 2].map((i) => mk("text", { x: tx, y: m.T + 26 + i * 18, "font-size": 13, "font-weight": i === 1 ? 700 : 500, "text-anchor": anchor, fill: v("ink", "#eceaff"), "pointer-events": "none" }, ""));
   const all = [panel, line, dot, hit, ...T];
   let cur = null;
@@ -66,7 +66,7 @@ export function mountDraggable(el, spec, opts = {}) {
 }
 
 const CYCLE = { even: ["", "+", "-"], odd: ["", "0", "||"], arrow: ["", "up", "down"] };
-const INSTYLE = "width:100%;height:100%;box-sizing:border-box;text-align:center;font:600 14px Inter,system-ui,sans-serif;color:var(--dg-ink,#eceaff);background:var(--dg-panel,#0f1230);border:1.5px solid var(--dg-muted,#6b6fa8);border-radius:6px;outline:none";
+const INSTYLE = "width:100%;height:100%;box-sizing:border-box;text-align:center;font:600 14px Inter,system-ui,sans-serif;color:var(--dg-ink,#eceaff);background:var(--dg-panel,#0f1230);border:1.5px solid var(--dg-muted,#6b6fa8);border-radius:6px";
 const CSS = ".dg-in:focus{border-color:var(--dg-accent,#a78bfa)!important}.dg-in.bad{border-color:var(--dg-bad,#fb7185)!important;box-shadow:0 0 0 2px rgba(251,113,133,.3)}";
 
 export function mountPractice(el, spec, opts = {}) {

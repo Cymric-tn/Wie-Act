@@ -85,8 +85,8 @@ function FlagItem({ flag, onDone }) {
       {flag.reports.filter((r) => r.note).map((r, i) => <p key={i} className="r-note" dir="auto">“{r.note}”</p>)}
       {error && <div className="ai-notice bad"><span>{error}</span></div>}
       <div className="r-actions">
-        <button className="d-btn ghost small" disabled={busy} onClick={() => resolve("approve")}><Icon name="check" size={14} /> {t("review.approve")}</button>
-        <button className="d-btn small r-reject" disabled={busy} onClick={() => resolve("reject")}><Icon name="trash" size={14} /> {t("review.reject")}</button>
+        <button className="btn btn-secondary small" disabled={busy} onClick={() => resolve("approve")}><Icon name="check" size={14} /> {t("review.approve")}</button>
+        <button className="btn btn-primary small r-reject" disabled={busy} onClick={() => resolve("reject")}><Icon name="trash" size={14} /> {t("review.reject")}</button>
       </div>
     </li>
   );
