@@ -134,7 +134,7 @@ def create_app(engine=None, *, token: str, engine_factory=None, fake: bool = Fal
         if engine_factory is not None:
             await box["engine"].aclose()
 
-    app = FastAPI(title="EdNova engine service", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
+    app = FastAPI(title="Lumi engine service", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
     app.state.runs = runs
 
@@ -266,7 +266,7 @@ def create_app(engine=None, *, token: str, engine_factory=None, fake: bool = Fal
             return _error(413, "error", "file too large")
         kw = {k: str(form[k]) for k in ("unit_id", "owner", "visibility", "source", "class_id", "language") if form.get(k)}
         language = kw.pop("language", None)
-        tmp = tempfile.mkdtemp(prefix="ednova-upload-")
+        tmp = tempfile.mkdtemp(prefix="lumi-upload-")
         try:
             path = os.path.join(tmp, name)                  # the chunk ids and `source` carry the file's own name
             with open(path, "wb") as fh:

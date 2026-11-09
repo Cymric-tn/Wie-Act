@@ -1,4 +1,4 @@
-# EdNova engine: API contract (v1.3)
+# Lumi engine: API contract (v1.3)
 
 This is the contract the feature layer (B: tutor, rooms, prep pages; C: professor tools, ingestion) codes against.
 It is generated: edit `docs/ENGINE_API.src.md`, then run `python -m scripts.gen_api_examples --doc`. Every JSON

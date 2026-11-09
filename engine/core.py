@@ -44,7 +44,7 @@ from engine.language import ARABIC_SCRIPT, arabic_ratio, contamination, latin_wo
 from engine.tasks import (Messages, Registry, TaskContext, TaskSpec, best_sentence, default_registry,
                           fast_excerpts, load_templates, load_terms_ar, trim_to_last_sentence)
 
-log = logging.getLogger("ednova.engine")
+log = logging.getLogger("lumi.engine")
 PARTIAL_SENTENCES = 3
 UNUSABLE = {"explain_guard:degenerate", "explain_guard:empty"}
 # deterministic check failures: the same request would very likely fail again, so mark its key (negative cache)

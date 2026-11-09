@@ -37,7 +37,7 @@ from gatekeeper.errors import LLMError, ModelSaturated, TransientError
 from metrics import CallRecord, MetricsSink
 from router.breaker import HALF_OPEN, CircuitBreaker
 
-log = logging.getLogger("ednova.router")
+log = logging.getLogger("lumi.router")
 
 C, M, V = ModelClass.COMPACT, ModelClass.MIDSIZE, ModelClass.VISION
 ESCALATION_COMPLEXITY = 4

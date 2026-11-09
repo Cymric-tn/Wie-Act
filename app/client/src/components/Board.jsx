@@ -31,7 +31,7 @@ const HANDLE = 9; // px
 const PATH_TOOLS = new Set(["pen", "highlighter"]);
 const ASPECT_TYPES = new Set(["image", "equation", "text"]);
 const NOTE_SIZE = { w: 220, h: 160 };
-const PASTE_MARKER = "[EdNova board items]";
+const PASTE_MARKER = "[Lumi board items]";
 
 const REJECTIONS = {
   locked: "The host has locked the board.",
@@ -1587,10 +1587,10 @@ export default function Board({ session, status, onLeave }) {
 
   return (
     <div className="app">
-      <aside className="rail" aria-label="EdNova navigation">
+      <aside className="rail" aria-label="Lumi navigation">
         <div className="logo">✧</div>
         <a className="nav" href="/app"><Icon name="home" /><small>Home</small></a>
-        {/* The static Universe / Atlas pages (client/public/ednova/) still list the old example curriculum: no links to them in Phase 1. */}
+        {/* The static Universe / Atlas pages (client/public/lumi/) still list the old example curriculum: no links to them in Phase 1. */}
         <span className="nav active" aria-current="page"><Icon name="board" /><small>Board</small></span>
       </aside>
 

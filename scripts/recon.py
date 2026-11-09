@@ -1,5 +1,5 @@
 """
-EdNova platform reconnaissance — run ONLY inside your active slot.
+Lumi platform reconnaissance — run ONLY inside your active slot.
 Usage:
   pip install httpx python-dotenv
   .env:  LLM_BASE_URL=https://llm.felcloud.io/v1

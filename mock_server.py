@@ -1,5 +1,5 @@
 """
-EdNova local mock of the platform contract (Technical Annex §5–§6).
+Lumi local mock of the platform contract (Technical Annex §5–§6).
 Same paths, same status codes, same headers as the real service, so the gateway
 is built and tested OFF-SLOT and the fault-injection demo uses identical code.
 

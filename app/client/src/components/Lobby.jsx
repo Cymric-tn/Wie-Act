@@ -31,7 +31,7 @@ export default function Lobby({ status, initialName, initialRoom, error, onJoin 
     <div className="lobby">
       <div className="lobby-sky" aria-hidden="true" />
       <section className="lobby-card">
-        <div className="brand lobby-brand"><i>✧</i> EdNova</div>
+        <div className="brand lobby-brand"><i>✧</i> Lumi</div>
         <div className="eyebrow">COLLABORATIVE WHITEBOARD</div>
         <h1>Sketch ideas<br /><em>together, in real time</em></h1>
         <p className="lobby-copy">

@@ -112,7 +112,7 @@ export default function Review({ onToast }) {
             {flags.map((f) => (
               <FlagItem key={f.request_id} flag={f} onDone={(id, action) => {
                 setFlags((list) => list.filter((x) => x.request_id !== id));
-                window.dispatchEvent(new Event("ednova:flags"));
+                window.dispatchEvent(new Event("lumi:flags"));
                 onToast(t(action === "reject" ? "review.rejected" : "review.kept"));
               }} />
             ))}

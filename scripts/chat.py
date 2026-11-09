@@ -315,7 +315,7 @@ async def main() -> None:
     sink = TeeSink(JsonlSink(s.metrics_path))
     async with Engine.create(s, sink=sink) as engine:
         console = Console(engine, sink, language=(a.lang or "").upper() or None, level=a.level)
-        print(f"EdNova console — provider {s.base_url}. {console.set_sim(a.sim).strip()}. /help for commands.")
+        print(f"Lumi console — provider {s.base_url}. {console.set_sim(a.sim).strip()}. /help for commands.")
         while True:
             try:
                 line = await asyncio.to_thread(input, "\nyou> ")

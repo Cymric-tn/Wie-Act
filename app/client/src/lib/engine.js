@@ -1,4 +1,4 @@
-// The web app's side of the EdNova engine. Every call goes to the server's
+// The web app's side of the Lumi engine. Every call goes to the server's
 // feature layer (/api/ai/*), which adds ids, keeps exercise solutions private
 // and streams the engine's progress events back as NDJSON.
 import { SERVER_URL } from "./api.js";

@@ -1,6 +1,6 @@
-// Copies the EdNova experience pages into public/ednova/ and wires them to the
+// Copies the Lumi experience pages into public/lumi/ and wires them to the
 // study board. The originals are never modified; re-run after they change:
-//   node scripts/sync-ednova.mjs [path/to/EdNova-Dark-Experiences-FINAL]
+//   node scripts/sync-lumi.mjs [path/to/EdNova-Dark-Experiences-FINAL]
 // Defaults to ednova/design/EdNova-Dark-Experiences-FINAL.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -8,17 +8,17 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const source = resolve(process.argv[2] || join(here, "../../../design/EdNova-Dark-Experiences-FINAL"));
-const target = join(here, "../public/ednova");
+const target = join(here, "../public/lumi");
 mkdirSync(target, { recursive: true });
 
 const shared = `
-.ednova-board-cta{border:0;border-radius:13px;padding:12px 15px;color:#fff;font-weight:700;font-size:12px;cursor:pointer;
+.lumi-board-cta{border:0;border-radius:13px;padding:12px 15px;color:#fff;font-weight:700;font-size:12px;cursor:pointer;
 background:linear-gradient(110deg,#2bb7a0,#1f8fb8);box-shadow:0 5px 20px #2bb7a033}
-.ednova-board-cta:hover{filter:brightness(1.08)}
+.lumi-board-cta:hover{filter:brightness(1.08)}
 a.nav{text-decoration:none}`;
 
 const constellation = `
-<!-- EdNova study-board integration (added by scripts/sync-ednova.mjs) -->
+<!-- Lumi study-board integration (added by scripts/sync-lumi.mjs) -->
 <style>${shared}
 .bottom{grid-template-columns:1.05fr 1.1fr auto}
 </style>
@@ -34,7 +34,7 @@ const constellation = `
 
   // A clear call to action next to the course details.
   const cta = document.createElement("button");
-  cta.className = "ednova-board-cta";
+  cta.className = "lumi-board-cta";
   document.querySelector(".actions").prepend(cta);
 
   function sync() {
@@ -51,7 +51,7 @@ const constellation = `
   };
 
   // The Planetary Universe is now served alongside this page.
-  const universe = () => (location.href = "/ednova/universe.html#universe");
+  const universe = () => (location.href = "/lumi/universe.html#universe");
   $("enter").textContent = "✧ Enter Planetary Universe";
   $("enter").onclick = universe;
   $("navUniverse").onclick = universe;
@@ -65,9 +65,9 @@ const constellation = `
 `;
 
 const universe = `
-<!-- EdNova study-board integration (added by scripts/sync-ednova.mjs) -->
+<!-- Lumi study-board integration (added by scripts/sync-lumi.mjs) -->
 <style>${shared}
-.concept-panel .ednova-board-cta{width:100%;margin-top:10px}
+.concept-panel .lumi-board-cta{width:100%;margin-top:10px}
 </style>
 <script>
 (function () {
@@ -86,12 +86,12 @@ const universe = `
   atlas.type = "button";
   atlas.title = "Academic Constellation";
   atlas.innerHTML = '✧ <span class="word">Academic Atlas</span>';
-  atlas.onclick = () => (location.href = "/ednova/constellation.html");
+  atlas.onclick = () => (location.href = "/lumi/constellation.html");
   (learning || navButtons[navButtons.length - 1]).after(atlas);
 
   // From any concept, start a shared board for its chapter.
   const study = document.createElement("button");
-  study.className = "ednova-board-cta";
+  study.className = "lumi-board-cta";
   study.id = "studyBoard";
   document.getElementById("tutor").after(study);
   const room = () => courses[ci].name + " · " + courses[ci].chapters[chapter][0];

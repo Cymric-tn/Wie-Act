@@ -1,7 +1,7 @@
 {
-  "name": "ednova-server",
+  "name": "lumi-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Lumi server: Express, Socket.IO and SQLite for the web app.",
   "main": "index.js",
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning index.js",

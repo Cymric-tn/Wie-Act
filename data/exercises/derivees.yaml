@@ -1,4 +1,4 @@
-# Exercise bank, topic "derivative", lycée. Synthetic, written for EdNova.
+# Exercise bank, topic "derivative", lycée. Synthetic, written for Lumi.
 # statement = template_key + expression (+ a, condition), rendered in FR / EN / AR from data/templates.yaml;
 #   an exercise that fits no template sets statement: {fr: ..., en: ..., ar: ...} instead.
 # level: 1 (direct application) .. 3 (several rules / steps). hints: graded, most general first; never the answer.

@@ -38,7 +38,7 @@ BASE_ENV = {
 # Runtime course material (Engine.add_material / ingest_file) is persisted per course. Every settings object a test
 # builds gets a directory of its own under one temp root (removed at exit): no test may write into data/index/courses,
 # where the next engine would load it and change every retrieval statistic.
-_COURSES_ROOT = tempfile.mkdtemp(prefix="ednova-courses-")
+_COURSES_ROOT = tempfile.mkdtemp(prefix="lumi-courses-")
 _COURSES_SEQ = itertools.count()
 atexit.register(shutil.rmtree, _COURSES_ROOT, True)
 

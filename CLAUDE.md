@@ -1,4 +1,4 @@
-# CLAUDE.md — EdNova LLM Engine
+# CLAUDE.md — Lumi LLM Engine
 
 ## Current status (2026-11-01, engine v1.3 on branch `engine-v1.3`, NOT merged, waiting for review; v1.2 merged into `main` 2026-11-01)
 
@@ -24,7 +24,7 @@
 
 ## What this repo is
 
-The **LLM/platform layer** of EdNova, a GenAI peer learning companion built for the
+The **LLM/platform layer** of Lumi, a GenAI peer learning companion built for the
 IEEE WIE ACT 5.0 EdNova Technical Challenge (Phase 1 deadline: **10 Nov 2026**).
 
 This repo is a standalone engine. It knows nothing about pedagogy. Product features

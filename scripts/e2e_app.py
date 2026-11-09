@@ -54,7 +54,7 @@ class Session:
         self.a = a
         self.token = "e2e-" + base64.urlsafe_b64encode(os.urandom(12)).decode()
         self.bridge_port, self.node_port = free_port(), free_port()
-        self.tmp = tempfile.mkdtemp(prefix="ednova-e2e-")
+        self.tmp = tempfile.mkdtemp(prefix="lumi-e2e-")
         self.procs: list[subprocess.Popen] = []
         self.steps: list[dict] = []
         self.request_ids: set[str] = set()

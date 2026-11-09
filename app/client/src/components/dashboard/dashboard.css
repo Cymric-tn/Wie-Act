@@ -1,4 +1,4 @@
-/* EdNova dashboards. Logical properties throughout so Arabic mirrors cleanly. */
+/* Lumi dashboards. Logical properties throughout so Arabic mirrors cleanly. */
 :root {
   --d-side: 256px;
   --d-card: linear-gradient(160deg, #0e1830f2, #080e22f2);

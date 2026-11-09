@@ -52,7 +52,7 @@ export default function SignIn() {
         </div>
 
         <form className="auth-card" onSubmit={submit}>
-          <Link to="/" className="d-brand"><i>✧</i> EdNova</Link>
+          <Link to="/" className="d-brand"><i>✧</i> Lumi</Link>
           <h1>{signup ? t("auth.create") : t("auth.welcome")}</h1>
           <p className="auth-sub">{t("auth.sub")}</p>
 

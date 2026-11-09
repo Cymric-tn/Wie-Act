@@ -1,4 +1,4 @@
-# EdNova LLM Engine
+# Lumi LLM Engine
 
 LLM/platform layer for the IEEE WIE ACT 5.0 EdNova challenge. It sits between a feature layer and an
 OpenAI-compatible provider (FelCloud in production, local Ollama in development) and handles

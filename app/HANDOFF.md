@@ -62,7 +62,7 @@ variables on `.dg-page`. The JSON contract is `docs/diagram.schema.json`. Trigge
 5. **FR / EN / AR and RTL on every screen** (`dir="auto"` on user and model text; check mixed formulas inside Arabic).
 
 ## Stale
-`client/public/ednova/` (Atlas / Universe static pages) still list MATH102 / CS201 / PHYS101 and are no longer linked: redesign for the one
+`client/public/lumi/` (Atlas / Universe static pages) still list MATH102 / CS201 / PHYS101 and are no longer linked: redesign for the one
 course or delete them.
 
 ## Known weak spots (engine side, not design)

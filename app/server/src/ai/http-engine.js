@@ -1,4 +1,4 @@
-// Client for the Python bridge (app/bridge/bridge.py), the one service that hosts the EdNova engine: one Engine per
+// Client for the Python bridge (app/bridge/bridge.py), the one service that hosts the Lumi engine: one Engine per
 // process, as the engine guide requires. Results stream back as NDJSON — one {"type":"event"} line per engine Event, then
 // one {"type":"result"} line — so the UI can show staged progress. Every call carries the shared secret in X-Engine-Token.
 //

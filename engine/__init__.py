@@ -1,4 +1,4 @@
-"""EdNova LLM engine. Usage:
+"""Lumi LLM engine. Usage:
 
     from engine import Engine, Priority
     async with Engine.create() as engine:

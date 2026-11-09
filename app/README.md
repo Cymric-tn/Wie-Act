@@ -1,9 +1,9 @@
-# EdNova app
+# Lumi app
 
-The EdNova web app: landing page, dashboards, the AI study features and the
+The Lumi web app: landing page, dashboards, the AI study features and the
 real-time collaborative whiteboard. React + Canvas on the front end, Node.js +
 Express + Socket.IO + SQLite on the back end, and a small Python bridge that
-hosts the EdNova LLM engine.
+hosts the Lumi LLM engine.
 
 ## Run it
 
@@ -65,7 +65,7 @@ Cards marked *Example data* (progress map, rooms list, roster) use demo data.
 
 ## AI features
 
-All of them run on the EdNova engine through the server (`/api/ai/*`):
+All of them run on the Lumi engine through the server (`/api/ai/*`):
 
 - **AI Companion** (every dashboard page) — one tutor turn per message:
   classify → follow-up → explain, hint, quiz, or grade when the message answers
@@ -96,7 +96,7 @@ All of them run on the EdNova engine through the server (`/api/ai/*`):
 ## AI engine
 
 ```
-browser ──/api/ai/*──▶ Node server (feature layer) ──HTTP/NDJSON, X-Engine-Token──▶ bridge/bridge.py ──▶ EdNova engine
+browser ──/api/ai/*──▶ Node server (feature layer) ──HTTP/NDJSON, X-Engine-Token──▶ bridge/bridge.py ──▶ Lumi engine
 ```
 
 - `server/src/ai/routes.js` — the feature layer: per-task input whitelist, learner / room / course ids, the tutor loop,
@@ -138,15 +138,15 @@ as PNG or SVG, all pages as PDF, or copy an image to the clipboard.
 
 **Presence** — live cursors, reactions, join/leave notices, connection status.
 
-## EdNova pages
+## Lumi pages
 
-`client/public/ednova/` holds copies of the Academic Constellation and Planetary
+`client/public/lumi/` holds copies of the Academic Constellation and Planetary
 Universe pages, wired to the board (study-board buttons, sidebar links, deep
-links such as `/ednova/constellation.html?course=MATH102`). Regenerate them after
+links such as `/lumi/constellation.html?course=MATH102`). Regenerate them after
 editing the originals in `design/EdNova-Dark-Experiences-FINAL/`:
 
 ```bash
-cd client && npm run sync:ednova
+cd client && npm run sync:lumi
 ```
 
 Course codes such as `MATH102` open that course's study room.

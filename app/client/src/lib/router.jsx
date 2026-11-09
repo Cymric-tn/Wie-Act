@@ -1,7 +1,7 @@
 // A tiny History-API router: enough for a handful of top-level screens.
 import { useEffect, useState } from "react";
 
-const EVENT = "ednova:navigate";
+const EVENT = "lumi:navigate";
 
 function current() {
   return { path: window.location.pathname.replace(/\/+$/, "") || "/", search: window.location.search };

@@ -18,7 +18,7 @@ from gatekeeper.client import LLMClient
 from metrics import MemorySink
 from tests.conftest import FnProvider, chat_ok, make_settings
 
-spec = importlib.util.spec_from_file_location("ednova_bridge", "app/bridge/bridge.py")
+spec = importlib.util.spec_from_file_location("lumi_bridge", "app/bridge/bridge.py")
 bridge = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bridge)
 

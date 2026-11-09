@@ -183,4 +183,4 @@ async def test_tests_never_write_runtime_material_into_the_repo(pdf, vt):
     eng, _, _ = make_engine(vt, lambda b: chat_ok(OCR_TEXT, 820, 60))
     await eng.ingest_file(pdf([TEXT_PAGE, ""], "iso.pdf"), "analyse", "derivees", "prof-7", "public", "professor", add=True)
     assert not os.path.exists("data/index/courses") and os.path.isdir(eng.settings.rag_course_index_dir)
-    assert "ednova-courses-" in eng.settings.rag_course_index_dir
+    assert "lumi-courses-" in eng.settings.rag_course_index_dir

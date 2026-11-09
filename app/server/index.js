@@ -24,7 +24,7 @@ const server = createServer({ dbPath, origins, ai });
 const PORT = Number(process.env.PORT) || 3000;
 
 server.listen(PORT).then((port) => {
-  console.log(`EdNova server listening on port ${port} (data: ${dbPath}, AI engine: ${ai.url})`);
+  console.log(`Lumi server listening on port ${port} (data: ${dbPath}, AI engine: ${ai.url})`);
 });
 
 async function shutdown() {

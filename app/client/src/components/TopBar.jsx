@@ -90,7 +90,7 @@ function TopBar(props) {
   return (
     <header className="top">
       <div className="top-left">
-        <div className="brand"><i>✧</i> EdNova</div>
+        <div className="brand"><i>✧</i> Lumi</div>
         <button className="room-pill" onClick={onCopyInvite} title="Copy invite link">
           <span className="eyebrow">ROOM</span>
           <b>{room}</b>

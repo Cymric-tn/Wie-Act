@@ -22,7 +22,7 @@ function Nav() {
   const user = getUser();
   return (
     <header className="lp-nav">
-      <Link to="/" className="d-brand"><i>✧</i> EdNova</Link>
+      <Link to="/" className="d-brand"><i>✧</i> Lumi</Link>
       <nav className="lp-links">
         <a href="#features">{t("nav.features")}</a>
         <a href="#how">{t("nav.how")}</a>
@@ -50,7 +50,7 @@ function HeroVisual() {
       <div className="lp-window">
         <div className="lp-window-bar">
           <i /><i /><i />
-          <span>EdNova · {t("map.title")}</span>
+          <span>Lumi · {t("map.title")}</span>
         </div>
         <ProgressMap compact />
       </div>
@@ -188,7 +188,7 @@ export default function Landing() {
       </section>
 
       <footer className="lp-footer">
-        <span className="d-brand small"><i>✧</i> EdNova</span>
+        <span className="d-brand small"><i>✧</i> Lumi</span>
         <span>© 2026 · {t("footer.made")}</span>
         <span className="d-badge soon">{t("footer.preview")}</span>
         <LanguageSwitcher />

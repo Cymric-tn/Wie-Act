@@ -17,7 +17,7 @@ from typing import Callable, Sequence
 from gatekeeper.client import estimate_tokens
 from rag.chunker import Chunk
 
-log = logging.getLogger("ednova.budget")
+log = logging.getLogger("lumi.budget")
 
 Turn = dict          # {"role": "user"|"assistant", "content": str}
 Render = Callable[[Sequence[Chunk], Sequence[Turn]], list[dict]]

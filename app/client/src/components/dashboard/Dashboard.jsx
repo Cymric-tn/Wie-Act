@@ -64,11 +64,11 @@ function useOpenFlags(enabled) {
     const load = () => ai.status().then((s) => alive && setN(s.open_flags || 0)).catch(() => {});
     load();
     const id = setInterval(load, 20000);
-    window.addEventListener("ednova:flags", load);
+    window.addEventListener("lumi:flags", load);
     return () => {
       alive = false;
       clearInterval(id);
-      window.removeEventListener("ednova:flags", load);
+      window.removeEventListener("lumi:flags", load);
     };
   }, [enabled]);
   return n;
@@ -81,7 +81,7 @@ function Sidebar({ user, section, open, onClose, onCompanion, onSignOut }) {
     <>
       <div className={"d-scrim" + (open ? " open" : "")} onClick={onClose} aria-hidden="true" />
       <aside className={"d-sidebar" + (open ? " open" : "")} aria-label="Main menu">
-        <Link to="/" className="d-brand"><i>✧</i> EdNova</Link>
+        <Link to="/" className="d-brand"><i>✧</i> Lumi</Link>
         <p className="d-tagline">{t("tagline")}</p>
         <nav className="d-nav">
           {NAV[user.role].map((group) => (

@@ -76,7 +76,7 @@ function createServer(options = {}) {
   const engine = ai.engine || createEngine({ ...ai, log });
   const aiStore = openAiStore(db.handle);
   const uploadsDir = ai.uploadsDir || (dbPath === ":memory:"
-    ? path.join(os.tmpdir(), `ednova-uploads-${process.pid}`)
+    ? path.join(os.tmpdir(), `lumi-uploads-${process.pid}`)
     : path.join(path.dirname(dbPath), "uploads"));
   /** In-memory state for rooms with recent activity; the database is the source of truth. */
   const rooms = new Map();

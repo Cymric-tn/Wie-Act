@@ -1,4 +1,4 @@
-// Interactive layer: draggable tangent and fill-the-table. No storage, no EdNova screens:
+// Interactive layer: draggable tangent and fill-the-table. No storage, no Lumi screens:
 // it only computes, draws and emits events (onTangentMove, onCheck).
 import { scene, toSVG, itemSVG, clip, LABELS, renderDiagram } from "./render.js";
 import { makeTrack, valueAt, clampTo, startPoint, snap, describe } from "./tangent.js";

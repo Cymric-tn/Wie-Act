@@ -151,7 +151,7 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
     <div className="bai">
       <div className="panel-card">
         <div className="bai-head">
-          <div className="eyebrow">AI PEER</div>
+          <div className="eyebrow">LUMI</div>
           <EngineLine />
         </div>
         <p className="panel-copy">

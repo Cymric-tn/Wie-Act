@@ -15,7 +15,7 @@ from diagrams import Diagram  # noqa: E402
 from diagrams.course import load_repo_course  # noqa: E402
 from diagrams.worker import handle  # noqa: E402
 
-spec = importlib.util.spec_from_file_location("ednova_bridge_diagrams", ROOT / "app/bridge/bridge.py")
+spec = importlib.util.spec_from_file_location("lumi_bridge_diagrams", ROOT / "app/bridge/bridge.py")
 bridge = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bridge)
 

@@ -1,6 +1,7 @@
 {
-  "name": "ednova-client",
+  "name": "lumi-client",
   "private": true,
+  "description": "Lumi web client: dashboards and the collaborative whiteboard.",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -9,7 +10,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "node --test --test-reporter=spec \"test/**/*.test.js\"",
-    "sync:ednova": "node scripts/sync-ednova.mjs"
+    "sync:lumi": "node scripts/sync-lumi.mjs"
   },
   "dependencies": {
     "jspdf": "^4.2.1",

@@ -1,6 +1,6 @@
-"""EdNova engine bridge: the one service the web app talks to.
+"""Lumi engine bridge: the one service the web app talks to.
 
-Hosts ONE EdNova LLM engine per process (the engine's limiter, queue, breaker and cache live in memory, so the guide asks
+Hosts ONE Lumi LLM engine per process (the engine's limiter, queue, breaker and cache live in memory, so the guide asks
 for one engine process per API key) and serves it to the Node server over HTTP on localhost.
 
     ENGINE_SERVICE_TOKEN=... python bridge.py                      # the real engine, from the repo root
@@ -492,7 +492,7 @@ def serve(host, token, port, address="127.0.0.1"):
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
-    parser = argparse.ArgumentParser(description="Serve the EdNova LLM engine to the web app.")
+    parser = argparse.ArgumentParser(description="Serve the Lumi LLM engine to the web app.")
     parser.add_argument("--engine-dir", default=os.environ.get("EDNOVA_ENGINE_DIR", os.path.join(here, "..", "..")),
                         help="the repo root that holds engine/, data/, prompts/ and .env (default: this repo)")
     parser.add_argument("--port", type=int, default=int(os.environ.get("BRIDGE_PORT", "8765")))
@@ -511,7 +511,7 @@ def main():
         return 3
     host.diagrams.warm()
     server = serve(host, token, args.port)
-    print(f"EdNova engine bridge on http://127.0.0.1:{args.port} "
+    print(f"Lumi engine bridge on http://127.0.0.1:{args.port} "
           f"({'FakeEngine' if args.fake else 'engine'} from {host.engine_dir})", flush=True)
     try:
         server.serve_forever()

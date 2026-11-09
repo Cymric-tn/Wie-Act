@@ -1,4 +1,4 @@
-// EdNova's feature layer over the engine: the HTTP API the web app calls.
+// Lumi's feature layer over the engine: the HTTP API the web app calls.
 //
 // The engine knows nothing about learners, rooms or UI; this layer does. It
 //  - whitelists and caps each task's inputs and builds the engine context
