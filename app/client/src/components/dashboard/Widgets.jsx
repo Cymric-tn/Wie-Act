@@ -60,20 +60,44 @@ export function Meter({ value }) {
 }
 
 // ---------- group rooms ----------
-export function JoinRoom({ big = false }) {
+const ROOM_CODE_MAX = 80; // the server's limit (LIMITS.roomLength); a code has no fixed length
+
+/**
+ * Join by code. Codes are case-sensitive names on the server, so capitals are display only (CSS): what was typed is what
+ * is sent, except that a room this list knows is matched whatever the case.
+ */
+export function JoinRoom() {
   const { t } = useI18n();
   const [code, setCode] = useState("");
+  const [invalid, setInvalid] = useState(false);
+  const value = code.trim();
   return (
     <form
-      className={"d-join" + (big ? " big" : "")}
+      className="d-join"
       onSubmit={(e) => {
         e.preventDefault();
-        if (code.trim()) openBoard(code.trim());
+        if (!value) return;
+        if (value.length > ROOM_CODE_MAX) return setInvalid(true);
+        openBoard(ROOMS.find((r) => r.code.toLowerCase() === value.toLowerCase())?.code || value);
       }}
     >
-      <Icon name="door" size={18} />
-      <input className="input" value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("rooms.code")} maxLength={80} aria-label={t("rooms.code")} />
-      <button className="btn btn-primary small" type="submit" disabled={!code.trim()}>{t("rooms.join")}</button>
+      <div className="d-join-field">
+        <Icon name="key" size={16} />
+        <input
+          value={code}
+          onChange={(e) => { setCode(e.target.value); setInvalid(false); }}
+          placeholder={t("rooms.enterCode")}
+          maxLength={ROOM_CODE_MAX}
+          aria-label={t("rooms.enterCode")}
+          aria-invalid={invalid}
+          aria-describedby={invalid ? "d-join-error" : undefined}
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        <button className={"d-join-btn" + (value ? " ready" : "")} type="submit" disabled={!value}>{t("rooms.join")}</button>
+      </div>
+      {invalid && <p className="d-join-error" id="d-join-error" role="alert"><Icon name="close" size={14} /> {t("rooms.codeInvalid")}</p>}
     </form>
   );
 }
@@ -115,7 +139,7 @@ export function RoomsCard({ onSoon }) {
       sub={t("rooms.sub")}
       example
       className="span-5"
-      actions={<button className="d-icon-btn" onClick={() => openBoard(`room-${Math.random().toString(36).slice(2, 7)}`)} aria-label={t("rooms.new")} title={t("rooms.new")}><Icon name="plus" size={17} /></button>}
+      actions={<button className="btn btn-secondary small" onClick={() => openBoard(`room-${Math.random().toString(36).slice(2, 7)}`)}><Icon name="plus" size={15} /> {t("rooms.new")}</button>}
     >
       <JoinRoom />
       <RoomList onSoon={onSoon} />

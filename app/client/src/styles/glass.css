@@ -87,12 +87,6 @@ textarea.input { height: auto; padding: var(--s3) var(--s4); border-radius: var(
 select option { background: var(--surface-solid); color: var(--text); }
 :lang(ar) :is(.btn, .input) { font-family: var(--font-arabic); }
 
-/* a field and its button inside one pill */
-.d-join input.input { height: 44px; padding: 0 6px; border: 0; background: none; }
-.d-join input.input:focus { box-shadow: none; }
-.d-join { border-radius: var(--r-pill); background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .25); }
-.d-join:focus-within { border-color: var(--glow); box-shadow: 0 0 0 4px rgba(34, 195, 230, .2); }
-
 .chip {
   height: 32px; /* buttons are lifted to 44px by the tap-target rule */
   padding: 0 14px;
@@ -180,7 +174,9 @@ span.chip { cursor: default; }
 .d-continue p { margin: 0; color: var(--text-2); font-size: 14px; }
 .d-continue .d-exam-ready { margin-top: 8px; max-width: 420px; }
 .d-continue .d-exam-ready small { color: var(--text-2); font-size: 12px; white-space: nowrap; }
-.d-card { border-radius: var(--r-card); padding: 20px; box-shadow: none; }
+.d-card { border-radius: var(--r-card); padding: 20px; box-shadow: none; align-content: start; }
+.d-card-head { flex-wrap: wrap; }
+.d-card-titles { flex-basis: 180px; }
 .d-card-titles h2 { font-family: var(--font-display); font-weight: 500; }
 .d-kpi { border-radius: var(--r-card); background-image: none; background-color: var(--glass-scrim); }
 .companion-card.glass-ai { background-color: var(--glass-scrim); }
@@ -378,13 +374,47 @@ html[lang="ar"] { --font-display: var(--font-arabic); --font-body: var(--font-ar
 html[lang="ar"] :is(.d-top-title, .d-continue h2, .pn h1, .lp-hero h1, .lp-head h2, .auth-card h1) { letter-spacing: 0; }
 html[dir="rtl"] :is(p, li, dd, small, .ai-msg, .ai-answer, .ai-ex-statement, .pn, .d-continue h2) { line-height: 1.75; }
 
-@media (max-width: 760px) {
-  .d-card-head { flex-wrap: wrap; }
-  .d-card-titles { flex-basis: 180px; }
-}
 .d-greeting .eyebrow { color: var(--text-2); } /* no glass under it */
 /* Blobs fill more of a phone screen and can overlap, so the glass dims a little more there. */
 @media (max-width: 760px) {
   :root { --glass-scrim: rgb(5 6 26 / .5); }
   html[data-aurora="full"] { --glass-scrim: rgb(5 6 26 / .6); }
 }
+
+/* ---------- join a room by code: one pill, with the icon and the button inside it ---------- */
+.d-join { display: grid; gap: 8px; }
+.d-join-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding-inline: 16px 3px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .06);
+  color: var(--text-3);
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.d-join-field:focus-within { border-color: var(--glow); box-shadow: 0 0 0 4px rgba(34, 195, 230, .18); }
+.d-join-field svg { flex: none; }
+.d-join-field input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: none; color: var(--text); font: 400 15px var(--font-body); }
+.d-join-field input:focus-visible { outline: none; } /* the pill around it shows focus */
+.d-join-field input:not(:placeholder-shown) { text-transform: uppercase; letter-spacing: .12em; }
+.d-join-btn {
+  position: relative;
+  flex: none;
+  height: 40px;
+  min-height: 40px;
+  padding-inline: 20px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .08);
+  color: var(--text-3);
+  font: 600 14px var(--font-body);
+  transition: background 150ms, color 150ms;
+}
+.d-join-btn::after { content: ""; position: absolute; inset: -4px; } /* a 48px target for a 40px button */
+.d-join-btn.ready { background: #fff; color: var(--void); }
+.d-join-btn:focus-visible { outline-offset: 1px; }
+.d-join-error { display: flex; align-items: center; gap: 6px; margin: 0; padding-inline-start: 16px; color: var(--rose); font-size: 13px; }
+.d-rooms li { padding: 14px 16px; }

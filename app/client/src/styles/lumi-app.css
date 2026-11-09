@@ -4,7 +4,7 @@
   --lumi-fill: color-mix(in srgb, var(--lumi-ink) 6%, transparent);   /* hover and quiet backgrounds */
   --lumi-fill-strong: color-mix(in srgb, var(--lumi-ink) 11%, transparent);
   /* --lumi-warn is orange, not amber: gold means mastery and nothing else. */
-  --lumi-ok: #4FD6A8; --lumi-warn: #FFB07C; --lumi-bad: #FF8FA8;
+  --lumi-ok: #4FD6A8; --lumi-warn: #FFB07C; --lumi-bad: var(--rose);
   --lumi-shadow: rgb(0 0 0 / .35);
   --lumi-scrim: rgb(5 6 26 / .62);
   --lumi-ok-soft: color-mix(in srgb, var(--lumi-ok) 13%, transparent);

@@ -4,7 +4,7 @@
 :root {
   /* Glass & Aurora: the source of truth. */
   --void: #05061A;            /* app background */
-  --iris: #5B5BD6; --glow: #22C3E6; --violet: #AA5AE6; --spark: #FFCC55;
+  --iris: #5B5BD6; --glow: #22C3E6; --violet: #AA5AE6; --spark: #FFCC55; --rose: #FF8FA3;
   --text: #EEF0FF; --text-2: #C9CCFF; --text-3: #A6A9D6;   /* all >= 4.5:1 on void */
   --glass: rgba(255,255,255,0.06);
   --glass-strong: rgba(255,255,255,0.10);

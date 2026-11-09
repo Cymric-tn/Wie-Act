@@ -310,8 +310,8 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
       return (
         <div className="d-grid">
           <Card icon="door" title={t("rooms.title")} sub={t("rooms.sub")} className="span-12" example
-            actions={<button className="btn btn-primary small" onClick={() => openBoard(`room-${Math.random().toString(36).slice(2, 7)}`)}><Icon name="plus" size={15} /> {t("rooms.new")}</button>}>
-            <JoinRoom big />
+            actions={<button className="btn btn-secondary small" onClick={() => openBoard(`room-${Math.random().toString(36).slice(2, 7)}`)}><Icon name="plus" size={15} /> {t("rooms.new")}</button>}>
+            <JoinRoom />
             <h3 className="d-subhead">{t("rooms.active")}</h3>
             <RoomList />
           </Card>

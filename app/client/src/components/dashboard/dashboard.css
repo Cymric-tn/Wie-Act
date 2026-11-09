@@ -342,23 +342,6 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
 .pm-hint { margin-inline-start: auto; color: var(--lumi-slate); }
 
 /* ---------- rooms ---------- */
-.d-join {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 6px 6px 12px;
-  padding-inline-start: 12px;
-  border-radius: 14px;
-  border: 1px solid var(--lumi-line);
-  background: var(--lumi-iris-soft);
-  color: var(--lumi-iris-strong);
-}
-.d-join input { flex: 1; min-width: 0; border: 0; background: none; color: var(--lumi-ink); font-size: 13.5px; font-family: ui-monospace, Menlo, monospace; letter-spacing: .5px; }
-.d-join input::placeholder { font-family: inherit; letter-spacing: 0; color: var(--lumi-slate); }
-.d-join:focus-within { border-color: var(--lumi-iris); box-shadow: 0 0 0 3px var(--lumi-shadow); }
-.d-join.big { padding: 10px 10px 10px 16px; }
-.d-join.big input { font-size: 16px; }
-
 .d-rooms, .d-exams, .d-materials, .d-groups, .d-bars, .d-plan { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .d-rooms li {
   display: flex;
@@ -377,7 +360,7 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
 .d-room-main small { font-size: 11px; color: var(--lumi-slate); display: flex; align-items: center; gap: 6px; }
 .d-course-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); flex: none; }
 .d-assigned { font-style: normal; color: var(--lumi-warn); }
-.d-room-side { display: grid; justify-items: end; gap: 3px; }
+.d-room-side { display: flex; align-items: center; gap: 10px; flex: none; }
 .d-room-side small { font-size: 10.5px; color: var(--lumi-slate); white-space: nowrap; }
 
 /* ---------- whiteboard & voice ---------- */
