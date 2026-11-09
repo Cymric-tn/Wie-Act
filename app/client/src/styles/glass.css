@@ -1,0 +1,36 @@
+/* Glass primitives. Use one of .glass / .glass-strong / .glass-ai; add .glass-hover on a card that is clickable as a whole.
+
+   --glass-scrim sits under the white glass. White glass alone cannot keep light text legible over a bright blob: more
+   white only makes the background lighter. So the sky is dimmed first, then frosted. The values are the lowest that
+   keep --text-3 at 4.5:1 over the brightest point of the aurora. */
+:root { --glass-scrim: rgb(5 6 26 / .34); }
+html[data-aurora="full"] { --glass-scrim: rgb(5 6 26 / .54); }
+
+.glass, .glass-strong, .glass-ai {
+  background-color: var(--glass-scrim);
+  background-image: linear-gradient(var(--glass), var(--glass));
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-card);
+}
+.glass-strong {
+  background-image: linear-gradient(var(--glass-strong), var(--glass-strong));
+  box-shadow: 0 0 60px rgba(91, 91, 214, .35);
+}
+.glass-ai {
+  border-color: var(--ai-border);
+  box-shadow: var(--ai-shadow);
+}
+.glass-hover { transition: border-color 200ms, transform 200ms; }
+.glass-hover:hover { border-color: rgba(255, 255, 255, .28); transform: translateY(-2px); }
+
+/* No blur available, or the learner's machine is weak: a solid panel reads better than an unblurred one. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass, .glass-strong, .glass-ai { background: rgba(20, 22, 52, .92); }
+}
+.low-power :is(.glass, .glass-strong, .glass-ai) {
+  background: rgba(20, 22, 52, .92);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

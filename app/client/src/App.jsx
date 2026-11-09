@@ -9,6 +9,7 @@ import BoardApp from "./components/BoardApp";
 import AuroraBackground from "./components/AuroraBackground";
 import "./App.css";
 import "./styles/aurora.css";
+import "./styles/glass.css"; // last: glass and controls win over the older per-screen rules
 
 function Redirect({ to }) {
   useEffect(() => navigate(to, { replace: true }), [to]);
