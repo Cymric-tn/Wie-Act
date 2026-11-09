@@ -40,7 +40,7 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
   text-decoration: none;
   padding: 0 10px;
 }
-.d-brand i { font-style: normal; color: var(--lumi-iris); text-shadow: 0 0 16px var(--lumi-shadow); }
+.d-brand i { font-style: normal; color: var(--lumi-iris-strong); text-shadow: 0 0 16px var(--lumi-shadow); }
 .d-tagline { font-size: 11px; color: var(--lumi-slate); margin: 6px 10px 22px; line-height: 1.5; }
 .d-nav { display: grid; gap: 18px; }
 .d-nav-group { display: grid; gap: 2px; }
@@ -250,7 +250,7 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
   border-radius: 11px;
   display: grid;
   place-items: center;
-  color: var(--lumi-iris);
+  color: var(--lumi-iris-strong);
   background: var(--lumi-iris-soft);
   border: 1px solid var(--lumi-line);
 }
@@ -355,7 +355,7 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
   border-radius: 14px;
   border: 1px solid var(--lumi-line);
   background: var(--lumi-iris-soft);
-  color: var(--lumi-iris);
+  color: var(--lumi-iris-strong);
 }
 .d-join input { flex: 1; min-width: 0; border: 0; background: none; color: var(--lumi-ink); font-size: 13.5px; font-family: ui-monospace, Menlo, monospace; letter-spacing: .5px; }
 .d-join input::placeholder { font-family: inherit; letter-spacing: 0; color: var(--lumi-slate); }

@@ -1,27 +1,9 @@
 /* Lumi · Collaborative Board — visual language shared with the
    Academic Constellation and Planetary Universe experiences. */
 :root {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   font-family: var(--lumi-font-body);
   color: var(--lumi-ink);
-  background: var(--lumi-mist);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -29,7 +11,6 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--lumi-mist);
   color: var(--lumi-ink);
   -webkit-font-smoothing: antialiased;
 }
@@ -53,7 +34,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .muted { font-size: 12px; color: var(--lumi-slate); }
 
 .brand { font-size: 22px; font-weight: 800; letter-spacing: -1px; white-space: nowrap; }
-.brand i { color: var(--lumi-iris); font-style: normal; }
+.brand i { color: var(--lumi-iris-strong); font-style: normal; }
 
 .dot {
   width: 9px;
@@ -142,7 +123,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   background: none;
   border: 0;
   padding: 0;
-  color: var(--lumi-iris);
+  color: var(--lumi-iris-strong);
   font-size: 12px;
   text-align: start;
   text-decoration: underline;
@@ -181,7 +162,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 .lobby-brand { margin-bottom: 26px; }
 .lobby-card h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.08; letter-spacing: -1.5px; margin: 12px 0; }
-.lobby-card h1 em { font-style: normal; color: var(--lumi-iris); }
+.lobby-card h1 em { font-style: normal; color: var(--lumi-iris-strong); }
 .lobby-copy { font-size: 13.5px; color: var(--lumi-slate); line-height: 1.65; margin: 0 0 24px; }
 
 .lobby-form { display: grid; gap: 14px; }
@@ -215,7 +196,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   display: flex;
   justify-content: space-between;
 }
-.course-rooms summary::after { content: "＋"; color: var(--lumi-iris); }
+.course-rooms summary::after { content: "＋"; color: var(--lumi-iris-strong); }
 .course-rooms[open] summary::after { content: "－"; }
 .course-rooms summary::-webkit-details-marker { display: none; }
 .course-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; padding: 0 10px 10px; }
@@ -258,7 +239,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   gap: 14px;
   z-index: 3;
 }
-.logo { font-size: 30px; color: var(--lumi-iris); margin-bottom: 26px; text-shadow: 0 0 18px var(--lumi-shadow); }
+.logo { font-size: 30px; color: var(--lumi-iris-strong); margin-bottom: 26px; text-shadow: 0 0 18px var(--lumi-shadow); }
 .nav {
   border: 1px solid transparent;
   color: var(--lumi-slate);
@@ -557,7 +538,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   padding: 0 16px;
 }
 .empty-hint p { color: var(--lumi-slate); font-size: 13px; line-height: 1.6; margin: 9px 0 0; }
-.empty-hint b { color: var(--lumi-iris); }
+.empty-hint b { color: var(--lumi-iris-strong); }
 .light .empty-hint p { color: var(--lumi-slate); }
 .light .empty-hint b { color: var(--lumi-iris-strong); }
 
@@ -858,7 +839,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 .hint-dock { font-size: 12px; color: var(--lumi-slate); gap: 10px; }
 .dock-label { font-size: 12px; color: var(--lumi-slate); }
-.selection-count { font-size: 12px; font-weight: 650; color: var(--lumi-iris); white-space: nowrap; }
+.selection-count { font-size: 12px; font-weight: 650; color: var(--lumi-iris-strong); white-space: nowrap; }
 .swatches { display: flex; align-items: center; gap: 7px; }
 .swatch {
   position: relative;
@@ -953,7 +934,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 .toggle-row b { display: block; font-size: 12.5px; color: var(--lumi-ink); }
 .toggle-row small { display: block; font-size: 10.5px; color: var(--lumi-slate); line-height: 1.4; margin-top: 2px; }
-.toggle-row.on { border-color: var(--lumi-iris); background: var(--lumi-iris-soft); color: var(--lumi-iris); }
+.toggle-row.on { border-color: var(--lumi-iris); background: var(--lumi-iris-soft); color: var(--lumi-iris-strong); }
 .switch {
   width: 34px;
   height: 20px;
@@ -1074,7 +1055,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   font-size: 10.5px;
   font-weight: 700;
   background: var(--lumi-fill);
-  color: var(--lumi-iris);
+  color: var(--lumi-iris-strong);
 }
 .page-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .page-pick small { color: var(--lumi-slate); font-variant-numeric: tabular-nums; }

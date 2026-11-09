@@ -2,45 +2,57 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&display=swap');
 
 :root {
-  /* Color roles */
-  --lumi-iris: #5B5BD6;        /* primary: nav, buttons, selected, links */
-  --lumi-iris-strong: #3B3BA8; /* text on iris-soft */
-  --lumi-iris-soft: #E6E6FA;   /* selected backgrounds */
-  --lumi-glow: #22C3E6;        /* AI activity only — never small text on white */
-  --lumi-spark: #FFCC55;       /* mastery only — never small text on white */
-  --lumi-mist: #F4F4FA;        /* light base */
-  --lumi-void: #07081A;        /* universe / dark base */
-  --lumi-ink: #101124;         /* body text */
-  --lumi-slate: #5A6275;       /* secondary text (passes 4.5:1 on mist) */
-  --lumi-line: #E4E5EF;
-  --lumi-surface: #FFFFFF;
-  --lumi-room: #ECEBFF;        /* study rooms */
+  /* Glass & Aurora: the source of truth. */
+  --void: #05061A;            /* app background */
+  --iris: #5B5BD6; --glow: #22C3E6; --violet: #AA5AE6; --spark: #FFCC55;
+  --text: #EEF0FF; --text-2: #C9CCFF; --text-3: #A6A9D6;   /* all >= 4.5:1 on void */
+  --glass: rgba(255,255,255,0.06);
+  --glass-strong: rgba(255,255,255,0.10);
+  --glass-border: rgba(255,255,255,0.14);
+  --glass-blur: blur(24px) saturate(140%);
+  --ai-border: rgba(34,195,230,0.40);
+  --ai-shadow: 0 0 50px rgba(34,195,230,0.22);
+  --r-pill: 999px; --r-panel: 28px; --r-card: 24px; --r-control: 14px; --r-chip: 16px;
+  --font-display: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif; --font-arabic: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
+
+  --board: #0E1030;           /* the dark canvas: solid, nothing shows through a drawing */
+  --surface-solid: #14163A;   /* menus, dialogs, toasts: whatever sits on top of other content */
+
+  /* The roles every screen already uses, pointed at the values above. */
+  --lumi-iris: var(--iris);
+  --lumi-iris-strong: #C3C3FF;  /* iris as text: --iris itself is only 3.5:1 on void */
+  --lumi-iris-soft: color-mix(in srgb, var(--iris) 30%, transparent);
+  --lumi-glow: var(--glow);     /* AI activity only */
+  --lumi-spark: var(--spark);   /* mastery only */
+  --lumi-mist: var(--void);
+  --lumi-void: var(--void);
+  --lumi-ink: var(--text);
+  --lumi-slate: var(--text-3);
+  --lumi-line: var(--glass-border);
+  --lumi-surface: var(--glass);
+  --lumi-surface-solid: var(--surface-solid);
+  --lumi-room: #ECEBFF;         /* the light board (Paper) only */
+  --lumi-board: var(--board);
 
   /* Type */
-  --lumi-font-display: 'Outfit', system-ui, sans-serif;
-  --lumi-font-body: 'Inter', system-ui, sans-serif;
-  --lumi-font-arabic: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
+  --lumi-font-display: var(--font-display);
+  --lumi-font-body: var(--font-body);
+  --lumi-font-arabic: var(--font-arabic);
 
-  /* Spacing (4px base) and radii */
+  /* Spacing (4px base) */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px; --s8: 32px; --s12: 48px;
-  --r-chip: 16px; --r-control: 14px; --r-card: 20px; --r-panel: 32px;
 
   /* Motion */
   --ease-out: cubic-bezier(.2, .8, .2, 1);
   --t-card: 220ms; --t-glow: 320ms; --t-burst: 600ms; --t-breathe: 2.4s;
+
+  color-scheme: dark;
 }
 
-/* Dark surfaces (Knowledge Universe, AI panel) */
-.lumi-dark {
-  --lumi-surface: #11132B;
-  --lumi-ink: #EEF0FF;
-  --lumi-slate: #A6A9D6;
-  --lumi-line: #2C2F57;
-  background: var(--lumi-void);
-  color: var(--lumi-ink);
-}
+/* The app is dark everywhere now. The class stays on the AI panel and the map as a hook. */
+.lumi-dark { color: var(--lumi-ink); }
 
-html { font-family: var(--lumi-font-body); color: var(--lumi-ink); background: var(--lumi-mist); }
+html { font-family: var(--lumi-font-body); color: var(--lumi-ink); background: var(--void); }
 h1, h2, h3, .lumi-display { font-family: var(--lumi-font-display); font-weight: 600; letter-spacing: -0.01em; }
 :lang(ar), [dir="rtl"] { font-family: var(--lumi-font-arabic); line-height: 1.75; }
 

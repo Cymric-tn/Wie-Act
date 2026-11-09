@@ -56,13 +56,13 @@ html[lang="ar"] .lp-hero h1 { letter-spacing: 0; line-height: 1.25; }
 .lp-hero h1 em {
   display: block;
   font-style: normal;
-  color: var(--lumi-iris);
+  color: var(--lumi-iris-strong);
 }
 .lp-lead { font-size: clamp(15px, 1.4vw, 17px); line-height: 1.7; color: var(--lumi-slate); margin: 0; max-width: 560px; }
 .lp-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 18px; }
 .lp-big { padding: 14px 22px; font-size: 14.5px; border-radius: 14px; }
 .lp-langs { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--lumi-slate); margin: 0; }
-.lp-langs svg { color: var(--lumi-iris); flex: none; }
+.lp-langs svg { color: var(--lumi-iris-strong); flex: none; }
 .lp-stats { display: flex; gap: 28px; margin: 34px 0 0; padding-top: 24px; border-top: 1px solid var(--lumi-line); flex-wrap: wrap; }
 .lp-stats div { display: grid; gap: 4px; max-width: 170px; }
 .lp-stats dt { font-size: 24px; font-weight: 800; color: var(--lumi-ink); display: flex; align-items: center; min-height: 30px; }
@@ -106,7 +106,7 @@ html[lang="ar"] .lp-hero h1 { letter-spacing: 0; line-height: 1.25; }
 .lp-float p { margin: 0; }
 .lp-float-chat { inset-inline-start: -28px; bottom: -6px; max-width: 250px; }
 .lp-float-fact { inset-inline-end: -14px; top: 6px; color: var(--lumi-ok); border-color: var(--lumi-ok-soft); animation-delay: -2s; }
-.lp-float-fact svg:first-child { color: var(--lumi-iris); }
+.lp-float-fact svg:first-child { color: var(--lumi-iris-strong); }
 .lp-float-room { inset-inline-end: 12%; bottom: -22px; animation-delay: -4s; }
 .lp-float-room b { font-size: 12px; }
 @keyframes floatY { 50% { transform: translateY(-8px); } }
@@ -252,7 +252,7 @@ html[lang="ar"] .lp-head h2, html[lang="ar"] .lp-chat-copy h2, html[lang="ar"] .
 .auth-orbit.o2 { inset: 0; animation-duration: 38s; }
 .auth-orbit.o2 i { background: var(--lumi-iris); box-shadow: 0 0 20px var(--lumi-shadow); width: 14px; height: 14px; top: -7px; color: #fff; }
 .auth-quote { font-size: clamp(22px, 2.4vw, 32px); font-weight: 750; letter-spacing: -.8px; text-align: center; max-width: 460px; line-height: 1.25; margin: 0; }
-.auth-quote em { display: block; font-style: normal; color: var(--lumi-iris); }
+.auth-quote em { display: block; font-style: normal; color: var(--lumi-iris-strong); }
 
 .auth-main {
   position: relative;
@@ -306,7 +306,7 @@ html[lang="ar"] .lp-head h2, html[lang="ar"] .lp-chat-copy h2, html[lang="ar"] .
 .auth-forgot { justify-self: end; margin-top: -6px; }
 .auth-guest { justify-self: center; }
 .auth-note { display: flex; gap: 8px; align-items: flex-start; font-size: 11.5px; line-height: 1.55; color: var(--lumi-slate); margin: 4px 0 0; padding: 12px; border-radius: 12px; background: var(--lumi-fill); border: 1px solid var(--lumi-line); }
-.auth-note svg { flex: none; margin-top: 1px; color: var(--lumi-iris); }
+.auth-note svg { flex: none; margin-top: 1px; color: var(--lumi-iris-strong); }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) {

@@ -1,6 +1,6 @@
 // The Lumi colours for code that cannot use CSS variables (the canvas). Read once from the design tokens; the fallbacks
 // are the same values, for tests and exports outside a browser.
-const FALLBACK = { iris: "#5B5BD6", glow: "#22C3E6", spark: "#FFCC55", room: "#ECEBFF", void: "#07081A", ink: "#101124", surface: "#FFFFFF" };
+const FALLBACK = { iris: "#5B5BD6", glow: "#22C3E6", spark: "#FFCC55", room: "#ECEBFF", void: "#05061A", board: "#0E1030" };
 let cached = null;
 
 export function lumiColors() {

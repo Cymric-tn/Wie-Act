@@ -1,16 +1,12 @@
 /* The app's layer on top of the Lumi tokens: what the tokens file does not define.
-   Status colours pass 4.5:1 on white. Glow and Spark are not used here: they are for AI activity and mastery only. */
-:root, .lumi-dark {
-  --lumi-fill: color-mix(in srgb, var(--lumi-ink) 6%, transparent);   /* hover and quiet backgrounds, on light and dark */
-  --lumi-fill-strong: color-mix(in srgb, var(--lumi-ink) 11%, transparent);
-}
+   Glow and Spark are not used here: they are for AI activity and mastery only. */
 :root {
-  --lumi-ok: #1B7F5C; --lumi-warn: #8A5A00; --lumi-bad: #C2334D;
-  --lumi-shadow: rgb(16 17 36 / .10);
-  --lumi-scrim: rgb(7 8 26 / .45);
-}
-.lumi-dark { --lumi-iris-soft: color-mix(in srgb, var(--lumi-iris) 30%, transparent); --lumi-iris-strong: #C3C3FF; --lumi-ok: #4FD6A8; --lumi-warn: #F2C572; --lumi-bad: #FF8FA8; color-scheme: dark; }
-:root, .lumi-dark {
+  --lumi-fill: color-mix(in srgb, var(--lumi-ink) 6%, transparent);   /* hover and quiet backgrounds */
+  --lumi-fill-strong: color-mix(in srgb, var(--lumi-ink) 11%, transparent);
+  /* --lumi-warn is orange, not amber: gold means mastery and nothing else. */
+  --lumi-ok: #4FD6A8; --lumi-warn: #FFB07C; --lumi-bad: #FF8FA8;
+  --lumi-shadow: rgb(0 0 0 / .35);
+  --lumi-scrim: rgb(5 6 26 / .62);
   --lumi-ok-soft: color-mix(in srgb, var(--lumi-ok) 13%, transparent);
   --lumi-warn-soft: color-mix(in srgb, var(--lumi-warn) 13%, transparent);
   --lumi-bad-soft: color-mix(in srgb, var(--lumi-bad) 12%, transparent);
@@ -46,7 +42,7 @@ span.chip, .chip.chip-mastered { cursor: default; }
 .lang-switch button { min-height: 44px; }
 .ai-spark { display: inline-flex; flex: none; align-items: center; justify-content: center; border-radius: 50%; background: var(--lumi-void); padding: 3px; }
 
-body { background: var(--lumi-mist); }
+body { background: transparent; } /* a body background would paint over the aurora, which sits at z-index -1 */
 .card > *, .d-card-head { min-width: 0; }
 .bai { border-radius: var(--r-card); padding: var(--s2); }
 .bai-name { display: inline-flex; align-items: center; gap: 6px; }

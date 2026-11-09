@@ -2,7 +2,7 @@
    Logical properties throughout, so Arabic mirrors without extra rules. */
 .d-exam-empty { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; color: var(--lumi-slate); font-size: 13px; }
 
-.pn { --pn-accent: var(--lumi-iris); --pn-hover: var(--lumi-fill); max-width: 760px; margin-inline: auto; padding-block: 12px 40px; color: var(--lumi-ink); font-size: 15px; line-height: 1.65; }
+.pn { --pn-accent: var(--lumi-iris-strong); --pn-hover: var(--lumi-fill); max-width: 760px; margin-inline: auto; padding-block: 12px 40px; color: var(--lumi-ink); font-size: 15px; line-height: 1.65; }
 .pn h1 { overflow-wrap: anywhere; margin: 0 0 8px; font-size: 36px; line-height: 1.2; font-weight: 700; letter-spacing: -.5px; color: var(--lumi-ink); }
 .pn h2 { margin: 0; font-size: 22px; line-height: 1.3; font-weight: 650; color: var(--lumi-ink); }
 .pn-lead { margin: 0 0 32px; color: var(--lumi-slate); }
@@ -33,7 +33,7 @@ button.pn-reveal:focus-visible, li:hover > .pn-reveal, li:focus-within > .pn-rev
 .pn-add { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 8px; border-radius: 6px; color: var(--lumi-slate); }
 .pn-add:hover { background: var(--pn-hover); color: var(--lumi-ink); }
 .pn-new { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
-.pn-new input, .pn-props input { font: inherit; color: inherit; background: none; border: 0; border-radius: 6px; color-scheme: light; }
+.pn-new input, .pn-props input { font: inherit; color: inherit; background: none; border: 0; border-radius: 6px; color-scheme: dark; }
 .pn-new input { padding: 6px 8px; background: var(--pn-hover); }
 .pn-new input:first-child { flex: 1; min-width: 200px; }
 .pn-new input:focus, .pn-props input:focus { box-shadow: inset 0 0 0 1px var(--lumi-line); }
