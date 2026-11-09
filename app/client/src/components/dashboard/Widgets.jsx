@@ -21,7 +21,7 @@ export const openBoardAi = () => {
 export function Card({ icon, title, sub, actions, example, className = "", children, accent }) {
   const { t } = useI18n();
   return (
-    <section className={`card d-card ${className}`} style={accent ? { "--accent": accent } : undefined}>
+    <section className={`card d-card glass ${className}`} style={accent ? { "--accent": accent } : undefined}>
       {(title || actions) && (
         <header className="d-card-head">
           {icon && <span className="d-card-icon"><Icon name={icon} size={18} /></span>}
@@ -294,9 +294,9 @@ export function MaterialsCard() {
 export function CompanionCard({ onOpen }) {
   const { t } = useI18n();
   return (
-    <Card className="span-4 companion-card">
+    <Card className="span-4 companion-card glass-ai">
       <div className="d-companion-promo">
-        <span className="d-ai-avatar"><LumiSpark size={26} onDark /></span>
+        <span className="d-ai-avatar"><LumiSpark size={26} /></span>
         <h2>{t("ai.title")}</h2>
         <p>{t("feature.companion.desc")}</p>
         <div className="d-suggest">
@@ -347,7 +347,7 @@ export function ClassKpis() {
   return (
     <div className="d-kpis span-12">
       {kpis.map((k) => (
-        <div className="d-kpi" key={k.label} style={{ "--c": k.color }}>
+        <div className="d-kpi glass" key={k.label} style={{ "--c": k.color }}>
           <span className="d-kpi-icon"><Icon name={k.icon} size={18} /></span>
           <b>{k.value}</b>
           <small>{k.label}</small>
@@ -445,7 +445,7 @@ export function ProfActions() {
           ["shield", "nav.review", () => navigate("/app/review")],
           ["sparkle", "prof.practice", () => navigate("/app/prep")]
         ].map(([icon, key, run]) => (
-          <button key={key} className="d-action" onClick={run}>
+          <button key={key} className="d-action glass-hover" onClick={run}>
             <span className="d-action-icon"><Icon name={icon} size={20} /></span>
             <b>{t(key)}</b>
           </button>

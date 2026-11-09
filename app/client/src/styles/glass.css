@@ -167,3 +167,22 @@ span.chip { cursor: default; }
   .d-content { padding-inline: 12px; }
 }
 @media (max-width: 760px) { .d-top { border-radius: var(--r-card); padding: 8px 12px; } }
+
+/* ---------- dashboard ---------- */
+.d-greeting h1 { margin: 8px 0 6px; font: 300 clamp(32px, 4vw, 48px)/1.12 var(--font-display); letter-spacing: -.02em; }
+.d-greeting h1 strong { font-weight: 600; }
+:lang(ar) .d-greeting h1 { font-family: var(--font-arabic); letter-spacing: 0; line-height: 1.5; }
+.d-greeting p { color: var(--text-2); }
+.d-continue { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 28px; }
+.d-continue-main { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.d-continue h2 { margin: 0; font: 500 26px/1.2 var(--font-display); overflow-wrap: anywhere; }
+.d-continue p { margin: 0; color: var(--text-2); font-size: 14px; }
+.d-continue .d-exam-ready { margin-top: 8px; max-width: 420px; }
+.d-continue .d-exam-ready small { color: var(--text-2); font-size: 12px; white-space: nowrap; }
+.d-card { border-radius: var(--r-card); padding: 20px; box-shadow: none; }
+.d-card-titles h2 { font-family: var(--font-display); font-weight: 500; }
+.d-kpi { border-radius: var(--r-card); background-image: none; background-color: var(--glass-scrim); }
+.companion-card.glass-ai { background-color: var(--glass-scrim); }
+@media (max-width: 760px) { .d-continue { flex-direction: column; align-items: stretch; padding: 20px; } }
+.d-exams li { border-radius: var(--r-control); }
+.d-exam-main { flex: 1 1 150px; }

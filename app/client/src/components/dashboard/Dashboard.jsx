@@ -6,14 +6,14 @@ import Prep from "./Prep";
 import Materials from "./Materials";
 import Review, { EngineStatusCard } from "./Review";
 import {
-  Card, RoomsCard, BoardCard, PrepCard, MaterialsCard, CompanionCard, JoinRoom, RoomList,
+  Card, Meter, RoomsCard, BoardCard, PrepCard, MaterialsCard, CompanionCard, JoinRoom, RoomList,
   BoardPreview, AiBoardChips, ClassKpis, GroupProgress, Roster, WeakPoints, ProfActions, openBoard
 } from "./Widgets";
 import { useI18n, LanguageSwitcher, LANGUAGES } from "../../lib/i18n";
 import { Link, navigate } from "../../lib/router";
 import { getUser, saveUser, signOut } from "../../lib/session";
-import { ROOMS, CLASS, courseMastery } from "../../lib/demoData";
-import { listExams } from "../../lib/exams";
+import { ROOMS, CLASS, courseMastery, weakTopics } from "../../lib/demoData";
+import { daysLeft, listExams } from "../../lib/exams";
 import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { initials } from "../../lib/format";
 import { ai, AI_LANGUAGES, replyLanguage, setReplyLanguage } from "../../lib/engine";
@@ -161,7 +161,7 @@ function Greeting({ user, onCompanion }) {
     <div className="d-greeting span-12">
       <div>
         <span className="eyebrow">{new Date().toLocaleDateString(lang === "ar" ? "ar-TN" : lang, { weekday: "long", day: "numeric", month: "long" }).toUpperCase()}</span>
-        <h1>{t(greetingKey(), { name: user.name.split(" ")[0] })}</h1>
+        <h1>{t(greetingKey(), { name: "\u0000" }).split("\u0000").flatMap((part, i) => (i ? [<strong key="name">{user.name.split(" ")[0]}</strong>, part] : [part]))}</h1>
         <p>{isProf ? t("home.prof.sub", { course: "\u0000" }).split("\u0000").flatMap((part, i) => (i ? [<span key="course" dir="ltr">{course.id} · {course.name}</span>, part] : [part])) : t("home.student.sub", { exams: listExams().length, rooms: live })}</p>
       </div>
       {isProf ? (
@@ -187,11 +187,40 @@ function Greeting({ user, onCompanion }) {
   );
 }
 
+/** Where to pick up: the next exam the learner added, else the weakest concept the course map reports. Nothing to resume, no card. */
+function ContinueCard() {
+  const { t } = useI18n();
+  const courses = useCourses();
+  const exam = listExams().find((e) => daysLeft(e.date) >= 0);
+  const topic = exam ? null : weakTopics(courses, 1)[0];
+  if (!exam && !topic) return null;
+  const value = exam ? courseMastery(courses[0]) : topic.mastery;
+  const left = exam && daysLeft(exam.date);
+  return (
+    <section className="d-continue glass-strong span-12">
+      <div className="d-continue-main">
+        <span className="eyebrow">{t("home.continue")}</span>
+        <h2 dir="auto">{exam ? exam.title : topic.name}</h2>
+        <p>{exam ? (left === 1 ? t("prep.tomorrow") : t("prep.inDays", { n: left })) : t("prep.weak")}</p>
+        <span className="d-exam-ready">
+          {exam && <small>{t("prep.readiness")}</small>}
+          <Meter value={value} />
+          <small>{Math.round(value * 100)}%</small>
+        </span>
+      </div>
+      <button className="btn btn-primary" onClick={() => navigate(exam ? "/app/prep" : "/app/map")}>
+        {exam ? t("prep.practice") : t("map.open")} <Icon name="right" size={17} />
+      </button>
+    </section>
+  );
+}
+
 function StudentHome({ user, onSoon, onCompanion }) {
   const { t } = useI18n();
   return (
     <div className="d-grid">
       <Greeting user={user} onCompanion={() => onCompanion()} />
+      <ContinueCard />
       <Card icon="planet" title={t("map.title")} example className="span-8 map-card">
         <ProgressMap compact onOpenFull={() => navigate("/app/map")} />
       </Card>
@@ -224,7 +253,7 @@ function AiLanguageCard() {
     <Card icon="sparkle" title={t("settings.ai")} sub={t("settings.aiHint")} className="span-7">
       <div className="d-lang-cards ai-langs" role="radiogroup" aria-label={t("settings.ai")}>
         {AI_LANGUAGES.map((id) => (
-          <button key={id} role="radio" aria-checked={value === id} className={"d-lang-card" + (value === id ? " active" : "")}
+          <button key={id} role="radio" aria-checked={value === id} className={"d-lang-card glass-hover" + (value === id ? " active" : "")}
             onClick={() => { setValue(id); setReplyLanguage(id); }}>
             <b>{id === "auto" ? "✦" : t(`lang.${id}`).split(" · ")[0]}</b>
             <span>{id === "auto" ? t("lang.auto") : t(`lang.${id}`).split(" · ")[1] || t(`lang.${id}`)}</span>
@@ -301,7 +330,7 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
           <Card icon="globe" title={t("settings.language")} sub={t("settings.languageHint")} className="span-7">
             <div className="d-lang-cards" role="radiogroup" aria-label={t("settings.language")}>
               {LANGUAGES.map((l) => (
-                <button key={l.id} role="radio" aria-checked={lang === l.id} className={"d-lang-card" + (lang === l.id ? " active" : "")} onClick={() => setLang(l.id)} lang={l.id} dir={l.dir}>
+                <button key={l.id} role="radio" aria-checked={lang === l.id} className={"d-lang-card glass-hover" + (lang === l.id ? " active" : "")} onClick={() => setLang(l.id)} lang={l.id} dir={l.dir}>
                   <b>{l.label}</b>
                   <span>{l.name}</span>
                 </button>
