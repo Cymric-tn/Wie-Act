@@ -9,7 +9,7 @@ const MAX_ITEMS = 500; // the server's limit for one operation
 const DASH = 14, GAP = 10;
 const BASELINE = 0.8; // from a text's baseline up to its top, as a share of its size
 const MUTED = "#8a90b8";
-const ROLE = { d: "#ffc45c", t: "#ff7fa8", asy: MUTED, grid: "#8a90b855", ok: "#40d9be", mastered: "#FFCC55", warn: "#ffc45c", bad: "#ff7fa8", new: "#a279ff", neutral: "#75e8ff", req: "#75e8ff", rel: MUTED };
+const ROLE = { d: "#8A5A00", t: "#C2334D", asy: MUTED, grid: "#8a90b855", ok: "#1B7F5C", warn: "#8A5A00", bad: "#C2334D", new: "#5B5BD6", mastered: "#FFCC55", neutral: "#5B5BD6", req: "#5B5BD6", rel: MUTED };
 const round = (v) => Math.round(v * 100) / 100;
 
 function extent(p) {
@@ -38,7 +38,7 @@ export function toBoardItems(primitives, { cx, cy, page, z = 1, ink }) {
   const y0 = Math.min(...pts.map((p) => p[1])), y1 = Math.max(...pts.map((p) => p[1]));
   const X = (v) => round(cx + (v - (x0 + x1) / 2) * SCALE), Y = (v) => round(cy + (v - (y0 + y1) / 2) * SCALE);
   const stroke = (w) => Math.max(1, round((w || 1.6) * SCALE));
-  const color = (p) => ROLE[p.role] || (p.color === "ink" ? ink : p.color === "muted" ? MUTED : "#a279ff");
+  const color = (p) => ROLE[p.role] || (p.color === "ink" ? ink : p.color === "muted" ? MUTED : "#5B5BD6");
 
   const expanded = primitives.flatMap((p) => (p.dashed && p.type === "line" ? dashes(p) : [p]));
   const parts = expanded.length <= MAX_ITEMS ? expanded : primitives; // too many dashes for one operation: solid lines instead

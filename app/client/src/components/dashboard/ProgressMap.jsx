@@ -248,7 +248,7 @@ function ProgressMap({ compact = false, initialCourse = null, onOpenFull }) {
           {/* "Enter 3D universe" is hidden: the static page behind it still lists MATH102 / CS201 / PHYS101 (Phase 1 has one course) */}
         </div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="pm-svg" role="group" aria-label={t("map.title")}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="pm-svg" dir="ltr" role="group" aria-label={t("map.title")}>
         <Defs COURSES={COURSES} />
         <rect width={W} height={H} fill="url(#pm-nebula)" />
         {STARS.map((s, i) => (

@@ -48,6 +48,9 @@ The screens read these fields of the engine's result (`/api/ai/run`, `/api/ai/tu
 `app/server/src/ai/*`, `app/bridge/*`, `app/diagrams/*`, `client/src/lib/diagrams/*`, `client/src/lib/engine.js`, `client/src/lib/api.js`. Design changes go in `client/src/components/**`
 and the CSS. Need another field or a new state? Ask the engine side; do not patch the feature layer.
 
+## Design system
+Colours, type and base components come from `client/src/styles/lumi-tokens.css`; app-level additions are in `styles/lumi-app.css`. Use `var(--lumi-*)`, never a hex. Glow is for AI activity, Spark for mastery. For the canvas use `lib/lumiColors.js`. Browser storage keys keep their `ednova-` prefix on purpose: renaming them signs people out.
+
 ## Diagram generator (`/app/diagrams`, no LLM, no quota, works with the fake engine too)
 Screen: `client/src/components/dashboard/Diagrams.jsx`, styles under `.dg-*` in `dashboard.css`; colours of the drawing are the `--dg-*`
 variables on `.dg-page`. The JSON contract is `docs/diagram.schema.json`. Trigger words (Darija, Arabizi...) are in

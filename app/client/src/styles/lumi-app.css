@@ -42,6 +42,7 @@ span.chip, .chip.chip-mastered { cursor: default; }
 :where(input[type="range"]) { min-height: 44px; }
 .d-nav-item, .d-brand, .auth-back, .lp-links a, .lp-nav a { min-height: 44px; display: inline-flex; align-items: center; }
 .d-nav-item { display: flex; }
+.lp-links a { min-width: 44px; justify-content: center; }
 .lang-switch button { min-height: 44px; }
 .ai-spark { display: inline-flex; flex: none; align-items: center; justify-content: center; border-radius: 50%; background: var(--lumi-void); padding: 3px; }
 
@@ -50,3 +51,7 @@ body { background: var(--lumi-mist); }
 .bai { border-radius: var(--r-card); padding: var(--s2); }
 .bai-name { display: inline-flex; align-items: center; gap: 6px; }
 .d-exams li { flex-wrap: wrap; }
+
+/* Arabic: the design system's components set Inter themselves. Numbers, code and formulas keep their reading order. */
+:lang(ar) :is(.btn, .input, .chip) { font-family: var(--lumi-font-arabic); }
+:is(code, kbd, pre, samp) { direction: ltr; unicode-bidi: isolate; }

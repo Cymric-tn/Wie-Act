@@ -495,3 +495,13 @@ degraded `quota_low`. Five changes and one script; evidence below, none of it me
 - **"This confuses me" did not exist before and was built here:** it is the existing `explain` task with `passage` and `confusion: HIGH`.
 - **Level test "done"** is a flag in this browser, set when the learner reaches Finish.
 - **Before/after screenshots:** `reports/prep-redesign/` ("before" = commit fbd8fe3, with the same two exams seeded).
+
+## Rebrand to Lumi and design system (2026-11-09, branch `rebrand-lumi`)
+
+- **Not renamed, on purpose:** browser storage keys (`ednova-user`, `-exams`, `-lang`, `-board-client`...: renaming signs people out and loses their exams), `EDNOVA_ENGINE_DIR`, the instance-lock tag (it feeds the lock file's hash), `x-ednova-mock-reset`, the `ContextVar` names, the bridge's `EdNovaBridge/2` header, the organiser's "EdNova Technical Challenge", `reports/`, `_legacy/`, past entries here, the two PDFs. Socket events, API routes and the SQLite file never contained the name.
+- **Light theme by the role of each colour,** not hex-for-hex: the old UI was dark and full of translucent white overlays. Overlays became `--lumi-fill` (ink-based, so they work on light and inside `.lumi-dark`), and text on a solid Iris is forced white. Functional gradients were restored by hand (mastery ring, timer bar, custom colour swatch).
+- **`styles/lumi-app.css` holds what the tokens file does not define,** so `lumi-tokens.css` stays as delivered: status colours (ok, warn, bad; 4.5:1 on white), fills, size variants, the 44px rule. In `.lumi-dark`, `--lumi-iris-soft` and `--lumi-iris-strong` are redefined because the light values are unreadable there.
+- **Glow** marks AI activity, and on the map the concept being worked on, as asked. On the canvas the selection turns Glow while the AI checks it. **Spark** marks mastery only. The pen palette and sticky-note colours are the learners' content and were left alone.
+- **Default canvas is Paper (Room).** The stored preference moved to `lumi-board-bg`, because the old key was written on every visit, so it could not tell a real choice from the old Starfield default. Starfield stays selectable.
+- **The board stays left-to-right in Arabic,** as before: its interface is English only and canvas text is positioned from the document direction. Its CSS is logical, so this can change later. The switch thumb and `left: 50%` centring stay physical on purpose.
+- **Map planets stay under 44px wide:** a bigger hit area would change the map's behaviour, which was out of bounds.

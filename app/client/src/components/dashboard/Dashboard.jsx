@@ -162,7 +162,7 @@ function Greeting({ user, onCompanion }) {
       <div>
         <span className="eyebrow">{new Date().toLocaleDateString(lang === "ar" ? "ar-TN" : lang, { weekday: "long", day: "numeric", month: "long" }).toUpperCase()}</span>
         <h1>{t(greetingKey(), { name: user.name.split(" ")[0] })}</h1>
-        <p>{isProf ? t("home.prof.sub", { course: `${course.id} · ${course.name}` }) : t("home.student.sub", { exams: listExams().length, rooms: live })}</p>
+        <p>{isProf ? t("home.prof.sub", { course: "\u0000" }).split("\u0000").flatMap((part, i) => (i ? [<span key="course" dir="ltr">{course.id} · {course.name}</span>, part] : [part])) : t("home.student.sub", { exams: listExams().length, rooms: live })}</p>
       </div>
       {isProf ? (
         <div className="d-greet-side">

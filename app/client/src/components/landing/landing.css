@@ -244,7 +244,7 @@ html[lang="ar"] .lp-head h2, html[lang="ar"] .lp-chat-copy h2, html[lang="ar"] .
   background: var(--lumi-iris);
   box-shadow: 0 0 80px var(--lumi-shadow), 0 0 160px var(--lumi-shadow); color: #fff; }
 .auth-orbit { position: absolute; border-radius: 50%; border: 1px dashed var(--lumi-line); animation: spin linear infinite; }
-.auth-orbit i { position: absolute; top: -9px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; }
+.auth-orbit i { position: absolute; top: -9px; inset-inline-start:  50%; width: 18px; height: 18px; margin-inline-start: -9px; border-radius: 50%; }
 .auth-orbit.o0 { inset: 24%; animation-duration: 14s; }
 .auth-orbit.o0 i { background: var(--lumi-iris); box-shadow: 0 0 20px var(--lumi-shadow); color: #fff; }
 .auth-orbit.o1 { inset: 11%; animation-duration: 24s; animation-direction: reverse; }

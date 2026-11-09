@@ -672,7 +672,7 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
 .d-toast {
   position: fixed;
   bottom: 28px;
-  left: 50%;
+  inset-inline-start:  50%;
   transform: translateX(-50%);
   z-index: 70;
   padding: 11px 18px;
