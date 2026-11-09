@@ -222,7 +222,14 @@ class FakeEngine:
         context = dict(context or {})
         explain = await self.run("explain", {"question": f"{focus_point['concept_id']}"}, context,
                                  Priority.BACKGROUND, on_event)
-        return _page(focus_point, explain)
+        return _page(focus_point, explain, *self._page_exercises(focus_point, context))
+
+    def _page_exercises(self, focus_point: Mapping[str, Any], context: Mapping[str, Any]) -> tuple[dict | None, list[dict]]:
+        """The real engine's selection on the real bank: statements rendered from each exercise's template and expression."""
+        from engine import prep
+        course = self.courses.get(str(context.get("course_id") or ""))
+        return prep.page_exercises(self.exercises, course, str(focus_point["concept_id"]), float(focus_point.get("mastery", 0.5)),
+                                   str(context.get("language") or "FRENCH"))
 
     # ---------------------------------------------------------------- internals
     def _outcome(self, task: str, context: Mapping) -> str:
@@ -582,18 +589,12 @@ def _prep(outcome, inputs, lang, k, ctx) -> _Plan:
     return _Plan(_ev((0.0, "answered_by_rules", None)), 0.02, {"data": data, "mode": "rules", "notes": {"source": "rules", **notes}})
 
 
-def _page(fp: Mapping, explain: Result) -> dict:
-    from engine.exercises import ExerciseBank
+def _page(fp: Mapping, explain: Result, worked: dict | None, quiz: list[dict]) -> dict:
     return {"concept_id": fp["concept_id"], "page_kind": fp.get("page_kind", "learn"), "title": fp["concept_id"],
             "language": "FRENCH", "explanation": explain.text, "explanation_sections": explain.data,
             "explain_request_id": explain.request_id, "from_cache": explain.from_cache, "degraded": explain.degraded,
             "degrade_reason": explain.degrade_reason, "eta_seconds": explain.eta_seconds,
-            "worked_example": {"source": "bank", "exercise_id": "d01", "statement": "Dérive f(x) = x⁴.",
-                               "steps": ["Quelle règle donne la dérivée de xⁿ ?", "(xⁿ)' = n·xⁿ⁻¹ : ici, que vaut n ?",
-                                         "Multiplie par l'exposant, puis baisse l'exposant de 1."],
-                               "solution": "f'(x) = 4x³"},
-            "quiz": [{"id": i, "concept": fp["concept_id"], "level": 1, "statement": f"Dérive l'exemple {i}.",
-                      "expression": "x²", "source": "bank"} for i in ("d02", "d03", "d04")]}
+            "worked_example": worked, "quiz": quiz}
 
 
 _PLANS = {"classify": _classify, "hint": _hint, "explain": _explain, "quiz": _quiz, "grade": _grade,
