@@ -3,6 +3,7 @@ import { MASTERY, masteryLevel, courseMastery } from "../../lib/demoData";
 import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { useI18n } from "../../lib/i18n";
 import Icon from "../Icons";
+import { Meter } from "./Widgets";
 
 // The map's own colours (it is the one place Glow marks a concept being worked on).
 const MAP_COLOR = { mastered: "var(--lumi-spark)", learning: "var(--lumi-glow)", weak: "var(--lumi-bad)", new: "var(--lumi-slate)" };
@@ -69,6 +70,17 @@ const STARS = (() => {
 
 function Body({ x, y, r, level, label, sub, onSelect, ariaLabel, labelBelow = true, dim }) {
   const color = MAP_COLOR[level];
+  // A burst of gold on the one occasion a concept becomes mastered while it is on screen.
+  const previous = useRef(level);
+  const [burst, setBurst] = useState(false);
+  useEffect(() => {
+    if (previous.current === level) return undefined;
+    previous.current = level;
+    if (level !== "mastered") return undefined;
+    setBurst(true);
+    const id = setTimeout(() => setBurst(false), 600);
+    return () => clearTimeout(id);
+  }, [level]);
   return (
     <g
       className={"pm-body" + (onSelect ? " clickable" : "") + (dim ? " dim" : "")}
@@ -78,9 +90,10 @@ function Body({ x, y, r, level, label, sub, onSelect, ariaLabel, labelBelow = tr
       tabIndex={onSelect ? 0 : undefined}
       aria-label={ariaLabel}
     >
-      <circle cx={x} cy={y} r={r * 1.9} fill={color} opacity={level === "new" ? 0.08 : 0.22} filter="url(#pm-glow)" />
+      <circle cx={x} cy={y} r={r * (level === "learning" ? 2.4 : 1.9)} fill={color} opacity={level === "new" ? 0.08 : level === "learning" ? 0.55 : 0.22} filter="url(#pm-glow)" />
       <circle cx={x} cy={y} r={r} fill={`url(#pm-${level})`} />
       {level === "mastered" && <circle cx={x} cy={y} r={r + 4} fill="none" stroke={color} strokeOpacity=".55" strokeDasharray="2 4" />}
+      {burst && <circle className="pm-burst" cx={x} cy={y} r={r * 2} fill="var(--lumi-spark)" />}
       {label && (
         <text x={x} y={labelBelow ? y + r + 16 : y - r - 10} textAnchor="middle" className="pm-label">
           {label}
@@ -205,6 +218,29 @@ function Moons({ course, unit, t }) {
   );
 }
 
+/** What the map knows about the selected concept. */
+function ConceptPanel({ unit }) {
+  const { t } = useI18n();
+  const level = masteryLevel(unit.mastery);
+  return (
+    <aside className="pm-details glass-ai" aria-label={unit.name}>
+      <h3 dir="auto">{unit.name}</h3>
+      {level === "mastered"
+        ? <span className="chip chip-mastered"><Icon name="check" size={13} /> {t(MASTERY.mastered.key)}</span>
+        : <p>{t(MASTERY[level].key)}</p>}
+      <div className="pm-details-meter"><Meter value={unit.mastery} /><small>{pct(unit.mastery)}%</small></div>
+      <ul>
+        {unit.lessons.map((l) => (
+          <li key={l.name}>
+            <span dir="auto">{l.name}</span>
+            <small>{t(MASTERY[masteryLevel(l.mastery)].key)} · {pct(l.mastery)}%</small>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
 /** The interactive solar-system progress map. */
 function ProgressMap({ compact = false, initialCourse = null, onOpenFull }) {
   const { t } = useI18n();
@@ -233,9 +269,9 @@ function ProgressMap({ compact = false, initialCourse = null, onOpenFull }) {
   if (unit) crumbs.push({ label: unit.name });
 
   return (
-    <div className={"progress-map lumi-dark" + (compact ? " compact" : "")} ref={ref}>
+    <div className={"progress-map lumi-dark" + (compact ? " compact" : "") + (unit && !compact ? " has-details" : "")} ref={ref}>
       <div className="pm-bar">
-        <nav className="pm-crumbs" aria-label="Map level">
+        <nav className="pm-crumbs glass" aria-label="Map level">
           {crumbs.map((c, i) => (
             <Fragment key={i}>
               {i > 0 && <span className="pm-sep" aria-hidden="true">›</span>}
@@ -258,6 +294,7 @@ function ProgressMap({ compact = false, initialCourse = null, onOpenFull }) {
         {course && !unit && <System course={course} t={time} onUnit={setUnitIndex} />}
         {unit && <Moons course={course} unit={unit} t={time} />}
       </svg>
+      {unit && !compact && <ConceptPanel unit={unit} />}
       <div className="pm-legend">
         {Object.entries(MASTERY).map(([level, { key }]) => (level === "mastered"
           ? <span key={level} className="chip chip-mastered"><Icon name="check" size={13} /> {t(key)}</span>

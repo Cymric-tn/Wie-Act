@@ -212,3 +212,37 @@ span.chip { cursor: default; }
 @keyframes ai-cursor-blink { 50% { opacity: 0; } }
 .ai-unrevealed { opacity: 0; }
 @media (max-height: 640px) { .ai-head .lumi-halo { --halo: 64px !important; } }
+
+/* ---------- knowledge universe ---------- */
+.progress-map { position: relative; }
+.pm-bar { position: absolute; top: 12px; inset-inline: 12px; z-index: 2; pointer-events: none; }
+.pm-bar > * { pointer-events: auto; }
+.pm-crumbs.glass { padding: 2px 16px; min-height: 44px; border-radius: var(--r-pill); }
+.pm-crumbs button { color: var(--text); text-decoration-color: rgba(255, 255, 255, .4); }
+.pm-burst { opacity: 0; transform-box: fill-box; transform-origin: center; animation: lumi-burst var(--t-burst) var(--ease-out); }
+.pm-body.clickable:is(:hover, :focus-visible) circle:first-child { fill: var(--glow); opacity: .6; }
+
+/* the full map floats on the sky, with no card of its own */
+.d-card.map-full { padding: 0; border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.map-full .d-card-head { padding: 12px 18px; border: 1px solid var(--glass-border); border-radius: var(--r-pill); background-color: var(--glass-scrim); background-image: linear-gradient(var(--glass), var(--glass)); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+.map-full .d-card-head p { color: var(--text-2); }
+.map-full .pm-svg { max-height: calc(100vh - 250px); }
+.map-full .pm-legend { padding: 8px 18px; border: 1px solid var(--glass-border); border-radius: var(--r-pill); background-color: var(--glass-scrim); background-image: linear-gradient(var(--glass), var(--glass)); color: var(--text-2); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+.map-full .pm-hint { color: var(--text-2); }
+.progress-map.has-details { grid-template-columns: minmax(0, 1fr) 300px; column-gap: 14px; }
+.progress-map.has-details .pm-legend { grid-column: 1 / -1; }
+.pm-details { display: grid; align-content: start; gap: 10px; padding: 20px; overflow-y: auto; max-height: calc(100vh - 250px); }
+.pm-details h3 { margin: 0; font: 500 20px/1.25 var(--font-display); overflow-wrap: anywhere; }
+.pm-details p { margin: 0; color: var(--text-2); font-size: 13px; }
+.pm-details .chip { justify-self: start; }
+.pm-details-meter { display: flex; align-items: center; gap: 10px; }
+.pm-details-meter small { color: var(--text-2); font-size: 12px; }
+.pm-details ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+.pm-details li { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--r-control); background: var(--lumi-fill); font-size: 13.5px; overflow-wrap: anywhere; }
+.pm-details li small { color: var(--text-2); font-size: 12px; }
+@media (max-width: 900px) {
+  .progress-map.has-details { grid-template-columns: minmax(0, 1fr); }
+  .pm-details { max-height: none; }
+}
+.low-power :is(.map-full .d-card-head, .map-full .pm-legend) { background: rgba(20, 22, 52, .92); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.pm-core { fill: var(--void); }
