@@ -9,6 +9,7 @@ import { buildTimeline, stateAt } from "../src/lib/history.js";
 import { buildTemplate, TEMPLATES } from "../src/lib/templates.js";
 import { courseForRoom } from "../src/lib/courses.js";
 import { daysLeft, inDays } from "../src/lib/exams.js";
+import { inkOn, INK, STARLIGHT } from "../src/lib/theme.js";
 
 const rect = (extra = {}) => ({
   id: "r1", type: "shape", shape: "rect", page: "p1", z: 1,
@@ -203,5 +204,18 @@ describe("exam dates", () => {
   test("inDays is the inverse of daysLeft, across a month end", () => {
     assert.equal(inDays(22, noon), "2026-12-01");
     assert.equal(daysLeft(inDays(22, noon), noon), 22);
+  });
+});
+
+describe("board inks follow the surface", () => {
+  test("dark ink becomes light on a dark board", () => assert.equal(inkOn(INK, "grid"), STARLIGHT));
+  test("light ink becomes dark on Paper, whatever the letter case", () => assert.equal(inkOn(STARLIGHT.toUpperCase(), "paper"), INK));
+  test("every other colour is the learner's and stays", () => {
+    assert.equal(inkOn("#a279ff", "grid"), "#a279ff");
+    assert.equal(inkOn("#a279ff", "paper"), "#a279ff");
+  });
+  test("an ink already right for its surface is unchanged", () => {
+    assert.equal(inkOn(INK, "paper"), INK);
+    assert.equal(inkOn(STARLIGHT, "stars"), STARLIGHT);
   });
 });

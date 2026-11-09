@@ -89,8 +89,8 @@ export default function Board({ session, status, onLeave }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [tool, setToolState] = useState("pen");
   const [shapeKind, setShapeKind] = useState("rect");
-  const [background, setBackground] = useState(() => readStored("lumi-board-bg", "paper"));
-  const [color, setColor] = useState(() => inkFor(readStored("lumi-board-bg", "paper")));
+  const [background, setBackground] = useState(() => readStored("lumi-board-surface", "grid"));
+  const [color, setColor] = useState(() => inkFor(readStored("lumi-board-surface", "grid")));
   const [width, setWidth] = useState(4);
   const [fill, setFill] = useState(false);
   const [noteColor, setNoteColor] = useState(NOTE_COLORS[0].value);
@@ -298,7 +298,7 @@ export default function Board({ session, status, onLeave }) {
 
   useEffect(() => {
     bgDirtyRef.current = true;
-    remember("lumi-board-bg", background);
+    markDirty(); // the default inks are redrawn for the new surface
   }, [background]);
 
   // ---------- render loop ----------
@@ -1001,6 +1001,7 @@ export default function Board({ session, status, onLeave }) {
 
   function changeBackground(id) {
     setBackground(id);
+    remember("lumi-board-surface", id); // only a real choice is stored, so the default can change later
     if (isLightBackground(id) && color === STARLIGHT) setColor(INK);
     if (!isLightBackground(id) && color === INK) setColor(STARLIGHT);
   }
@@ -1592,7 +1593,7 @@ export default function Board({ session, status, onLeave }) {
 
   return (
     <div className="app">
-      <aside className="rail" aria-label="Lumi navigation">
+      <aside className="rail glass" aria-label="Lumi navigation">
         <div className="logo"><LumiSpark size={34} label="Lumi" /></div>
         <a className="nav" href="/app"><Icon name="home" /><small>Home</small></a>
         {/* The static Universe / Atlas pages (client/public/lumi/) still list the old example curriculum: no links to them in Phase 1. */}

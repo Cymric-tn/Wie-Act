@@ -56,7 +56,7 @@ function PeopleTab(p) {
   return (
     <>
       {isHost && (
-        <div className="card panel-card">
+        <div className="card panel-card glass">
           <div className="eyebrow">TEACHER CONTROLS</div>
           <div className="toggles">
             <Toggle icon={meta.locked ? "lock" : "unlock"} on={meta.locked} onChange={p.onLock} label="Lock board" hint="Only you can draw. Others can still vote and react." />
@@ -67,7 +67,7 @@ function PeopleTab(p) {
         </div>
       )}
 
-      <div className="card panel-card">
+      <div className="card panel-card glass">
         <div className="eyebrow">IN THIS ROOM · {users.length}</div>
         <ul className="people">
           {users.map((u) => {
@@ -102,7 +102,7 @@ function PeopleTab(p) {
         </button>
       </div>
 
-      <div className="card panel-card">
+      <div className="card panel-card glass">
         <div className="eyebrow">REACT</div>
         <div className="reaction-row">
           {REACTIONS.map((e) => (
@@ -153,7 +153,7 @@ function PageRow({ page, index, active, count, canEdit, canDelete, onPage, onRen
 function TimerCard({ timer, offset, isHost, onTimer }) {
   const running = Boolean(timer.endsAt);
   return (
-    <div className="card panel-card">
+    <div className="card panel-card glass">
       <div className="eyebrow">CLASS TIMER</div>
       <div className="timer-readout">
         <TimerBadge timer={timer} offset={offset} compact />
@@ -187,7 +187,7 @@ function TimerCard({ timer, offset, isHost, onTimer }) {
 function RoomTab(p) {
   return (
     <>
-      <div className="card panel-card">
+      <div className="card panel-card glass">
         <div className="eyebrow">PAGES · {p.pages.length}</div>
         <ul className="pages">
           {p.pages.map((page, i) => (
@@ -213,7 +213,7 @@ function RoomTab(p) {
 
       <TimerCard timer={p.meta.timer} offset={p.timerOffset} isHost={p.isHost} onTimer={p.onTimer} />
 
-      <div className="card panel-card">
+      <div className="card panel-card glass">
         <div className="eyebrow">TEMPLATES</div>
         <div className="template-grid">
           {TEMPLATES.map((t) => (
@@ -225,7 +225,7 @@ function RoomTab(p) {
         </div>
       </div>
 
-      <div className="card panel-card">
+      <div className="card panel-card glass">
         <div className="eyebrow">BOARD STYLE</div>
         <div className="bg-options">
           {BACKGROUNDS.map((b) => (
@@ -242,7 +242,7 @@ function RoomTab(p) {
         </div>
       </div>
 
-      <div className="card panel-card">
+      <div className="card panel-card glass">
         <div className="eyebrow">TOP IDEAS</div>
         {p.topNotes.length ? (
           <ol className="top-notes">
@@ -266,7 +266,7 @@ function RoomTab(p) {
 function HistoryTab({ history, onLoad, onScrub, onPlay, onExit }) {
   if (history.state !== "ready") {
     return (
-      <div className="card panel-card">
+      <div className="card panel-card glass">
         <div className="eyebrow">BOARD HISTORY</div>
         <p className="panel-copy">Scrub through every change made in this room and watch the board being built, step by step.</p>
         <button className="btn btn-primary small" onClick={onLoad} disabled={history.state === "loading"}>
@@ -277,7 +277,7 @@ function HistoryTab({ history, onLoad, onScrub, onPlay, onExit }) {
   }
   const { count, index, entry } = history;
   return (
-    <div className="card panel-card">
+    <div className="card panel-card glass">
       <div className="eyebrow">BOARD HISTORY</div>
       {count === 0 ? (
         <p className="panel-copy">Nothing has been drawn in this room yet.</p>
@@ -321,7 +321,7 @@ function HelpTab() {
   return (
     <>
       {SHORTCUTS.map(([group, rows]) => (
-        <div className="card panel-card shortcuts" key={group}>
+        <div className="card panel-card glass shortcuts" key={group}>
           <div className="eyebrow">{group.toUpperCase()}</div>
           <dl>
             {rows.map(([keys, what]) => (
@@ -330,7 +330,7 @@ function HelpTab() {
           </dl>
         </div>
       ))}
-      <div className="card panel-card">
+      <div className="card panel-card glass">
         <div className="eyebrow">TIPS</div>
         <p className="panel-copy">Drop or paste images and PDFs onto the board — each PDF page becomes a board page you can annotate. Turn on Shape assist with the pen to straighten rough boxes, circles and lines.</p>
       </div>
@@ -342,7 +342,7 @@ function SidePanel(props) {
   const { tab, setTab } = props;
   return (
     <aside className="side-panel" aria-label="Room details">
-      <div className="panel-tabs" role="tablist">
+      <div className="panel-tabs glass" role="tablist">
         {TABS.map((t) => (
           <button key={t.id} role="tab" aria-selected={tab === t.id} className={"panel-tab" + (tab === t.id ? " active" : "")} onClick={() => setTab(t.id)}>
             <Icon name={t.icon} size={16} />

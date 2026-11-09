@@ -37,7 +37,7 @@ function ToolDock({ tool, shapeKind, onTool, onImage, onUndo, onRedo, canUndo, c
   }, [flyout]);
 
   return (
-    <nav className="tool-dock" aria-label="Drawing tools">
+    <nav className="tool-dock glass" aria-label="Drawing tools">
       {TOOLS.map((t, i) => {
         const disabled = readOnly && EDIT_TOOLS.has(t.id);
         const sep = i > 0 && TOOLS[i - 1].group !== t.group;

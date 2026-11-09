@@ -46,7 +46,7 @@ function ContextDock(props) {
   } = props;
 
   if (readOnly) {
-    return <div className="context-dock hint-dock"><Icon name="lock" size={16} /> View only — you can still pan, zoom, vote on notes and react.</div>;
+    return <div className="glass context-dock hint-dock"><Icon name="lock" size={16} /> View only — you can still pan, zoom, vote on notes and react.</div>;
   }
 
   if (tool === "select" && selection.length) {
@@ -55,7 +55,7 @@ function ContextDock(props) {
     const fillable = selection.filter((i) => i.type === "shape" && (i.shape === "rect" || i.shape === "ellipse"));
     const first = selection.find((i) => i.color);
     return (
-      <div className="context-dock" aria-label="Selection">
+      <div className="glass context-dock" aria-label="Selection">
         <span className="selection-count">{selection.length} selected</span>
         <Sep />
         {selection.some((i) => i.type !== "image") && (
@@ -90,7 +90,7 @@ function ContextDock(props) {
 
   if (tool === "note") {
     return (
-      <div className="context-dock">
+      <div className="glass context-dock">
         <span className="dock-label">Note</span>
         <Swatches colors={NOTE_COLORS} custom={false} value={noteColor} onChange={setNoteColor} label="Note color" />
         <Sep />
@@ -101,7 +101,7 @@ function ContextDock(props) {
 
   if (hints[tool]) {
     return (
-      <div className="context-dock hint-dock">
+      <div className="glass context-dock hint-dock">
         <span>{hints[tool]}</span>
         {tool === "eraser" && isHost && (
           <>
@@ -115,7 +115,7 @@ function ContextDock(props) {
 
   const canFill = tool === "shape" && (shapeKind === "rect" || shapeKind === "ellipse");
   return (
-    <div className="context-dock" aria-label="Pen style">
+    <div className="glass context-dock" aria-label="Pen style">
       <Swatches colors={PALETTE} value={color} onChange={setColor} />
       <Sep />
       <WidthControl

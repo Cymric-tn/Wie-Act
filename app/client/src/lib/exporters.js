@@ -4,7 +4,7 @@ import {
   NOTE_TEXT_SIZE, NOTE_PADDING, TEXT_LINE_HEIGHT
 } from "./geometry.js";
 import { drawItem, drawBackground, ensureAssets, penPathData, arrowHead, equationSrc, BACKGROUND_FILL, FONT_FAMILY } from "./render.js";
-import { NOTE_INK } from "./theme.js";
+import { NOTE_INK, inkOn } from "./theme.js";
 
 const PADDING = 60;
 
@@ -110,7 +110,7 @@ function itemToSvg(item) {
 export async function exportSvg(items, background, name) {
   await ensureAssets(items);
   const box = contentBox(items);
-  const body = items.map(itemToSvg).join("\n  ");
+  const body = items.map((item) => itemToSvg({ ...item, color: inkOn(item.color, background) })).join("\n  ");
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.x} ${box.y} ${box.w} ${box.h}" width="${Math.round(box.w)}" height="${Math.round(box.h)}">
   <rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" fill="${BACKGROUND_FILL[background] || BACKGROUND_FILL.stars}"/>

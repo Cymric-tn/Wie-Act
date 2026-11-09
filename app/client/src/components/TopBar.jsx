@@ -89,7 +89,7 @@ function TopBar(props) {
   } = props;
   const online = status === "Connected";
   return (
-    <header className="top">
+    <header className="top glass">
       <div className="top-left">
         <div className="brand"><LumiLogo height={26} /></div>
         <button className="room-pill" onClick={onCopyInvite} aria-label="Copy invite link" title="Copy invite link">

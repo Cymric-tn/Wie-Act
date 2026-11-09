@@ -4,7 +4,7 @@ import {
   setTextMeasurer, wrapLines, voteBadgeBox,
   NOTE_TEXT_SIZE, NOTE_PADDING, TEXT_LINE_HEIGHT
 } from "./geometry.js";
-import { NOTE_INK } from "./theme.js";
+import { NOTE_INK, inkOn } from "./theme.js";
 import { texToSvg } from "./math.js";
 import { lumiColors } from "./lumiColors.js";
 
@@ -122,11 +122,24 @@ function roundRectPath(ctx, x, y, w, h, r) {
 }
 
 // ---------- items ----------
+// The surface the next items land on: drawBackground sets it, for the board and for exports alike.
+let surface = "grid";
+const shownByItem = new WeakMap(); // one display copy per recoloured item, so per-item caches keep working
+
+function shownOnSurface(item) {
+  const color = inkOn(item.color, surface);
+  if (color === item.color) return item;
+  let shown = shownByItem.get(item);
+  if (!shown || shown.color !== color) shownByItem.set(item, (shown = { ...item, color }));
+  return shown;
+}
+
 /**
  * Draws one item in world coordinates (the caller sets the view transform).
  * opts.live: stroke still being drawn (skip caching).
  */
-export function drawItem(ctx, item, opts = {}) {
+export function drawItem(ctx, stored, opts = {}) {
+  const item = shownOnSurface(stored);
   ctx.save();
   if (opts.alpha !== undefined) ctx.globalAlpha = opts.alpha;
   ctx.lineCap = "round";
@@ -271,11 +284,12 @@ const STAR_TILES = [512, 733].map((size, layer) => {
 });
 
 export const BACKGROUND_FILL = {
-  get stars() { return lumiColors().void; }, get grid() { return lumiColors().void; }, get graph() { return lumiColors().void; },
+  get stars() { return lumiColors().board; }, get grid() { return lumiColors().board; }, get graph() { return lumiColors().board; },
   get paper() { return lumiColors().room; }
 };
 
 export function drawBackground(ctx, mode, view, width, height) {
+  surface = mode;
   ctx.save();
   if (mode === "paper") {
     ctx.fillStyle = BACKGROUND_FILL.paper;
@@ -283,11 +297,7 @@ export function drawBackground(ctx, mode, view, width, height) {
     ctx.restore();
     return;
   }
-  const base = ctx.createRadialGradient(width * 0.6, height * 0.42, 0, width * 0.6, height * 0.42, Math.max(width, height) * 0.8);
-  base.addColorStop(0, lumiColors().void);
-  base.addColorStop(0.45, lumiColors().void);
-  base.addColorStop(1, lumiColors().void);
-  ctx.fillStyle = base;
+  ctx.fillStyle = lumiColors().board;
   ctx.fillRect(0, 0, width, height);
 
   if (mode === "stars") {

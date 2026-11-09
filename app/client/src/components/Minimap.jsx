@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef } from "react";
 import { bbox, unionBox, visibleBox } from "../lib/geometry";
 import { lumiColors } from "../lib/lumiColors";
+import { inkOn } from "../lib/theme";
 
 const W = 200;
 const H = 124;
@@ -31,7 +32,7 @@ function Minimap({ items, view, size, onNavigate, light }) {
     items.forEach((item) => {
       const b = bbox(item);
       ctx.globalAlpha = item.type === "note" || item.type === "image" ? 0.75 : 0.55;
-      ctx.fillStyle = item.color || lumiColors().iris;
+      ctx.fillStyle = inkOn(item.color, "grid") || lumiColors().iris; // the minimap is dark on every board
       ctx.fillRect(ox + b.x * scale, oy + b.y * scale, Math.max(1.5, b.w * scale), Math.max(1.5, b.h * scale));
     });
     ctx.globalAlpha = 1;

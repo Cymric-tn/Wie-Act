@@ -1056,38 +1056,8 @@ button:disabled { cursor: default; }
   background: var(--lumi-surface);
   border: 1px solid var(--lumi-line);
 }
-.tpl-axes .tpl-thumb { background: var(--lumi-surface); }
-.tpl-venn .tpl-thumb { background: var(--lumi-surface); }
-.tpl-mindmap .tpl-thumb { background: var(--lumi-surface); }
-.tpl-kwl .tpl-thumb { background: var(--lumi-surface); }
-.tpl-cornell .tpl-thumb { background: var(--lumi-surface); }
-.tpl-exit .tpl-thumb { background: var(--lumi-surface); }
-
-.bg-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 11px; }
-.bg-option {
-  display: grid;
-  gap: 6px;
-  justify-items: center;
-  border: 1px solid var(--lumi-iris);
-  background: var(--lumi-surface);
-  border-radius: 12px;
-  padding: 7px 4px;
-  font-size: 10.5px;
-  color: var(--lumi-slate);
-  transition: border-color .2s, color .2s;
-}
-.bg-option.active, .bg-option:hover { border-color: var(--lumi-iris); color: var(--lumi-ink); }
-.bg-thumb { width: 100%; height: 24px; border-radius: 7px; border: 1px solid var(--lumi-line); }
-.bg-option.bg-stars .bg-thumb {
-  background:
-    var(--lumi-surface);
-}
-.bg-option.bg-grid .bg-thumb { background: var(--lumi-surface); }
-.bg-option.bg-graph .bg-thumb {
-  background:
-    var(--lumi-surface);
-}
-.bg-option.bg-paper .bg-thumb { background: var(--lumi-surface); }
+.bg-option:not(.bg-paper) .bg-thumb { background: var(--lumi-board); }
+.bg-option.bg-paper .bg-thumb { background: var(--lumi-room); }
 
 .top-notes { list-style: none; margin: 11px 0 0; padding: 0; display: grid; gap: 6px; }
 .top-notes button {

@@ -152,7 +152,7 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
 
   return (
     <div className="bai lumi-dark">
-      <div className="card panel-card">
+      <div className="card panel-card glass">
         <div className="bai-head">
           <div className="eyebrow bai-name"><LumiSpark size={20} state={busy ? "thinking" : "rest"} /> LUMI</div>
           <EngineLine />
@@ -176,7 +176,7 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
       </div>
 
       {(busy || out || error) && (
-        <div className="card panel-card bai-result" aria-live="polite">
+        <div className="card panel-card glass bai-result" aria-live="polite">
           {busy && <Progress state={progress} />}
           {error && <div className="ai-notice bad"><span>{error}</span></div>}
           {out && (

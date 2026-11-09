@@ -139,7 +139,7 @@ span.chip { cursor: default; }
 .d-user { border-radius: var(--r-pill); }
 .d-ai-avatar { background: rgba(5, 6, 26, .55); box-shadow: 0 0 22px rgba(34, 195, 230, .35); }
 .d-icon-btn { border-radius: 50%; }
-.d-top { top: 12px; margin: 24px 24px 0; padding: 10px 14px 10px 22px; padding-inline: 22px 14px; border-radius: var(--r-pill); }
+.d-top { top: 12px; margin: 24px 24px 0; padding-block: 10px; padding-inline: 22px 14px; border-radius: var(--r-pill); }
 .d-top-title { font-family: var(--font-display); font-weight: 500; }
 .d-role, .lang-switch { border-radius: var(--r-pill); background: var(--lumi-fill); }
 .d-role button, .lang-switch button { border-radius: var(--r-pill); }
@@ -246,3 +246,48 @@ span.chip { cursor: default; }
 }
 .low-power :is(.map-full .d-card-head, .map-full .pm-legend) { background: rgba(20, 22, 52, .92); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .pm-core { fill: var(--void); }
+
+/* ---------- study rooms and whiteboard ---------- */
+.rail.glass { margin-block: 12px; margin-inline: 12px 0; border-radius: var(--r-panel); }
+.app { grid-template-columns: 96px minmax(0, 1fr); }
+.top.glass { margin: 12px 12px 0; border-radius: var(--r-pill); }
+.tool-dock.glass { border-radius: var(--r-card); box-shadow: none; }
+.context-dock.glass { border-radius: var(--r-pill); box-shadow: none; }
+.panel-tabs.glass { border-radius: var(--r-card); }
+.panel-card.glass { border-radius: var(--r-card); box-shadow: none; }
+.nav { border-radius: var(--r-control); }
+.nav.active, .nav:hover { background: rgba(255, 255, 255, .14); }
+.lobby-card.glass-strong { border-radius: var(--r-panel); }
+.avatars .avatar, .d-avatars .d-avatar { border: 2px solid var(--void); }
+.avatar.more, .d-avatar.more { background: var(--surface-solid); }
+
+/* The canvas and everything floating on it are solid: nothing blurs behind a drawing. */
+.stage, .stage.light { background: var(--board); border-color: var(--glass-border); box-shadow: 0 25px 80px var(--lumi-shadow); }
+.stage.light { background: var(--lumi-room); }
+:is(.banner, .pager, .zoomer, .minimap, .busy, .drop-hint, .note-draft-hint, .text-draft) { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.light .minimap, .light .text-draft { background: var(--surface-solid); }
+.light .text-draft { background: #fff; }
+.light .empty-hint p { color: #5A6275; }
+.light .empty-hint b { color: #3B3BA8; }
+.empty-hint p { color: var(--text-2); }
+
+/* Popovers and dialogs sit on top of other content, so they are solid too. */
+:is(.menu, .shape-flyout, .equation-editor, .review) { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.equation-editor textarea, .eq-preview { background: var(--lumi-fill); }
+
+/* Rows inside a glass panel: a hairline, not an iris outline on each one. */
+:is(.toggle-row, .code-row, .people li, .reaction-btn, .page-row, .template-btn, .bg-option, .top-notes button, .course-btn) { border-color: var(--lumi-line); background: var(--lumi-fill); }
+.page-row input { border-color: var(--lumi-line); background: var(--lumi-fill); }
+.bg-option.active, .bg-option:hover { border-color: var(--lumi-iris-strong); }
+.iconbtn, .room-pill { border-radius: var(--r-pill); }
+.iconbtn { background: var(--lumi-fill); }
+
+@media (max-width: 1240px) {
+  /* here the side panel covers the canvas */
+  .side-panel { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .panel-card.glass, .panel-tabs.glass { background: var(--lumi-fill); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; }
+  .top.glass { border-radius: var(--r-card); }
+}

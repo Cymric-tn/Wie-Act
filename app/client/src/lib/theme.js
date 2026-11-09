@@ -34,4 +34,14 @@ export const BACKGROUNDS = [
 export const isLightBackground = (bg) => bg === "paper";
 export const inkFor = (bg) => (isLightBackground(bg) ? INK : STARLIGHT);
 
+/**
+ * The two default inks follow the surface they are shown on, so work drawn on Paper stays readable on the dark board and
+ * the other way round. Only the display changes: the stored item keeps its colour.
+ */
+export function inkOn(color, bg) {
+  const c = String(color).toLowerCase();
+  if (isLightBackground(bg)) return c === STARLIGHT ? INK : color;
+  return c === INK ? STARLIGHT : color;
+}
+
 export const TIMER_PRESETS = [60, 180, 300, 600, 900];
