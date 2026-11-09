@@ -464,3 +464,34 @@ degraded `quota_low`. Five changes and one script; evidence below, none of it me
   before this fix wrong_math 4 / ungrounded 7 / unchecked 0, after wrong_math 3 / ungrounded 7 / unchecked 1 (the upload
   sentence moved from wrong_math to unchecked; nothing else changed); against the state before verbal equality at all: 3 / 7 / 0 ->
   3 / 7 / 1. `reports/recheck-formulas-limits.json`.
+
+## Diagram generator (2026-11-09, from the team's `ednova-diagrams` package; feature layer, `engine/` not touched)
+
+- **Where it lives.** Python in `app/diagrams/` (feature code, not engine: it makes no LLM call and `engine/` is frozen), renderer in
+  `app/client/src/lib/diagrams/`, contract in `docs/diagram.schema.json` (`python -m scripts.gen_diagram_schema`; a test fails on drift). Route:
+  browser -> `POST /api/diagrams`, `/api/diagrams/check` (Node, own 60/min limit, 200 kB) -> bridge `/diagrams`, `/diagrams/check` -> worker. It works
+  on every engine mode because no model is involved, and it does not appear in the engine's metrics or the AI run log.
+- **The maths runs in a child process (`diagrams.worker`), killed at `DIAGRAM_TIMEOUT_S` (10 s), not in a bridge thread.** Measured on the package as
+  delivered: the slowest legitimate build was 5.8 s (`sqrt(x**5+x**3+1)/(x**7-x+1)`), but `x+((((9**99)+1)**99+1)**99+1)**99` passes the parser's whitelist and
+  was still running at 25 s, in big-integer arithmetic that holds the GIL. In the bridge that freezes the engine's event loop, and a thread cannot be stopped. The
+  worker is restarted on the next request; it has a 2 GB address-space limit. A timeout is a 503 `diagram_timeout`, a refusal a 400 whose text is for the learner.
+- **The concept map reads the real graph `data/courses/analyse.yaml`, not the package's own course file**, whose concept ids (`derivee`, `somme`...) differ from
+  the bank's. Draft concepts are left out, as on the progress map. The package's file is kept only as a test fixture (`tests/fixtures/diagrams_course.yaml`).
+- **Mastery colours come from the server's measured attempts** (`store.mastery`, as for prep plans); a learner with none gets a neutral map.
+- **Labels follow the UI language,** not the language guessed from the sentence, so a French UI does not get an English table for "plot x²".
+- **Parser errors are replaced by a localized message** (`err_parse`, `err_failed`): the package returned English developer text in every language.
+- **Board adapter (`toBoard.js`).** The board has no dashed line (a dash = short lines; solid if that would pass 500 items in one operation), its text is left-aligned from
+  the top (anchors and baselines are converted), and a curve is a pen path with constant pressure so it keeps one thickness. The package's `toBoardPrimitives` now also
+  returns `role` and `width`, without which the derivative and the tangent had the same colour. Every item is checked against the server's `cleanItem` in the tests.
+- **Practice tables:** the answer key is in the spec the browser receives (the widget's "reveal" needs it), and results are not recorded as attempts, so they do not change mastery.
+- **Not done:** the tutor chat does not draw diagrams on its own, and there is no diagram box inside the board. Detection is by trigger words, which are substring matches, so it
+  suits an explicit "draw this" field better than free chat.
+
+## Assessment Prep redesign (2026-11-09, branch `prep-redesign`)
+
+- **Bugs 1 and 2 were only in `engine/fake.py`** (canned `Dérive l'exemple {id}`; the fake's "À toi" was always d01, also its worked example). The real engine was checked first: 36 generated pages, no id in a statement, no duplicate. The fake now uses the real `prep.page_exercises` and honours `exclude_exercises`; nothing else under `engine/` changed.
+- **Exams are the learner's, in this browser** (`lib/exams.js`, like the preview accounts), because the upcoming exams were hardcoded examples and adding them to the server would be an API change. Readiness is the course's measured mastery, so it is the same for every exam.
+- **Final assessment:** the plan's `assessment_exercise_ids` cannot be shown, no route returns their statements. It uses the existing `quiz` task, one exercise per concept of the plan (at most 6), harder where mastery is higher, which is how the planner defines the assessment.
+- **"This confuses me" did not exist before and was built here:** it is the existing `explain` task with `passage` and `confusion: HIGH`.
+- **Level test "done"** is a flag in this browser, set when the learner reaches Finish.
+- **Before/after screenshots:** `reports/prep-redesign/` ("before" = commit fbd8fe3, with the same two exams seeded).
