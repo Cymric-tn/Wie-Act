@@ -4,6 +4,9 @@ import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { useI18n } from "../../lib/i18n";
 import Icon from "../Icons";
 
+// The map's own colours (it is the one place Glow marks a concept being worked on).
+const MAP_COLOR = { mastered: "var(--lumi-spark)", learning: "var(--lumi-glow)", weak: "var(--lumi-bad)", new: "var(--lumi-slate)" };
+
 const W = 800;
 const H = 460;
 const pct = (v) => Math.round(v * 100);
@@ -33,7 +36,7 @@ function orbit(cx, cy, rx, ry, angle) {
 function Defs({ COURSES }) {
   return (
     <defs>
-      {Object.entries(MASTERY).map(([level, { color }]) => (
+      {Object.entries(MAP_COLOR).map(([level, color]) => (
         <radialGradient key={level} id={`pm-${level}`} cx="35%" cy="32%" r="75%">
           <stop offset="0%" stopColor="#ffffff" stopOpacity=".9" />
           <stop offset="28%" stopColor={color} />
@@ -42,7 +45,7 @@ function Defs({ COURSES }) {
       ))}
       {COURSES.map((c) => (
         <radialGradient key={c.id} id={`pm-sun-${c.id}`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fffdf5" />
+          <stop offset="0%" stopColor="#ffffff" />
           <stop offset="35%" stopColor={c.color} />
           <stop offset="100%" stopColor={c.color} stopOpacity="0" />
         </radialGradient>
@@ -51,8 +54,8 @@ function Defs({ COURSES }) {
         <feGaussianBlur stdDeviation="6" />
       </filter>
       <radialGradient id="pm-nebula" cx="55%" cy="45%" r="60%">
-        <stop offset="0%" stopColor="#8270e5" stopOpacity=".22" />
-        <stop offset="100%" stopColor="#8270e5" stopOpacity="0" />
+        <stop offset="0%" stopColor="var(--lumi-iris)" stopOpacity=".22" />
+        <stop offset="100%" stopColor="var(--lumi-iris)" stopOpacity="0" />
       </radialGradient>
     </defs>
   );
@@ -65,7 +68,7 @@ const STARS = (() => {
 })();
 
 function Body({ x, y, r, level, label, sub, onSelect, ariaLabel, labelBelow = true, dim }) {
-  const color = MASTERY[level].color;
+  const color = MAP_COLOR[level];
   return (
     <g
       className={"pm-body" + (onSelect ? " clickable" : "") + (dim ? " dim" : "")}
@@ -102,7 +105,7 @@ function Sun({ course, x, y, r, onSelect, showLabel = true, t }) {
     >
       <circle cx={x} cy={y} r={r * 2.6 * pulse} fill={`url(#pm-sun-${course.id})`} opacity=".45" />
       <circle cx={x} cy={y} r={r} fill={`url(#pm-sun-${course.id})`} />
-      <circle cx={x} cy={y} r={r * 0.55} fill="#fffdf5" opacity=".9" />
+      <circle cx={x} cy={y} r={r * 0.55} fill="#ffffff" opacity=".9" />
       {showLabel && (
         <text x={x} y={y + r + 22} textAnchor="middle" className="pm-label strong">
           {course.name}
@@ -192,7 +195,7 @@ function Moons({ course, unit, t }) {
       {moons.map((m) => <ellipse key={m.i} cx={cx} cy={cy} rx={m.rx} ry={m.ry} className="pm-orbit" />)}
       {moons.filter((m) => !m.front).map(moon)}
       <g>
-        <circle cx={cx} cy={cy} r={68} fill={MASTERY[level].color} opacity=".18" filter="url(#pm-glow)" />
+        <circle cx={cx} cy={cy} r={68} fill="var(--lumi-glow)" opacity=".22" filter="url(#pm-glow)" />
         <circle cx={cx} cy={cy} r={42} fill={`url(#pm-${level})`} />
         <ellipse cx={cx} cy={cy} rx={64} ry={12} fill="none" stroke={course.color} strokeOpacity=".55" strokeWidth="2" transform={`rotate(-14 ${cx} ${cy})`} />
         <text x={cx} y={cy + 4} textAnchor="middle" className="pm-core">{pct(unit.mastery)}%</text>
@@ -230,7 +233,7 @@ function ProgressMap({ compact = false, initialCourse = null, onOpenFull }) {
   if (unit) crumbs.push({ label: unit.name });
 
   return (
-    <div className={"progress-map" + (compact ? " compact" : "")} ref={ref}>
+    <div className={"progress-map lumi-dark" + (compact ? " compact" : "")} ref={ref}>
       <div className="pm-bar">
         <nav className="pm-crumbs" aria-label="Map level">
           {crumbs.map((c, i) => (
@@ -249,17 +252,17 @@ function ProgressMap({ compact = false, initialCourse = null, onOpenFull }) {
         <Defs COURSES={COURSES} />
         <rect width={W} height={H} fill="url(#pm-nebula)" />
         {STARS.map((s, i) => (
-          <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#d5e6ff" opacity={s.o * (0.75 + Math.sin(time * 0.9 + i) * 0.25)} />
+          <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#ffffff" opacity={s.o * (0.75 + Math.sin(time * 0.9 + i) * 0.25)} />
         ))}
         {!course && <Galaxy t={time} onCourse={setCourseIndex} COURSES={COURSES} />}
         {course && !unit && <System course={course} t={time} onUnit={setUnitIndex} />}
         {unit && <Moons course={course} unit={unit} t={time} />}
       </svg>
       <div className="pm-legend">
-        {Object.entries(MASTERY).map(([level, { color, key }]) => (level === "mastered"
+        {Object.entries(MASTERY).map(([level, { key }]) => (level === "mastered"
           ? <span key={level} className="chip chip-mastered"><Icon name="check" size={13} /> {t(key)}</span>
           : (
-          <span key={level}><i style={{ background: color, color }} />{t(key)}</span>
+          <span key={level}><i style={{ background: MAP_COLOR[level], color: MAP_COLOR[level] }} />{t(key)}</span>
           )))}
         <span className="pm-hint">{t("map.sub")}</span>
       </div>

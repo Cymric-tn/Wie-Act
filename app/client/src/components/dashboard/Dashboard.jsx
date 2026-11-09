@@ -374,7 +374,7 @@ export default function Dashboard({ section }) {
           navigate("/");
         }}
       />
-      <div className="d-main">
+      <div className={"d-main" + (section === "rooms" || section === "board" ? " d-room" : "")}>
         <TopBar user={user} section={section} onMenu={() => setMenuOpen(true)} onRole={changeRole} onCompanion={() => openCompanion()} onSoon={onSoon} />
         <main className="d-content" key={`${section}-${user.role}`}>
           <Section user={user} section={section} onSoon={onSoon} onToast={onToast} onCompanion={openCompanion} onRole={changeRole} />

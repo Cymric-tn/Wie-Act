@@ -1,7 +1,7 @@
 // The board's AI tab: ask about the board, fact-check a selected claim, check a
 // worked solution line by line, or read handwriting from a selection. Each call
 // carries the room id, so the engine keeps one AI request per room at a time.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "./Icons";
 import { ai, engineLanguage, replyLanguage } from "../lib/engine";
 import { renderToCanvas } from "../lib/exporters";
@@ -84,13 +84,15 @@ function WorkResult({ data, steps = [] }) {
   );
 }
 
-export default function BoardAI({ room, courseId, pageItems, selected, background, canEdit, onPin, onAddText }) {
+export default function BoardAI({ room, courseId, pageItems, selected, background, canEdit, onPin, onAddText, onBusyChange }) {
   const { t, lang } = useI18n();
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(null);
   const [out, setOut] = useState(null); // { kind, result, input }
   const [error, setError] = useState(null);
   const [progress, onEvent, resetProgress] = useProgress();
+
+  useEffect(() => { onBusyChange?.(Boolean(busy)); return () => onBusyChange?.(false); }, [busy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectionText = textOfItems(selected);
   const boardText = textOfItems(pageItems);

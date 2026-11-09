@@ -6,6 +6,7 @@ import {
 } from "./geometry.js";
 import { NOTE_INK } from "./theme.js";
 import { texToSvg } from "./math.js";
+import { lumiColors } from "./lumiColors.js";
 
 export const FONT_FAMILY = "Inter, ui-sans-serif, system-ui, -apple-system, sans-serif";
 export const font = (size, weight = 600) => `${weight} ${size}px ${FONT_FAMILY}`;
@@ -216,7 +217,7 @@ export function drawItem(ctx, item, opts = {}) {
       const votes = item.votes?.length || 0;
       const badge = voteBadgeBox(item);
       roundRectPath(ctx, badge.x, badge.y, badge.w, badge.h, 15);
-      ctx.fillStyle = votes ? "#6c43d9" : "#1a1f3a1f";
+      ctx.fillStyle = votes ? lumiColors().iris : "#1a1f3a1f";
       ctx.fill();
       ctx.fillStyle = votes ? "#ffffff" : "#1a1f3a99";
       ctx.font = font(15, 700);
@@ -269,7 +270,10 @@ const STAR_TILES = [512, 733].map((size, layer) => {
   return { size, stars, parallax: layer ? 0.18 : 0.3 };
 });
 
-export const BACKGROUND_FILL = { stars: "#060d25", grid: "#060d25", graph: "#060d25", paper: "#f7f8fd" };
+export const BACKGROUND_FILL = {
+  get stars() { return lumiColors().void; }, get grid() { return lumiColors().void; }, get graph() { return lumiColors().void; },
+  get paper() { return lumiColors().room; }
+};
 
 export function drawBackground(ctx, mode, view, width, height) {
   ctx.save();
@@ -280,16 +284,16 @@ export function drawBackground(ctx, mode, view, width, height) {
     return;
   }
   const base = ctx.createRadialGradient(width * 0.6, height * 0.42, 0, width * 0.6, height * 0.42, Math.max(width, height) * 0.8);
-  base.addColorStop(0, "#131a4d");
-  base.addColorStop(0.45, "#08102b");
-  base.addColorStop(1, "#040a1c");
+  base.addColorStop(0, lumiColors().void);
+  base.addColorStop(0.45, lumiColors().void);
+  base.addColorStop(1, lumiColors().void);
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, width, height);
 
   if (mode === "stars") {
     const glow = ctx.createRadialGradient(width * 0.58, height * 0.44, 0, width * 0.58, height * 0.44, width * 0.45);
-    glow.addColorStop(0, "#8270e52a");
-    glow.addColorStop(1, "#8270e500");
+    glow.addColorStop(0, `${lumiColors().iris}2a`);
+    glow.addColorStop(1, `${lumiColors().iris}00`);
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
 
@@ -301,7 +305,7 @@ export function drawBackground(ctx, mode, view, width, height) {
         for (let ty = oy; ty < height; ty += size) {
           stars.forEach((s) => {
             ctx.globalAlpha = s.a;
-            ctx.fillStyle = s.violet ? "#c6a0ff" : "#d5e6ff";
+            ctx.fillStyle = "#ffffff";
             ctx.beginPath();
             ctx.arc(tx + s.x, ty + s.y, s.r * scale, 0, Math.PI * 2);
             ctx.fill();

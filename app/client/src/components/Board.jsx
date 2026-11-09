@@ -17,6 +17,7 @@ import { imageFileToData, pdfFileToPages, isPdf, isImage } from "../lib/media";
 import { exportPng, exportSvg, exportPdf, copyPng } from "../lib/exporters";
 import { buildTemplate } from "../lib/templates";
 import { LumiSpark } from "./LumiSpark";
+import { lumiColors } from "../lib/lumiColors";
 import { toBoardItems } from "../lib/diagrams/toBoard";
 import { takePendingDiagram } from "../lib/diagrams/api";
 import { buildTimeline, stateAt, describeEntry } from "../lib/history";
@@ -88,8 +89,8 @@ export default function Board({ session, status, onLeave }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [tool, setToolState] = useState("pen");
   const [shapeKind, setShapeKind] = useState("rect");
-  const [background, setBackground] = useState(() => readStored("ednova-board-bg", "stars"));
-  const [color, setColor] = useState(() => inkFor(readStored("ednova-board-bg", "stars")));
+  const [background, setBackground] = useState(() => readStored("lumi-board-bg", "paper"));
+  const [color, setColor] = useState(() => inkFor(readStored("lumi-board-bg", "paper")));
   const [width, setWidth] = useState(4);
   const [fill, setFill] = useState(false);
   const [noteColor, setNoteColor] = useState(NOTE_COLORS[0].value);
@@ -144,6 +145,8 @@ export default function Board({ session, status, onLeave }) {
 
   // ---------- small helpers ----------
   const markDirty = () => { dirtyRef.current = true; };
+  const aiBusyRef = useRef(false);
+  const onAiBusy = (on) => { aiBusyRef.current = on; markDirty(); };
   const bump = () => { setRev((r) => r + 1); dirtyRef.current = true; };
   const showToast = (text) => setToast({ text, key: Date.now() + Math.random() });
 
@@ -295,7 +298,7 @@ export default function Board({ session, status, onLeave }) {
 
   useEffect(() => {
     bgDirtyRef.current = true;
-    remember("ednova-board-bg", background);
+    remember("lumi-board-bg", background);
   }, [background]);
 
   // ---------- render loop ----------
@@ -339,7 +342,8 @@ export default function Board({ session, status, onLeave }) {
     // Screen-space overlays: selection frame, handles, marquee.
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const light = isLightBackground(backgroundRef.current);
-    const accent = light ? "#6949d7" : "#c8b7ff";
+    const { iris, glow, void: voidColor } = lumiColors();
+    const accent = aiBusyRef.current ? glow : iris; // Glow while the AI is checking the selection
     const box = selectionBox();
     if (box && !historyRef.current) {
       const a = G.worldToScreen(v, box.x, box.y);
@@ -354,7 +358,7 @@ export default function Board({ session, status, onLeave }) {
       if (!readOnlyRef.current) {
         handlePoints(box).forEach(([, hx, hy]) => {
           const p = G.worldToScreen(v, hx, hy);
-          ctx.fillStyle = light ? "#ffffff" : "#0b1430";
+          ctx.fillStyle = light ? "#ffffff" : voidColor;
           ctx.fillRect(p.x - HANDLE / 2, p.y - HANDLE / 2, HANDLE, HANDLE);
           ctx.strokeRect(p.x - HANDLE / 2, p.y - HANDLE / 2, HANDLE, HANDLE);
         });
@@ -364,7 +368,7 @@ export default function Board({ session, status, onLeave }) {
     if (inter?.kind === "marquee" && inter.rect) {
       const r = inter.rect;
       const a = G.worldToScreen(v, r.x, r.y);
-      ctx.fillStyle = light ? "#6949d714" : "#a68bff18";
+      ctx.fillStyle = `${iris}18`;
       ctx.strokeStyle = accent;
       ctx.lineWidth = 1;
       ctx.fillRect(a.x, a.y, r.w * v.zoom, r.h * v.zoom);
@@ -1776,6 +1780,7 @@ export default function Board({ session, status, onLeave }) {
                 selected={selectedList}
                 background={background}
                 canEdit={!readOnly}
+                onBusyChange={onAiBusy}
                 onPin={pinNote}
                 onAddText={addTextItem}
               />

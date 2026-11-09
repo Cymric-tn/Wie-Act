@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef } from "react";
 import { bbox, unionBox, visibleBox } from "../lib/geometry";
+import { lumiColors } from "../lib/lumiColors";
 
 const W = 200;
 const H = 124;
@@ -30,13 +31,13 @@ function Minimap({ items, view, size, onNavigate, light }) {
     items.forEach((item) => {
       const b = bbox(item);
       ctx.globalAlpha = item.type === "note" || item.type === "image" ? 0.75 : 0.55;
-      ctx.fillStyle = item.type === "image" ? "#8da7ff" : item.color || "#a279ff";
+      ctx.fillStyle = item.color || lumiColors().iris;
       ctx.fillRect(ox + b.x * scale, oy + b.y * scale, Math.max(1.5, b.w * scale), Math.max(1.5, b.h * scale));
     });
     ctx.globalAlpha = 1;
-    ctx.strokeStyle = light ? "#6949d7" : "#c8b7ff";
+    ctx.strokeStyle = lumiColors().iris;
     ctx.lineWidth = 1.5;
-    ctx.fillStyle = light ? "#6949d71a" : "#c8b7ff14";
+    ctx.fillStyle = `${lumiColors().iris}1a`;
     const vx = ox + visible.x * scale, vy = oy + visible.y * scale;
     ctx.fillRect(vx, vy, visible.w * scale, visible.h * scale);
     ctx.strokeRect(vx, vy, visible.w * scale, visible.h * scale);
