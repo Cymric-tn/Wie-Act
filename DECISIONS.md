@@ -505,3 +505,17 @@ degraded `quota_low`. Five changes and one script; evidence below, none of it me
 - **Default canvas is Paper (Room).** The stored preference moved to `lumi-board-bg`, because the old key was written on every visit, so it could not tell a real choice from the old Starfield default. Starfield stays selectable.
 - **The board stays left-to-right in Arabic,** as before: its interface is English only and canvas text is positioned from the document direction. Its CSS is logical, so this can change later. The switch thumb and `left: 50%` centring stay physical on purpose.
 - **Map planets stay under 44px wide:** a bigger hit area would change the map's behaviour, which was out of bounds.
+
+## Glass & Aurora restyle (2026-11-09, branch `restyle-glass-aurora`, from `rebrand-lumi`; `app/client` only)
+
+- **The `--lumi-*` names stayed and now point at the new tokens,** so every screen moved with one change. `styles/glass.css` loads last and holds the primitives, controls and per-screen rules.
+- **Contrast over a bright blob: a dark layer under the glass, not more white** (a change from the brief's "raise opacity to 0.12-0.16"). White glass over a bright blob gets lighter, which lowers contrast for light text. `--glass-scrim` dims the sky first. Measured with each blob parked at full strength under the panel: `--text-3` lowest 5.08:1 on desktop, 4.94:1 on a phone across the drift. Hero cards (`.glass-strong`) use `--text-2` for secondary text.
+- **Gold means mastery only,** so `--lumi-warn` moved from amber to orange.
+- **Dark board by default (`grid` on #0E1030), Paper is the light option.** The preference moved to `lumi-board-surface`, because `lumi-board-bg` was written on every visit and so could not tell a choice from the old default. It is now stored only on a real choice.
+- **The two default inks follow the surface at draw time (`theme.inkOn`).** Boards drawn on Paper use dark ink, which would vanish on the dark board. Stored items are unchanged; other colours are the learners' and stay.
+- **Nothing blurs behind a drawing.** Whatever floats on the canvas is solid, and so is the side panel when it covers the canvas (below 1240px).
+- **AI text is revealed in the browser** (the engine returns whole answers). The full text is in the DOM from the start and only transparent, so nothing reflows and a screen reader hears it once.
+- **"Continue" uses real data only:** the next exam the learner added, else the weakest concept. There is no "review due" tile, because the app has no data for one.
+- **Concept details are new** (a panel on the full map), built from what the course map already holds.
+- **Scrolling cost is not established.** The test machine renders without a GPU (about 8-9 fps with or without blur), so it says nothing about a laptop. Blur stays at 24px with 3 blobs; low-power mode turns on by itself at 4 cores or fewer.
+
