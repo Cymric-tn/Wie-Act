@@ -15,6 +15,8 @@
   --r-pill: 999px; --r-panel: 28px; --r-card: 24px; --r-control: 14px; --r-chip: 16px;
   --font-display: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif; --font-arabic: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
 
+  --font-wordmark: 'Outfit', sans-serif; /* the logo is Latin in every language */
+
   --board: #0E1030;           /* the dark canvas: solid, nothing shows through a drawing */
   --surface-solid: #14163A;   /* menus, dialogs, toasts: whatever sits on top of other content */
 

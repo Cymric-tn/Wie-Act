@@ -26,7 +26,7 @@ export function LumiLogo({ height = 32 }) {
   return (
     <span aria-label="Lumi" role="img" dir="ltr" style={{ display: 'inline-flex', alignItems: 'center', gap: height * 0.3 }}>
       <LumiSpark size={height} />
-      <span aria-hidden="true" style={{ font: `600 ${height * 1.1}px var(--lumi-font-display)`, letterSpacing: '-0.035em', lineHeight: 1 }}>lumi</span>
+      <span aria-hidden="true" style={{ font: `600 ${height * 1.1}px var(--font-wordmark)`, letterSpacing: '-0.035em', lineHeight: 1 }}>lumi</span>
     </span>
   );
 }

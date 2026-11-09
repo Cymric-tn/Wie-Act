@@ -15,6 +15,7 @@ html[data-aurora="full"] { --glass-scrim: rgb(5 6 26 / .54); }
   border-radius: var(--r-card);
 }
 .glass-strong {
+  --lumi-slate: var(--text-2); /* the brightest glass: secondary text steps up to stay above 4.5:1 */
   background-image: linear-gradient(var(--glass-strong), var(--glass-strong));
   box-shadow: 0 0 60px rgba(91, 91, 214, .35);
 }
@@ -369,4 +370,21 @@ span.chip { cursor: default; }
   :is(.glass-hover, .lp-feature.glass, .d-action, .d-fab, .d-companion-btn, .filter, .template-btn, .reaction-btn, .swatch):hover { transform: none; }
   .lumi-burst::after { display: none; }
   .pm-burst { display: none; }
+}
+
+/* ---------- right-to-left ---------- */
+/* Rules above name the display font directly, so Arabic swaps it at the source. */
+html[lang="ar"] { --font-display: var(--font-arabic); --font-body: var(--font-arabic); }
+html[lang="ar"] :is(.d-top-title, .d-continue h2, .pn h1, .lp-hero h1, .lp-head h2, .auth-card h1) { letter-spacing: 0; }
+html[dir="rtl"] :is(p, li, dd, small, .ai-msg, .ai-answer, .ai-ex-statement, .pn, .d-continue h2) { line-height: 1.75; }
+
+@media (max-width: 760px) {
+  .d-card-head { flex-wrap: wrap; }
+  .d-card-titles { flex-basis: 180px; }
+}
+.d-greeting .eyebrow { color: var(--text-2); } /* no glass under it */
+/* Blobs fill more of a phone screen and can overlap, so the glass dims a little more there. */
+@media (max-width: 760px) {
+  :root { --glass-scrim: rgb(5 6 26 / .5); }
+  html[data-aurora="full"] { --glass-scrim: rgb(5 6 26 / .6); }
 }

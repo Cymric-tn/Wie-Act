@@ -55,3 +55,11 @@
   .aurora-blob { animation: none; }
 }
 .low-power .aurora-blob { animation: none; filter: none; will-change: auto; }
+
+/* On a phone three full-size blobs would pile up behind the text. */
+@media (max-width: 760px) {
+  .aurora-blob { filter: blur(30px); }
+  .aurora-iris { width: 400px; height: 400px; top: -150px; inset-inline-start: -150px; }
+  .aurora-glow { width: 380px; height: 380px; top: 36%; inset-inline-end: -170px; }
+  .aurora-violet { width: 420px; height: 420px; bottom: -230px; inset-inline-start: calc(50% - 210px); }
+}
