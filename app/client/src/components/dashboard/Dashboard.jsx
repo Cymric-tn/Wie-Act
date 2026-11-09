@@ -14,7 +14,7 @@ import { Link, navigate } from "../../lib/router";
 import { getUser, saveUser, signOut } from "../../lib/session";
 import { ROOMS, CLASS, courseMastery, weakTopics } from "../../lib/demoData";
 import { daysLeft, listExams } from "../../lib/exams";
-import { refreshCourseMap, useCourses } from "../../lib/courseMap";
+import { refreshCourseMap, useCourseDataState, useCourses } from "../../lib/courseMap";
 import { initials } from "../../lib/format";
 import { ai, AI_LANGUAGES, replyLanguage, setReplyLanguage } from "../../lib/engine";
 import { isLowPower, setLowPower } from "../../lib/lowPower";
@@ -218,11 +218,12 @@ function ContinueCard() {
 
 function StudentHome({ user, onSoon, onCompanion }) {
   const { t } = useI18n();
+  const mapData = useCourseDataState();
   return (
     <div className="d-grid">
       <Greeting user={user} onCompanion={() => onCompanion()} />
       <ContinueCard />
-      <Card icon="planet" title={t("map.title")} example className="span-8 map-card">
+      <Card icon="planet" title={t("map.title")} example={mapData === "failed"} className="span-8 map-card">
         <ProgressMap compact onOpenFull={() => navigate("/app/map")} />
       </Card>
       <PrepCard onSoon={onSoon} />
@@ -286,6 +287,7 @@ function LowPowerCard() {
 
 function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
   const { t, lang, setLang } = useI18n();
+  const mapData = useCourseDataState();
   const isProf = user.role === "professor";
 
   switch (section) {
@@ -300,7 +302,7 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
     case "map":
       return (
         <div className="d-page">
-          <Card icon="planet" title={t("map.title")} sub={t("map.sub")} example className="map-full">
+          <Card icon="planet" title={t("map.title")} sub={t("map.sub")} example={mapData === "failed"} className="map-full">
             <ProgressMap />
           </Card>
         </div>

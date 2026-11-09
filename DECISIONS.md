@@ -518,4 +518,8 @@ degraded `quota_low`. Five changes and one script; evidence below, none of it me
 - **"Continue" uses real data only:** the next exam the learner added, else the weakest concept. There is no "review due" tile, because the app has no data for one.
 - **Concept details are new** (a panel on the full map), built from what the course map already holds.
 - **Scrolling cost is not established.** The test machine renders without a GPU (about 8-9 fps with or without blur), so it says nothing about a laptop. Blur stays at 24px with 3 blobs; low-power mode turns on by itself at 4 cores or fewer.
-
+- **Room codes: capitals are display only.** On the server a code is any case-sensitive name up to 80 characters, so rewriting the input would open a different room. A room the list knows is matched whatever the case. "Valid length" is therefore 1 to 80 characters.
+- **The inline "invalid code" message has nothing to fire on yet.** The server creates any room that does not exist and has no expiry; a private room reports in the lobby. The dashboard can only learn more from a new endpoint, which was out of scope (frontend only).
+- **Progress map: planets share orbits (up to 3)** instead of one orbit each: 11 concepts on 11 rings cannot fit. The canvas is laid out in real pixels (`lib/mapLayout.js`, tested over many orbit positions), so sizes and the 32px margin hold at every width.
+- **Planets stay in one DOM order** (they no longer move between "behind" and "in front of" the sun lists), so keyboard focus survives their motion. Inner orbits are placed to clear the sun and its label, so the two lists were no longer needed.
+- **"Example data" on the map appears only if the learner's mastery could not be loaded:** the course graph and mastery are real otherwise.

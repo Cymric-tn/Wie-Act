@@ -109,7 +109,7 @@ select option { background: var(--surface-solid); color: var(--text); }
 .chip.danger:hover:not(:disabled) { border-color: var(--lumi-bad); color: var(--lumi-bad); background: var(--lumi-bad-soft); }
 span.chip { cursor: default; }
 /* Gold is mastery and nothing else, always with its check icon and label. */
-.chip.chip-mastered, .pm-legend .chip.chip-mastered { border: 0; background: var(--spark); color: var(--void); cursor: default; }
+.chip.chip-mastered { border: 0; background: var(--spark); color: var(--void); cursor: default; }
 
 .progress { display: block; flex: 1; min-width: 40px; height: 6px; border-radius: var(--r-pill); background: rgba(255, 255, 255, .15); }
 .progress > span { display: block; height: 100%; border-radius: var(--r-pill); background: #fff; box-shadow: 0 0 14px var(--glow); }
@@ -212,23 +212,21 @@ span.chip { cursor: default; }
 
 /* ---------- knowledge universe ---------- */
 .progress-map { position: relative; }
-.pm-bar { position: absolute; top: 12px; inset-inline: 12px; z-index: 2; pointer-events: none; }
-.pm-bar > * { pointer-events: auto; }
+/* the breadcrumb and actions get their own row, so they never sit on the orbits */
+.pm-bar { min-height: 44px; }
 .pm-crumbs.glass { padding: 2px 16px; min-height: 44px; border-radius: var(--r-pill); }
 .pm-crumbs button { color: var(--text); text-decoration-color: rgba(255, 255, 255, .4); }
 .pm-burst { opacity: 0; transform-box: fill-box; transform-origin: center; animation: lumi-burst var(--t-burst) var(--ease-out); }
-.pm-body.clickable:is(:hover, :focus-visible) circle:first-child { fill: var(--glow); opacity: .6; }
 
 /* the full map floats on the sky, with no card of its own */
 .d-card.map-full { padding: 0; border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .map-full .d-card-head { padding: 12px 18px; border: 1px solid var(--glass-border); border-radius: var(--r-pill); background-color: var(--glass-scrim); background-image: linear-gradient(var(--glass), var(--glass)); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
 .map-full .d-card-head p { color: var(--text-2); }
-.map-full .pm-svg { max-height: calc(100vh - 250px); }
 .map-full .pm-legend { padding: 8px 18px; border: 1px solid var(--glass-border); border-radius: var(--r-pill); background-color: var(--glass-scrim); background-image: linear-gradient(var(--glass), var(--glass)); color: var(--text-2); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
 .map-full .pm-hint { color: var(--text-2); }
 .progress-map.has-details { grid-template-columns: minmax(0, 1fr) 300px; column-gap: 14px; }
-.progress-map.has-details .pm-legend { grid-column: 1 / -1; }
-.pm-details { display: grid; align-content: start; gap: 10px; padding: 20px; overflow-y: auto; max-height: calc(100vh - 250px); }
+.progress-map.has-details :is(.pm-bar, .pm-legend) { grid-column: 1 / -1; }
+.pm-details { display: grid; align-content: start; gap: 10px; padding: 20px; overflow-y: auto; max-height: max(420px, calc(100vh - 340px)); }
 .pm-details h3 { margin: 0; font: 500 20px/1.25 var(--font-display); overflow-wrap: anywhere; }
 .pm-details p { margin: 0; color: var(--text-2); font-size: 13px; }
 .pm-details .chip { justify-self: start; }
@@ -242,7 +240,6 @@ span.chip { cursor: default; }
   .pm-details { max-height: none; }
 }
 .low-power :is(.map-full .d-card-head, .map-full .pm-legend) { background: rgba(20, 22, 52, .92); -webkit-backdrop-filter: none; backdrop-filter: none; }
-.pm-core { fill: var(--void); }
 
 /* ---------- study rooms and whiteboard ---------- */
 .rail.glass { margin-block: 12px; margin-inline: 12px 0; border-radius: var(--r-panel); }
@@ -418,3 +415,24 @@ html[dir="rtl"] :is(p, li, dd, small, .ai-msg, .ai-answer, .ai-ex-statement, .pn
 .d-join-btn:focus-visible { outline-offset: 1px; }
 .d-join-error { display: flex; align-items: center; gap: 6px; margin: 0; padding-inline-start: 16px; color: var(--rose); font-size: 13px; }
 .d-rooms li { padding: 14px 16px; }
+
+/* ---------- progress map: canvas, planets, labels ---------- */
+/* The canvas is sized here; the layout reads that size, so orbits and labels always fit it. */
+.pm-svg { height: clamp(400px, 32vw, 540px); }
+.map-full .pm-svg { height: max(420px, calc(100vh - 340px)); }
+.pm-core { fill: var(--void); font-size: 17px; font-weight: 800; pointer-events: none; }
+.pm-sun-name { fill: var(--text); font: 600 16px var(--font-display); paint-order: stroke; stroke: var(--void); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+.pm-sun-pct { fill: var(--text-2); font: 500 12px var(--font-body); }
+.pm-hit { fill: transparent; }
+.pm-halo { opacity: 0; transition: opacity 150ms; }
+.pm-body.learning .pm-halo { opacity: .28; }
+.pm-glyph { transform-origin: 0 0; transition: transform 150ms; }
+.pm-body:is(:hover, :focus-visible) .pm-glyph { transform: scale(1.2); }
+.pm-body:is(:hover, :focus-visible) .pm-halo { opacity: .6; }
+.pm-label { fill: var(--text); font: 600 12px var(--font-body); paint-order: stroke; stroke: var(--void); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; transition: opacity 180ms; }
+.pm-label.off { opacity: 0; }
+.pm-body:is(:hover, :focus-visible) .pm-label { opacity: 1; }
+.pm-pct { fill: var(--text-2); opacity: 0; transition: opacity 120ms; }
+.pm-body:is(:hover, :focus-visible) .pm-pct { opacity: 1; }
+.pm-legend-item { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding-block: 0; padding-inline: 6px 12px; border: 1px solid var(--lumi-line); border-radius: var(--r-pill); background: var(--lumi-fill); color: var(--text-2); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.map-full .pm-legend { padding-inline-end: 84px; } /* the floating Lumi button sits at this corner */
