@@ -30,7 +30,6 @@ export default function Lobby({ status, initialName, initialRoom, error, onJoin 
 
   return (
     <div className="lobby">
-      <div className="lobby-sky" aria-hidden="true" />
       <section className="lobby-card">
         <div className="brand lobby-brand"><LumiLogo height={30} /></div>
         <div className="eyebrow">COLLABORATIVE WHITEBOARD</div>

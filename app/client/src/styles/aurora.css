@@ -1,0 +1,57 @@
+/* The aurora: one fixed layer behind the whole app. */
+.aurora {
+  --aurora-k: .6;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora[data-intensity="full"] { --aurora-k: 1; }
+
+.aurora-stars { position: absolute; top: 0; inset-inline-start: 0; width: 1px; height: 1px; border-radius: 50%; }
+
+.aurora-blob {
+  position: absolute;
+  width: 680px;
+  height: 680px;
+  border-radius: 50%;
+  filter: blur(40px);
+  will-change: transform;
+  transition: opacity .6s ease;
+}
+.aurora-iris {
+  top: -200px;
+  inset-inline-start: -160px;
+  background: radial-gradient(circle, var(--iris), transparent 65%);
+  opacity: calc(.7 * var(--aurora-k));
+  animation: aurora-drift-a 21s ease-in-out infinite alternate;
+}
+.aurora-glow {
+  top: 18%;
+  inset-inline-end: -220px;
+  width: 640px;
+  height: 640px;
+  background: radial-gradient(circle, var(--glow), transparent 65%);
+  opacity: calc(.5 * var(--aurora-k));
+  animation: aurora-drift-b 26s ease-in-out infinite alternate;
+}
+.aurora-violet {
+  bottom: -300px;
+  inset-inline-start: calc(50% - 350px);
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, var(--violet), transparent 65%);
+  opacity: calc(.45 * var(--aurora-k));
+  animation: aurora-drift-c 18s ease-in-out infinite alternate;
+}
+
+/* Three different paths at three different speeds, so the sky never visibly loops. */
+@keyframes aurora-drift-a { from { transform: translate(-40px, -30px) scale(.97); } to { transform: translate(60px, 50px) scale(1.08); } }
+@keyframes aurora-drift-b { from { transform: translate(30px, 60px) scale(1.05); } to { transform: translate(-60px, -40px) scale(.95); } }
+@keyframes aurora-drift-c { from { transform: translate(60px, 20px) scale(.95); } to { transform: translate(-50px, -60px) scale(1.06); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob { animation: none; }
+}
+.low-power .aurora-blob { animation: none; filter: none; will-change: auto; }

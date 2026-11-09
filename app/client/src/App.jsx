@@ -6,7 +6,9 @@ import Landing from "./components/landing/Landing";
 import SignIn from "./components/auth/SignIn";
 import Dashboard from "./components/dashboard/Dashboard";
 import BoardApp from "./components/BoardApp";
+import AuroraBackground from "./components/AuroraBackground";
 import "./App.css";
+import "./styles/aurora.css";
 
 function Redirect({ to }) {
   useEffect(() => navigate(to, { replace: true }), [to]);
@@ -29,9 +31,15 @@ function Routes() {
   return <Landing />;
 }
 
+// Full aurora where there is room to see it, calm where people read and draw.
+const auroraFor = (path) => (path === "/" || path === "/login" || path === "/app/map" ? "full" : "calm");
+
 export default function App() {
+  const { path } = useLocation();
   return (
     <LanguageProvider>
+      {/* Outside the routes, so it never re-mounts on navigation. */}
+      <AuroraBackground intensity={auroraFor(path)} />
       <Routes />
     </LanguageProvider>
   );

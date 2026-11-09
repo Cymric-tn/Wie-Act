@@ -37,7 +37,6 @@ export default function SignIn() {
 
   return (
     <div className="auth">
-      <div className="lp-sky" aria-hidden="true" />
       <aside className="auth-art" aria-hidden="true">
         <div className="auth-orbits">
           <span className="auth-sun" />

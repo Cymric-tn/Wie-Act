@@ -79,7 +79,6 @@ export default function Landing() {
   const { t } = useI18n();
   return (
     <div className="lp">
-      <div className="lp-sky" aria-hidden="true" />
       <Nav />
 
       <section className="lp-hero">

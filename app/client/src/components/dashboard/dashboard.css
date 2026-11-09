@@ -14,7 +14,6 @@ html[lang="ar"] .eyebrow, html[lang="ar"] .d-nav-label { letter-spacing: 0; }
   min-height: 100vh;
   display: grid;
   grid-template-columns: var(--d-side) minmax(0, 1fr);
-  background: var(--lumi-mist);
   color: var(--lumi-ink);
 }
 
@@ -806,4 +805,3 @@ select.m-tag option { background: var(--lumi-surface); color: var(--lumi-ink); }
 .d-card.d-card-top { align-content: start; }
 
 .progress-map.lumi-dark { border-radius: var(--r-card); padding: var(--s3); }
-.d-main.d-room { background: var(--lumi-room); }

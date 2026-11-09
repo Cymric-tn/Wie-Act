@@ -6,15 +6,7 @@
   min-height: 100vh;
   overflow-x: hidden;
   color: var(--lumi-ink);
-  background:
-    var(--lumi-surface);
 }
-.lp-sky {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: var(--lumi-mist);
-  opacity: 1; }
 
 /* ---------- nav ---------- */
 .lp-nav {
