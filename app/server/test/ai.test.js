@@ -184,6 +184,33 @@ describe("AI API through the bridge (the engine's FakeEngine)", { skip }, () => 
     assert.ok(s.tasks.includes("check_answer"));
   });
 
+  test("diagrams: built without any engine task, on the real course, refused in the learner's language", async () => {
+    const before = (await (await fetch(ctx.base + "/api/ai/status")).json()).stats;
+    const graph = await ctx.post("/api/diagrams", { text: "courbe de x^3 - 3x et sa tangente en 1", lang: "fr", learner_id: learner });
+    assert.equal(graph.status, 200);
+    const { diagram } = await graph.json();
+    assert.equal(diagram.type, "function_graph");
+    assert.equal(diagram.payload.tangent_at, 1);
+    const map = await (await ctx.post("/api/diagrams", { text: "concept map", lang: "en" })).json();
+    assert.ok(map.diagram.payload.nodes.some((n) => n.id === "nombre dérivé" && n.label === "Derivative at a point"));
+    const refused = await ctx.post("/api/diagrams", { text: "bonjour", lang: "fr" });
+    assert.equal(refused.status, 400);
+    assert.match((await refused.json()).error, /Essayez/);
+    assert.equal((await ctx.post("/api/diagrams", { text: "   " })).status, 400);
+    assert.deepEqual((await (await fetch(ctx.base + "/api/ai/status")).json()).stats, before, "no AI run is logged");
+  });
+
+  test("diagrams: a practice table is checked on the server", async () => {
+    const { diagram } = await (await ctx.post("/api/diagrams", { text: "tableau de variations de x^3-3x", lang: "fr", practice: true })).json();
+    assert.equal(diagram.payload.mode, "practice");
+    const p = diagram.payload;
+    const answer = { columns: p.columns, signs: p.derivative_signs, trends: p.trends, vals: p.values.map((v) => ({ f: v.f, f_right: v.f_right || "" })) };
+    assert.deepEqual(await (await ctx.post("/api/diagrams/check", { spec: diagram, answer })).json(), { correct: true, mistakes: [] });
+    const wrong = await (await ctx.post("/api/diagrams/check", { spec: diagram, answer: { ...answer, trends: ["down", "down", "up"] } })).json();
+    assert.deepEqual(wrong.mistakes.map((m) => [m.row, m.column]), [["arrows", 0]]);
+    assert.equal((await ctx.post("/api/diagrams/check", { spec: diagram })).status, 400);
+  });
+
   test("the course graph is served with titles for the screens", async () => {
     const { course } = await (await fetch(ctx.base + "/api/ai/courses/analyse")).json();
     assert.ok(course.title.fr && course.units[0].title.fr && course.concepts["nombre dérivé"].title.en);

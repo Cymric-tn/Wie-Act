@@ -16,6 +16,8 @@ import { texToSvg } from "../lib/math";
 import { imageFileToData, pdfFileToPages, isPdf, isImage } from "../lib/media";
 import { exportPng, exportSvg, exportPdf, copyPng } from "../lib/exporters";
 import { buildTemplate } from "../lib/templates";
+import { toBoardItems } from "../lib/diagrams/toBoard";
+import { takePendingDiagram } from "../lib/diagrams/api";
 import { buildTimeline, stateAt, describeEntry } from "../lib/history";
 import { courseForRoom } from "../lib/courses";
 import { NOTE_COLORS, STARLIGHT, INK, inkFor, isLightBackground } from "../lib/theme";
@@ -1096,10 +1098,9 @@ export default function Board({ session, status, onLeave }) {
     });
   }
 
-  function insertTemplate(id) {
-    const c = viewCenter();
-    const items = buildTemplate(id, { cx: round(c.x), cy: round(c.y), page: pageRef.current, z: nextZ(), ink: inkFor(background) })
-      .map((i) => ({ ...i, owner: me.clientId, ...(i.type === "note" ? { votes: [] } : {}) }));
+  /** Adds ready-made items in one undoable step, selects them and zooms out if they don't fit. */
+  function placeItems(built) {
+    const items = built.map((i) => ({ ...i, owner: me.clientId, ...(i.type === "note" ? { votes: [] } : {}) }));
     commitOp({ kind: "add", items });
     setTool("select");
     setSelection(items.map((i) => i.id));
@@ -1107,6 +1108,25 @@ export default function Board({ session, status, onLeave }) {
     const { w, h } = sizeRef.current;
     if (box.w * viewRef.current.zoom > w * 0.9 || box.h * viewRef.current.zoom > h * 0.9) setView(G.fitView(box, w, h, 80, 1.2), { user: true });
   }
+
+  function insertTemplate(id) {
+    const c = viewCenter();
+    placeItems(buildTemplate(id, { cx: round(c.x), cy: round(c.y), page: pageRef.current, z: nextZ(), ink: inkFor(background) }));
+  }
+
+  // A diagram sent from the generator page lands here, once the canvas has its size.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const primitives = takePendingDiagram();
+      if (!primitives) return;
+      if (readOnlyRef.current) return showToast(REJECTIONS.locked);
+      const c = viewCenter();
+      placeItems(toBoardItems(primitives, { cx: round(c.x), cy: round(c.y), page: pageRef.current, z: nextZ(), ink: inkFor(background) }));
+      showToast("Diagram added to the board");
+    }, 150);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when the board opens
+  }, []);
 
   function jumpTo(item) {
     setPage(item.page, { user: true });

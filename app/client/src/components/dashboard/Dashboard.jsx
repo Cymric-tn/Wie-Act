@@ -7,8 +7,7 @@ import Materials from "./Materials";
 import Review, { EngineStatusCard } from "./Review";
 import {
   Card, RoomsCard, BoardCard, PrepCard, MaterialsCard, CompanionCard, JoinRoom, RoomList,
-  BoardPreview, AiBoardChips, SlotPage, ClassKpis, GroupProgress, Roster, WeakPoints, ProfActions,
-  openBoard
+  BoardPreview, AiBoardChips, ClassKpis, GroupProgress, Roster, WeakPoints, ProfActions, openBoard
 } from "./Widgets";
 import { useI18n, LanguageSwitcher, LANGUAGES } from "../../lib/i18n";
 import { Link, navigate } from "../../lib/router";
@@ -18,6 +17,7 @@ import { listExams } from "../../lib/exams";
 import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { initials } from "../../lib/format";
 import { ai, AI_LANGUAGES, replyLanguage, setReplyLanguage } from "../../lib/engine";
+import Diagrams from "./Diagrams";
 import "./dashboard.css";
 
 const NAV = {
@@ -292,15 +292,7 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
       return isProf ? <Review onToast={onToast} /> : null;
 
     case "diagrams":
-      return (
-        <SlotPage icon="diagram" title={t("diagrams.title")} sub={t("diagrams.sub")} plans={["plan.diagrams.1", "plan.diagrams.2"]} onSoon={onSoon}>
-          <Card title={t("diagrams.title")}>
-            <div className="d-diagram-preview" aria-hidden="true">
-              <span>f(x)</span><i /><span>f′(x)</span><i /><span>∫ f′ = f</span>
-            </div>
-          </Card>
-        </SlotPage>
-      );
+      return <Diagrams />;
 
     case "settings":
       return (

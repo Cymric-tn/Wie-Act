@@ -60,8 +60,7 @@ templates, translations). The bridge itself is tested against the real `Engine` 
 | `/app` | Main dashboard — student or professor view; sections at `/app/map`, `/app/rooms`, `/app/board`, `/app/voice`, `/app/prep`, `/app/materials`, `/app/diagrams`, `/app/groups`, `/app/insights`, `/app/review` (professors), `/app/settings` |
 | `/board?room=CODE` | The collaborative whiteboard |
 
-Features that aren't built yet (voice chat, group assignment, diagram
-generator) have their menu entries, cards and pages in place, marked **Soon**.
+Features that aren't built yet (voice chat, group assignment) have their menu entries, cards and pages in place, marked **Soon**.
 Cards marked *Example data* (progress map, rooms list, roster) use demo data.
 
 ## AI features

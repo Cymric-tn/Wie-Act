@@ -27,6 +27,8 @@ Endpoints (JSON; /run and /generate_page stream NDJSON):
     PATCH  /materials/chunks/<chunk_id> {concept}   a professor confirms or fixes a concept tag
     POST   /cache/invalidate       {request_id} -> {removed}
     GET    /metrics/summary?since=&request_ids=a,b   the engine's own numbers (runs, cache, degraded, latency, 429s)
+    POST   /diagrams               {text, lang?, course_id?, mastery?, type?, practice?} -> {spec}   (no LLM; 400 = refusal to show)
+    POST   /diagrams/check         {spec, answer, lang?} -> {correct, mistakes}   (no LLM; 503 = the maths ran out of time)
 """
 
 import argparse
@@ -38,6 +40,7 @@ import inspect
 import json
 import os
 import queue
+import subprocess
 import sys
 import threading
 import traceback
@@ -48,6 +51,92 @@ MAX_BODY = 30_000_000
 CALL_TIMEOUT_S = 300
 TOKEN_HEADER = "X-Engine-Token"
 SOURCES = {"professor": "professor", "learner": "learner", "course": "course"}   # anything else (the app's "upload") = learner
+APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DIAGRAM_TIMEOUT_S = float(os.environ.get("DIAGRAM_TIMEOUT_S", "10"))             # the slowest legitimate build measured: 5.8 s
+DIAGRAM_START_TIMEOUT_S = 60
+
+
+class DiagramTimeout(Exception):
+    """The diagram worker ran out of time, or is still busy with someone else's request."""
+
+
+class DiagramWorker:
+    """Runs app/diagrams/worker.py as a child process and kills it at the time limit (see the worker's docstring for why it
+    is not a thread). One request at a time; the worker is restarted on the next request after a kill or a crash."""
+
+    def __init__(self, courses_dir, timeout_s=DIAGRAM_TIMEOUT_S, start_timeout_s=DIAGRAM_START_TIMEOUT_S):
+        self.courses_dir = courses_dir
+        self.timeout_s = timeout_s
+        self.start_timeout_s = start_timeout_s
+        self._lock = threading.Lock()
+        self._proc = None
+        self._lines = None
+
+    def _spawn(self):
+        self._proc = subprocess.Popen([sys.executable, "-m", "diagrams.worker", "--courses-dir", self.courses_dir], cwd=APP_DIR,
+                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, encoding="utf-8", bufsize=1)
+        lines = self._lines = queue.Queue()
+
+        def read(stream):
+            for line in stream:
+                lines.put(line)
+            lines.put(None)
+        threading.Thread(target=read, args=(self._proc.stdout,), name="diagram-worker-out", daemon=True).start()
+        self._next(self.start_timeout_s)
+
+    def _next(self, timeout):
+        try:
+            line = self._lines.get(timeout=timeout)
+        except queue.Empty:
+            line = None
+        if line is None:
+            self._kill()
+            raise DiagramTimeout()
+        return json.loads(line)
+
+    def _kill(self):
+        proc, self._proc = self._proc, None
+        if proc is not None:
+            proc.kill()
+            proc.wait()
+
+    def _ensure(self):
+        if self._proc is None or self._proc.poll() is not None:
+            self._kill()
+            self._spawn()
+
+    def warm(self):
+        """Loads sympy ahead of the first request."""
+        def go():
+            with self._lock:
+                try:
+                    self._ensure()
+                except DiagramTimeout:
+                    print("the diagram worker did not start", file=sys.stderr, flush=True)
+        threading.Thread(target=go, name="diagram-worker-warm", daemon=True).start()
+
+    def call(self, request):
+        """-> the worker's reply. ValueError = a refusal in the learner's language; DiagramTimeout = out of time or busy."""
+        if not self._lock.acquire(timeout=self.timeout_s + 2):
+            raise DiagramTimeout()
+        try:
+            self._ensure()
+            try:
+                self._proc.stdin.write(json.dumps(request, ensure_ascii=False) + "\n")
+                self._proc.stdin.flush()
+            except (BrokenPipeError, OSError):
+                self._kill()
+                raise DiagramTimeout() from None
+            reply = self._next(self.timeout_s)
+        finally:
+            self._lock.release()
+        if "refused" in reply:
+            raise ValueError(reply["refused"])
+        return reply
+
+    def close(self):
+        with self._lock:
+            self._kill()
 
 
 def jsonable(obj):
@@ -98,6 +187,7 @@ class EngineHost:
         self.version = getattr(engine_pkg, "__version__", None)
         from engine import Priority  # noqa: E402
         self.Priority = Priority
+        self.diagrams = DiagramWorker(os.path.join(self.engine_dir or os.path.dirname(APP_DIR), "data", "courses"))
 
     def _take_lock(self) -> None:
         from config import load_settings
@@ -113,6 +203,7 @@ class EngineHost:
         return Engine.create()
 
     def close(self):
+        self.diagrams.close()
         aclose = getattr(self.engine, "aclose", None)
         if callable(aclose) and self.engine_dir:
             try:
@@ -297,6 +388,8 @@ def make_handler(host, token, port):
                 fn()
             except ValueError as error:
                 self._json(400, {"error": str(error)})
+            except DiagramTimeout:
+                self._json(503, {"error": "diagram_timeout"})
             except Exception as error:  # the Node side turns this into a degraded result
                 traceback.print_exc()
                 try:
@@ -358,6 +451,10 @@ def make_handler(host, token, port):
                     return self._json(200, host.add_material(body))
                 if path == "/cache/invalidate":
                     return self._json(200, host.invalidate(str(body.get("request_id", ""))))
+                if path == "/diagrams":
+                    return self._json(200, host.diagrams.call({**body, "op": "build"}))
+                if path == "/diagrams/check":
+                    return self._json(200, host.diagrams.call({**body, "op": "check"})["result"])
                 self._json(404, {"error": "not found"})
             self._guard(go)
 
@@ -412,6 +509,7 @@ def main():
     except SystemExit as e:
         print(e, file=sys.stderr)
         return 3
+    host.diagrams.warm()
     server = serve(host, token, args.port)
     print(f"EdNova engine bridge on http://127.0.0.1:{args.port} "
           f"({'FakeEngine' if args.fake else 'engine'} from {host.engine_dir})", flush=True)

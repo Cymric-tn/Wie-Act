@@ -45,8 +45,13 @@ The screens read these fields of the engine's result (`/api/ai/run`, `/api/ai/tu
   `invalid_image`, `superseded` (silent). Anything else falls back to a generic notice.
 
 ## Do not edit
-`app/server/src/ai/*`, `app/bridge/*`, `client/src/lib/engine.js`, `client/src/lib/api.js`. Design changes go in `client/src/components/**`
+`app/server/src/ai/*`, `app/bridge/*`, `app/diagrams/*`, `client/src/lib/diagrams/*`, `client/src/lib/engine.js`, `client/src/lib/api.js`. Design changes go in `client/src/components/**`
 and the CSS. Need another field or a new state? Ask the engine side; do not patch the feature layer.
+
+## Diagram generator (`/app/diagrams`, no LLM, no quota, works with the fake engine too)
+Screen: `client/src/components/dashboard/Diagrams.jsx`, styles under `.dg-*` in `dashboard.css`; colours of the drawing are the `--dg-*`
+variables on `.dg-page`. The JSON contract is `docs/diagram.schema.json`. Trigger words (Darija, Arabizi...) are in
+`app/diagrams/triggers/*.yaml`, no code change needed. "Send to whiteboard" opens the board and the items arrive selected, as ordinary items.
 
 ## Design priorities
 1. **Degraded and waiting states** (the engine is slow and quota-limited by design): fast-mode extracts + "get the full explanation", busy / quota

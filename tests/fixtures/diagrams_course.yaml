@@ -1,0 +1,18 @@
+course: analyse
+units:
+- id: derivees
+  concepts:
+  - {id: fonction, title: {fr: Fonction, en: Function, ar: دالة}}
+  - {id: limite, title: {fr: Limite, en: Limit, ar: نهاية}, requires: [fonction]}
+  - {id: continuite, title: {fr: Continuité, en: Continuity, ar: اتصال}, requires: [limite]}
+  - {id: taux, title: {fr: Taux d'accroissement, en: Rate of change, ar: معدل التغير}, requires: [limite]}
+  - {id: derivee, title: {fr: Dérivée en un point, en: Derivative at a point, ar: العدد المشتق}, requires: [taux, continuite]}
+  - {id: tangente, title: {fr: Tangente, en: Tangent line, ar: المماس}, requires: [derivee]}
+  - {id: puissance, title: {fr: Dérivée d'une puissance, en: Power rule, ar: مشتقة قوة}, requires: [derivee]}
+  - {id: somme, title: {fr: Dérivée d'une somme, en: Sum rule, ar: مشتقة مجموع}, requires: [derivee]}
+  - {id: produit, title: {fr: Dérivée d'un produit, en: Product rule, ar: مشتقة جداء}, requires: [puissance, somme], related: [quotient]}
+  - {id: quotient, title: {fr: Dérivée d'un quotient, en: Quotient rule, ar: مشتقة خارج}, requires: [produit]}
+  - {id: composee, title: {fr: Dérivée d'une composée, en: Chain rule, ar: مشتقة مركب}, requires: [puissance]}
+  - {id: signe, title: {fr: Signe de la dérivée, en: Sign of the derivative, ar: إشارة المشتقة}, requires: [derivee]}
+  - {id: variations, title: {fr: Sens de variation, en: Monotonicity, ar: منحى التغيرات}, requires: [signe]}
+  - {id: extremums, title: {fr: Extremums, en: Extrema, ar: القيم القصوى}, requires: [variations], related: [tangente]}

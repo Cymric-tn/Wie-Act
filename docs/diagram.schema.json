@@ -1,0 +1,484 @@
+{
+  "$defs": {
+    "Asymptote": {
+      "properties": {
+        "kind": {
+          "default": "vertical",
+          "enum": [
+            "vertical",
+            "horizontal"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "at": {
+          "title": "At",
+          "type": "number"
+        }
+      },
+      "required": [
+        "at"
+      ],
+      "title": "Asymptote",
+      "type": "object"
+    },
+    "ConceptMapPayload": {
+      "properties": {
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/Node"
+          },
+          "title": "Nodes",
+          "type": "array"
+        },
+        "edges": {
+          "items": {
+            "$ref": "#/$defs/Edge"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "focus": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Focus"
+        }
+      },
+      "required": [
+        "nodes",
+        "edges"
+      ],
+      "title": "ConceptMapPayload",
+      "type": "object"
+    },
+    "Curve": {
+      "properties": {
+        "role": {
+          "enum": [
+            "f",
+            "derivative",
+            "tangent"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "segments": {
+          "items": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "required": [
+        "role",
+        "label",
+        "segments"
+      ],
+      "title": "Curve",
+      "type": "object"
+    },
+    "DerivativeSamples": {
+      "properties": {
+        "x": {
+          "items": {
+            "type": "number"
+          },
+          "title": "X",
+          "type": "array"
+        },
+        "f": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "F",
+          "type": "array"
+        },
+        "df": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Df",
+          "type": "array"
+        }
+      },
+      "required": [
+        "x",
+        "f",
+        "df"
+      ],
+      "title": "DerivativeSamples",
+      "type": "object"
+    },
+    "Edge": {
+      "properties": {
+        "from": {
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "title": "To",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "requires",
+            "related"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "kind"
+      ],
+      "title": "Edge",
+      "type": "object"
+    },
+    "FunctionGraphPayload": {
+      "properties": {
+        "x_range": {
+          "items": {
+            "type": "number"
+          },
+          "title": "X Range",
+          "type": "array"
+        },
+        "y_range": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Y Range",
+          "type": "array"
+        },
+        "curves": {
+          "items": {
+            "$ref": "#/$defs/Curve"
+          },
+          "title": "Curves",
+          "type": "array"
+        },
+        "points": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Point"
+          },
+          "title": "Points",
+          "type": "array"
+        },
+        "asymptotes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Asymptote"
+          },
+          "title": "Asymptotes",
+          "type": "array"
+        },
+        "derivative_samples": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DerivativeSamples"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tangent_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tangent At"
+        }
+      },
+      "required": [
+        "x_range",
+        "y_range",
+        "curves"
+      ],
+      "title": "FunctionGraphPayload",
+      "type": "object"
+    },
+    "Node": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "mastery": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mastery"
+        }
+      },
+      "required": [
+        "id",
+        "label"
+      ],
+      "title": "Node",
+      "type": "object"
+    },
+    "Point": {
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "label": {
+          "default": "",
+          "title": "Label",
+          "type": "string"
+        },
+        "open": {
+          "default": false,
+          "title": "Open",
+          "type": "boolean"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "max",
+                "min",
+                "tangent"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "Point",
+      "type": "object"
+    },
+    "VarValue": {
+      "properties": {
+        "at": {
+          "title": "At",
+          "type": "string"
+        },
+        "f": {
+          "title": "F",
+          "type": "string"
+        },
+        "f_right": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "F Right"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "max",
+                "min"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        }
+      },
+      "required": [
+        "at",
+        "f"
+      ],
+      "title": "VarValue",
+      "type": "object"
+    },
+    "VariationTablePayload": {
+      "properties": {
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "derivative_signs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Derivative Signs",
+          "type": "array"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/VarValue"
+          },
+          "title": "Values",
+          "type": "array"
+        },
+        "trends": {
+          "items": {
+            "enum": [
+              "up",
+              "down"
+            ],
+            "type": "string"
+          },
+          "title": "Trends",
+          "type": "array"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "const": "practice",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        }
+      },
+      "required": [
+        "columns",
+        "derivative_signs",
+        "values",
+        "trends"
+      ],
+      "title": "VariationTablePayload",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "version": {
+      "default": 2,
+      "enum": [
+        1,
+        2
+      ],
+      "title": "Version",
+      "type": "integer"
+    },
+    "type": {
+      "enum": [
+        "function_graph",
+        "variation_table",
+        "concept_map"
+      ],
+      "title": "Type",
+      "type": "string"
+    },
+    "lang": {
+      "enum": [
+        "fr",
+        "en",
+        "ar"
+      ],
+      "title": "Lang",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    },
+    "payload": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FunctionGraphPayload"
+        },
+        {
+          "$ref": "#/$defs/VariationTablePayload"
+        },
+        {
+          "$ref": "#/$defs/ConceptMapPayload"
+        }
+      ],
+      "title": "Payload"
+    }
+  },
+  "required": [
+    "type",
+    "lang",
+    "title",
+    "payload"
+  ],
+  "title": "Diagram",
+  "type": "object"
+}

@@ -9,6 +9,7 @@ const crypto = require("crypto");
 
 const RUN_TIMEOUT_MS = 120_000; // explain is bounded at 25 s; OCR at 40 s; background prep can queue longer
 const TOKEN_HEADER = "x-engine-token";
+const DIAGRAM_TIMEOUT_MS = 30_000; // the bridge stops the maths at 10 s; this also covers waiting behind another diagram
 
 function createHttpEngine({ url, token = "", fetchImpl = fetch, timeoutMs = RUN_TIMEOUT_MS } = {}) {
   const base = String(url || "http://127.0.0.1:8765").replace(/\/+$/, "");
@@ -103,6 +104,9 @@ function createHttpEngine({ url, token = "", fetchImpl = fetch, timeoutMs = RUN_
     confirmChunk: (chunkId, concept) => call(`/materials/chunks/${encodeURIComponent(chunkId)}`, { method: "PATCH", body: { concept } }),
     invalidate: (requestId) => call("/cache/invalidate", { method: "POST", body: { request_id: requestId } }),
     metrics: (since) => call(`/metrics/summary${since ? `?since=${encodeURIComponent(since)}` : ""}`),
+    /** Diagrams: exact maths, no LLM. A refusal is a RangeError whose message is written for the learner. */
+    diagram: (request) => call("/diagrams", { method: "POST", body: request, timeout: DIAGRAM_TIMEOUT_MS }).then((r) => r.spec),
+    checkDiagram: (spec, answer, lang) => call("/diagrams/check", { method: "POST", body: { spec, answer, lang }, timeout: DIAGRAM_TIMEOUT_MS }),
     health: () => call("/health", { timeout: 2500 }),
     async close() {}
   };

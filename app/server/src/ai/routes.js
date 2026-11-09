@@ -35,6 +35,8 @@ const MATERIAL_TYPES = {
 const MAX_MATERIAL_BYTES = 15_000_000;
 const SECRET_KEYS = ["solution", "hints", "common_mistakes", "mistakes"];
 const DEFAULT_COURSE = process.env.AI_COURSE || "analyse"; // the one course the engine has content for
+const DIAGRAM_LANGS = new Set(["fr", "en", "ar"]);
+const DIAGRAM_TYPES = new Set(["function_graph", "variation_table", "concept_map"]);
 
 const isId = (v) => typeof v === "string" && /^[\w.:~-]{1,80}$/.test(v); // ~ : generated variants (d10~v1)
 // Concept ids are the course graph's own: "nombre dérivé", "racine carrée", "polynôme" (letters, digits, spaces, accents).
@@ -184,6 +186,8 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
   const json = express.json({ limit: "25mb" });
   const aiLimit = rateLimiter({ perMinute: 40 });
   const uploadLimit = rateLimiter({ perMinute: 10 });
+  const diagramJson = express.json({ limit: "200kb" }); // the largest thing sent here is a practice table's spec
+  const diagramLimit = rateLimiter({ perMinute: 60 }); // no AI quota involved, but each build is CPU work on one worker
   fs.mkdirSync(uploadsDir, { recursive: true });
 
   function contextFrom(body = {}) {
@@ -408,6 +412,44 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
       res.json({ course: shapeCourse(course) });
     } catch (error) {
       res.status(502).json({ error: error.message });
+    }
+  });
+
+  // ---------- diagrams (exact maths through the bridge, no LLM, no quota) ----------
+  function diagramFailed(res, error) {
+    if (error instanceof RangeError) return res.status(400).json({ error: error.message });
+    if (error.status === 503) return res.status(503).json({ error: "diagram_timeout" });
+    log("Diagram request failed:", error.message);
+    res.status(502).json({ error: "The diagram service is not answering." });
+  }
+  const diagramLang = (v) => (DIAGRAM_LANGS.has(v) ? v : undefined);
+
+  router.post("/diagrams", diagramJson, diagramLimit, async (req, res) => {
+    const b = req.body || {};
+    const text = str(b.text, 300);
+    if (!text || !text.trim()) return res.status(400).json({ error: "missing input: text" });
+    const course = isId(b.course_id) ? b.course_id : DEFAULT_COURSE;
+    // Colours of a concept map come from the learner's real attempts; a brand-new learner gets no mastery colours at all.
+    const measured = isId(b.learner_id) ? store.mastery(b.learner_id, course) : {};
+    const mastery = Object.fromEntries(Object.entries(measured).map(([k, v]) => [k, v.value]));
+    try {
+      const diagram = await engine.diagram(drop({
+        text, lang: diagramLang(b.lang), course_id: course, mastery: Object.keys(mastery).length ? mastery : undefined,
+        type: DIAGRAM_TYPES.has(b.type) ? b.type : undefined, practice: b.practice === true ? true : undefined
+      }));
+      res.json({ diagram });
+    } catch (error) {
+      diagramFailed(res, error);
+    }
+  });
+
+  router.post("/diagrams/check", diagramJson, diagramLimit, async (req, res) => {
+    const b = req.body || {};
+    if (!b.spec || typeof b.spec !== "object" || !b.answer || typeof b.answer !== "object") return res.status(400).json({ error: "missing input: spec, answer" });
+    try {
+      res.json(await engine.checkDiagram(b.spec, b.answer, diagramLang(b.lang)));
+    } catch (error) {
+      diagramFailed(res, error);
     }
   });
 
