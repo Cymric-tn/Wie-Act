@@ -1,0 +1,2883 @@
+Exo7 — Déterminants
+Source: https://exo7.emath.fr/cours/ch_determinants.pdf
+Author: Arnaud Bodin, Exo7
+Licence: CC BY-NC-SA 3.0 FR (Exo7)
+Text extracted with pdftotext on 2026-11-10 for Lumi testing (formulas may be garbled).
+
+Déterminants
+Vidéo  partie 1. Déterminant en dimension 2 et 3
+Vidéo  partie 2. Définition du déterminant
+Vidéo  partie 3. Propriétés du déterminant
+Vidéo  partie 4. Calculs de déterminants
+Vidéo  partie 5. Applications des déterminants
+Fiche d'exercices  Calculs de déterminants
+Le déterminant est un nombre que l’on associe à n vecteurs (v1 , . . . , vn ) de Rn . Il correspond au volume du parallélépipède engendré par ces n vecteurs. On peut aussi définir le déterminant d’une matrice A. Le déterminant permet de
+savoir si une matrice est inversible ou pas, et de façon plus générale, joue un rôle important dans le calcul matriciel et
+la résolution de systèmes linéaires.
+Dans tout ce qui suit, nous considérons des matrices à coefficients dans un corps commutatif K, les principaux
+exemples étant K = R ou K = C. Nous commençons par donner l’expression du déterminant d’une matrice en petites
+dimensions.
+
+1. Déterminant en dimension 2 et 3
+1.1. Matrice 2 × 2
+En dimension 2, le déterminant est très simple à calculer :
+
+
+a b
+det
+= ad − bc.
+c d
+C’est donc le produit des éléments sur la diagonale principale (en bleu) moins le produit des éléments sur l’autre
+diagonale (en orange).
+−
+
+
+
+
+
+a
+
+b
+
+c
+
+d
+
+
++
+
+1.2. Matrice 3 × 3
+Soit A ∈ M3 (K) une matrice 3 × 3 :
+
+
+a11
+
+A = a21
+a31
+
+a12
+a22
+a32
+
+
+a13
+a23  .
+a33
+
+Voici la formule pour le déterminant :
+det A = a11 a22 a33 + a12 a23 a31 + a13 a21 a32 − a31 a22 a13 − a32 a23 a11 − a33 a21 a12 .
+
+DÉTERMINANTS
+
+1. DÉTERMINANT EN DIMENSION 2 ET 3
+
+2
+
+Il existe un moyen facile de retenir cette formule, c’est la règle de Sarrus : on recopie les deux premières colonnes à
+droite de la matrice (colonnes grisées), puis on additionne les produits de trois termes en les regroupant selon la
+direction de la diagonale descendante (à gauche), et on soustrait ensuite les produits de trois termes regroupés selon
+la direction de la diagonale montante (à droite).
+
+
+
+
+
+
+
+
+
+a11
+
+a12
+
+a13
+
+a11
+
+a12
+
+a21
+
+a22
+
+a23
+
+a21
+
+a22
+
+a31
+
+a32
+
+a33
+
+a31
+
+a32
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+a11
+
+a12
+
+a13
+
+a11
+
+a12
+
+a21
+
+a22
+
+a23
+
+a21
+
+a22
+
+a31
+
+a32
+
+a33
+
+a31
+
+a32
+
+
+
+
+
+
+
+
+
+Exemple 1.
+
+
+2
+Calculons le déterminant de la matrice A = 1
+3
+Par la règle de Sarrus :
+
+1
+−1
+2
+
+
+0
+3.
+1
+
+det A = 2 × (−1) × 1 + 1 × 3 × 3 + 0 × 1 × 2
+− 3 × (−1) × 0 − 2 × 3 × 2 − 1 × 1 × 1 = −6.
+
+
+
+2
+
+
+
+
+
+
+
+
+
+1
+
+0
+
+2
+
+1
+
+1
+
+−1
+
+3
+
+1
+
+−1
+
+3
+
+2
+
+1
+
+3
+
+2
+
+
+
+
+
+
+
+
+
+Attention : cette méthode ne s’applique pas pour les matrices de taille supérieure à 3. Nous verrons d’autres méthodes
+qui s’appliquent aux matrices carrées de toute taille et donc aussi aux matrices 3 × 3.
+
+1.3. Interprétation géométrique du déterminant
+On va voir qu’en dimension 2, les déterminantscorrespondent à des aires et en dimension 3 à des volumes.
+Donnons nous deux vecteurs v1 = ( ac ) et v2 = db du plan R2 . Ces deux vecteurs v1 , v2 déterminent un parallélogramme.
+y
+
+v2
+
+~j
+O
+
+v1
+~i
+
+x
+
+Proposition 1.
+L’aire du parallélogramme est donnée par la valeur absolue du déterminant :
+
+
+a b
+.
+A = det(v1 , v2 ) = det
+c d
+De manière similaire, trois vecteurs de l’espace R3 :
+ 
+ 
+a11
+a12
+
+
+
+v1 = a21
+v2 = a22 
+a31
+a32
+définissent un parallélépipède.
+
+
+
+
+a13
+v3 = a23 
+a33
+
+DÉTERMINANTS
+
+1. DÉTERMINANT EN DIMENSION 2 ET 3
+
+3
+
+v3
+
+v2
+
+v1
+
+À partir de ces trois vecteurs on définit, en juxtaposant les colonnes, une matrice et un déterminant :
+
+
+a11 a12 a13
+det(v1 , v2 , v3 ) = det a21 a22 a23  .
+a31 a32 a33
+Proposition 2.
+Le volume du parallélépipède est donné par la valeur absolue du déterminant :
+V = det(v1 , v2 , v3 ) .
+2
+On prendra
+ comme unité d’aire dans R l’aire3 du carré unité dont les côtés sont les vecteurs de la base canonique
+1
+0
+0 , 1 , et comme unité de volume dans R , le volume du cube unité.
+
+Démonstration. Traitons le cas de la dimension 2. Le résultat est vrai si v1 = ( 0a ) et v2 = d0 . En effet, dans ce cas on
+
+
+a 0
+a affaire à un rectangle de côtés |a| et |d|, donc d’aire |ad|, alors que le déterminant de la matrice
+vaut ad.
+0 d
+
+d
+
+v2
+
+~j
+v1
+O
+
+~i
+
+a
+
+Si les vecteurs v1 et v2 sont colinéaires alors le parallélogramme est aplati, donc d’aire nulle ; on calcule facilement
+que lorsque deux vecteurs sont colinéaires, leur déterminant est nul.
+
+Dans la suite on suppose que les vecteurs ne sont pas colinéaires. Notons v1 = ( ac ) et v2 = db . Si a 6= 0, alors
+ 0 
+v20 = v2 − ab v1 est un vecteur vertical : v20 = d− ab c .
+L’opération de remplacer v2 par v20 ne change pas l’aire du parallélogramme (c’est comme si on avait coupé le triangle
+vert et on l’avait collé à la place le triangle bleu).
+
+v20
+
+v2
+
+~j
+O
+
+v1
+~i
+
+Cette opération ne change pas non plus le déterminant car on a toujours :
+
+
+a
+0
+det(v1 , v20 ) = det
+= ad − bc = det(v1 , v2 ) .
+b d − ab c
+On pose alors v10 = ( 0a ) : c’est un vecteur horizontal. Encore une fois l’opération de remplacer v1 par v10 ne change ni
+l’aire des parallélogrammes ni le déterminant car
+
+
+a
+0
+0
+0
+det(v1 , v2 ) = det
+= ad − bc = det(v1 , v2 ) .
+0 d − ab c
+
+DÉTERMINANTS
+
+2. DÉFINITION DU DÉTERMINANT
+
+4
+
+v20
+~j
+
+v1
+~i
+
+O
+
+v10
+
+On s’est donc ramené au premier cas d’un rectangle aux côtés parallèles aux axes, pour lequel le résultat est déjà
+acquis.
+Le cas tridimensionnel se traite de façon analogue.
+Mini-exercices.
+
+
+
+
+1 2
+−7 8
+1. Pour A =
+et B =
+calculer les déterminants de A, B, A × B, A + B, A−1 , λA, AT .
+5 3
+−9 5
+
+
+ 0
+
+a b
+a
+0
+2. Mêmes questions pour A =
+et B = 0
+.
+c d
+c d0
+
+
+
+
+1 2 3
+2 0 1
+3. Mêmes questions pour A = 2 −1 2 et B = 0 2 2.
+0 0 3
+3 1 0
+
+
+4. Calculer l’aire du parallélogramme défini par les vecteurs 73 et 14 .
+2 1 1
+5. Calculer le volume du parallélépipède défini par les vecteurs 1 , 1 , 3 .
+1
+
+4
+
+1
+
+2. Définition du déterminant
+Cette partie est consacrée à la définition du déterminant. La définition du déterminant est assez abstraite et il faudra
+attendre encore un peu pour pouvoir vraiment calculer des déterminants.
+
+2.1. Définition et premières propriétés
+Nous allons caractériser le déterminant comme une application, qui à une matrice carrée associe un scalaire :
+det : Mn (K) −→ K
+Théorème 1 (Existence et d’unicité du déterminant).
+Il existe une unique application de Mn (K) dans K, appelée déterminant, telle que
+(i) le déterminant est linéaire par rapport à chaque vecteur colonne, les autres étant fixés ;
+(ii) si une matrice A a deux colonnes identiques, alors son déterminant est nul ;
+(iii) le déterminant de la matrice identité I n vaut 1.
+Une preuve de l’existence du déterminant sera donnée plus bas en section 2.4.
+On note le déterminant d’une matrice A = (ai j ) par :
+
+det A
+
+a11
+a21
+..
+.
+an1
+
+ou
+
+a12
+a22
+..
+.
+an2
+
+···
+···
+···
+
+a1n
+a2n
+..
+.
+ann
+
+.
+
+Si on note Ci la i-ème colonne de A, alors
+det A = C1
+
+C2
+
+···
+
+Cn = det(C1 , C2 , . . . , Cn ) .
+
+DÉTERMINANTS
+
+2. DÉFINITION DU DÉTERMINANT
+
+5
+
+Avec cette notation, la propriété (i) de linéarité par rapport à la colonne j s’écrit : pour tout λ, µ ∈ K, det(C1 , . . . , λC j +
+µC j0 , . . . , Cn ) = λ det(C1 , . . . , C j , . . . , Cn ) + µ det(C1 , . . . , C j0 , . . . , Cn ), soit
+a11
+..
+.
+ai1
+..
+.
+an1
+
+···
+···
+···
+
+λa1 j + µa10 j
+..
+.
+λai j + µai0 j
+..
+.
+λan j + µan0 j
+
+···
+
+···
+
+···
+
+a11
+..
+.
+= λ ai1
+..
+.
+an1
+
+···
+···
+
+a1 j
+..
+.
+ai j
+..
+.
+an j
+
+···
+···
+
+···
+···
+
+a1n
+..
+.
+ain
+..
+.
+ann
+a11
+a1n
+..
+..
+.
+.
+ain + µ ai1
+..
+..
+.
+.
+ann
+an1
+
+a10 j
+..
+.
+ai0 j
+..
+.
+an0 j
+
+···
+···
+···
+
+···
+···
+···
+
+a1n
+..
+.
+ain .
+..
+.
+ann
+
+Exemple 2.
+6
+5
+7 −10
+12 25
+Car la seconde colonne est un multiple de 5.
+
+3 2
+7 −5
+9 2
+Par linéarité sur la troisième colonne.
+
+6
+4
+−3 = 5 × 7
+−1
+12
+
+3
+4−3
+3−2 = 7
+9
+10 − 4
+
+2
+−5
+2
+
+1
+−2
+5
+
+4
+−3
+−1
+
+3
+4
+3 − 7
+9
+10
+
+2
+−5
+2
+
+3
+2
+4
+
+Remarque.
+• Une application de Mn (K) dans K qui satisfait la propriété (i) est appelée forme multilinéaire.
+• Si elle satisfait (ii), on dit qu’elle est alternée.
+Le déterminant est donc la seule forme multilinéaire alternée qui prend comme valeur 1 sur la matrice I n . Les autres
+formes multilinéaires alternées sont les multiples scalaires du déterminant. On verra plus loin comment on peut
+calculer en pratique les déterminants.
+
+2.2. Premières propriétés
+Nous connaissons déjà le déterminant de deux matrices :
+• le déterminant de la matrice nulle 0n vaut 0 (par la propriété (ii)),
+• le déterminant de la matrice identité I n vaut 1 (par la propriété (iii)).
+Donnons maintenant quelques propriétés importantes du déterminant : comment se comporte le déterminant face
+aux opérations élémentaires sur les colonnes ?
+Proposition 3.
+Soit A ∈ Mn (K) une matrice ayant les colonnes C1 , C2 , . . . , Cn . On note A0 la matrice obtenue par une des opérations
+élémentaires sur les colonnes, qui sont :
+1. Ci ← λCi avec λ 6= 0 : A0 est obtenue en multipliant une colonne de A par un scalaire non nul. Alors det A0 = λ det A.
+2. Ci ← Ci + λC j avec λ ∈ K (et j =
+6 i) : A0 est obtenue en ajoutant à une colonne de A un multiple d’une autre
+0
+colonne de A. Alors det A = det A.
+3. Ci ↔ C j : A0 est obtenue en échangeant deux colonnes distinctes de A. Alors det A0 = − det A .
+Pn
+Plus généralement pour (2) : l’opération Ci ← Ci + j=1 λ j C j d’ajouter une combinaison linéaire des autres colonnes
+j6=i
+
+conserve le déterminant.
+Attention ! Échanger deux colonnes change le signe du déterminant.
+
+DÉTERMINANTS
+
+2. DÉFINITION DU DÉTERMINANT
+
+6
+
+Démonstration.
+1. La première propriété découle de la partie (i) de la définition du déterminant.
+
+2. Soit A = C1 · · · Ci · · · C j · · · Cn une matrice représentée par ses vecteurs colonnes Ck . L’opération
+Ci ← Ci + λC j transforme la matrice A en la matrice A0 = C1 · · · Ci + λC j · · · C j · · · Cn . Par linéarité
+par rapport à la colonne i, on sait que
+
+det A0 = det A + λ det C1 · · · C j · · · C j · · · Cn .
+
+Or les colonnes i et j de la matrice C1 · · · C j · · · C j · · · Cn sont identiques, donc son déterminant est
+nul.
+
+3. Si on échange les colonnes i et j de A = C1 · · · Ci · · · C j · · · Cn on obtient la matrice A0 =
+C1 · · · Ci · · · C j · · · Cn , où le vecteur C j se retrouve en colonne i et le vecteur
+Ci en colonne j.
+
+Introduisons alors une troisième matrice B = C1 · · · Ci + C j · · · C j + Ci · · · Cn . Cette matrice a deux
+colonnes distinctes égales, donc d’après (ii), det B = 0.
+D’un autre côté, nous pouvons développer ce déterminant en utilisant la propriété (i) de multilinéarité, c’est-à-dire
+linéarité par rapport à chaque colonne. Ceci donne
+
+0 = det B = det C1 · · · Ci + C j · · · C j + Ci · · ·  Cn
+= det C1 · · · Ci · · · C j + Ci · · · Cn 
++ det C1 · · · C j · · · C j + Ci ·· · Cn
+= det C1 · · · Ci · · · C j · · · Cn 
++ det C1 · · · Ci · · · Ci · · · Cn 
++ det C1 · · · C j · · · C j · · · Cn
++ det C1 · · · C j · · · Ci · · · Cn
+= det A + 0 + 0 + det A0 ,
+encore grâce à (i) pour les deux déterminants nuls du milieu.
+
+Corollaire 1.
+Si une colonne Ci de la matrice A est combinaison linéaire des autres colonnes, alors det A = 0.
+
+2.3. Déterminants de matrices particulières
+Calculer des déterminants n’est pas toujours facile. Cependant il est facile de calculer le déterminant de matrices
+triangulaires.
+Proposition 4.
+Le déterminant d’une matrice triangulaire supérieure (ou inférieure) est égal au produit des termes diagonaux.
+Autrement dit, pour une matrice triangulaire A = (ai j ) on a
+a11
+0
+..
+.
+det A = .
+..
+..
+.
+0
+
+a12
+a22
+..
+.
+
+...
+...
+..
+.
+..
+.
+
+...
+...
+..
+..
+
+...
+
+...
+
+...
+...
+
+.
+
+.
+...
+
+..
+
+.
+0
+
+a1n
+a2n
+..
+.
+.. = a11 · a22 · · · ann .
+.
+..
+.
+ann
+
+Comme cas particulièrement important on obtient :
+Corollaire 2.
+Le déterminant d’une matrice diagonale est égal au produit des termes diagonaux.
+
+DÉTERMINANTS
+
+2. DÉFINITION DU DÉTERMINANT
+
+7
+
+Démonstration. On traite le cas des matrices triangulaires supérieures (le cas des matrices triangulaires inférieures
+est identique). Soit donc
+
+
+a11 a12 a13 · · · a1n
+ 0 a22 a23 · · · a2n 
+
+
+
+0 a33 · · · a3n 
+A= 0
+.
+ .
+..
+..
+.. 
+..
+ ..
+.
+.
+.
+. 
+0
+0
+0 · · · ann
+La façon de procéder utilise l’algorithme du pivot de Gauss (sur les colonnes, alors qu’il est en général défini sur les
+lignes). Par linéarité par rapport à la première colonne, on a
+1
+0
+det A = a11 0
+..
+.
+0
+
+a12
+a22
+0
+..
+.
+0
+
+···
+···
+···
+..
+.
+···
+
+a13
+a23
+a33
+..
+.
+0
+
+a1n
+a2n
+a3n .
+..
+.
+ann
+
+On soustrait maintenant de chaque colonne C j , pour j > 2, la colonne C1 multipliée par −a1 j . C’est l’opération
+élémentaire C j ← C j − a1 j C1 . Ceci ne modifie pas le déterminant d’après la section précédente. Il vient donc
+1
+0
+0
+det A = a11
+..
+.
+0
+
+0
+a22
+0
+..
+.
+0
+
+0
+a23
+a33
+..
+.
+0
+
+···
+···
+···
+..
+.
+···
+
+0
+a2n
+a3n .
+..
+.
+ann
+
+···
+···
+···
+..
+.
+···
+
+0
+a2n
+a3n ,
+..
+.
+ann
+
+Par linéarité par rapport à la deuxième colonne, on en déduit
+1
+0
+det A = a11 · a22 0
+..
+.
+0
+
+0
+1
+0
+..
+.
+0
+
+0
+a23
+a33
+..
+.
+0
+
+et l’on continue ainsi jusqu’à avoir parcouru toutes les colonnes de la matrice. Au bout de n étapes, on a obtenu
+1
+0
+det A = a11 · a22 · a33 · · · ann 0
+..
+.
+0
+
+0
+1
+0
+..
+.
+0
+
+0
+0
+1
+..
+.
+0
+
+···
+···
+···
+..
+.
+···
+
+0
+0
+0 = a · a · a · · · a · det I ,
+11
+22
+33
+nn
+n
+..
+.
+1
+
+d’où le résultat, car det I n = 1, par (iii).
+
+2.4. Démonstration de l’existence du déterminant
+La démonstration du théorème d’existence du déterminant, exposée ci-dessous, est ardue et pourra être gardée pour
+une seconde lecture. Par ailleurs, l’unicité du déterminant, plus difficile, est admise.
+Pour démontrer l’existence d’une application satisfaisant aux conditions (i), (ii), (iii) du théorème-définition 1, on
+donne une formule qui, de plus, nous offre une autre méthode de calcul pratique du déterminant d’une matrice, et
+on vérifie que les propriétés caractéristiques des déterminants sont satisfaites. On retrouvera cette formule, dite de
+développement par rapport à une ligne, en section 4.2.
+Notation. Soit A ∈ Mn (K) une matrice carrée de taille n× n. Il est évident que si l’on supprime une ligne et une colonne
+dans A, la matrice obtenue a n − 1 lignes et n − 1 colonnes. On note Ai, j ou Ai j la matrice obtenue en supprimant la
+i-ème ligne et la j-ème colonne de A. Le théorème d’existence peut s’énoncer de la façon suivante :
+Théorème 2 (Existence du déterminant).
+Les formules suivantes définissent par récurrence, pour n > 1, une application de Mn (K) dans K qui satisfait aux
+propriétés (i), (ii), (iii) caractérisant le déterminant :
+• Déterminant d’une matrice 1 × 1. Si a ∈ K et A = (a), det A = a.
+
+DÉTERMINANTS
+
+2. DÉFINITION DU DÉTERMINANT
+
+8
+
+• Formule de récurrence. Si A = (ai, j ) est une matrice carrée de taille n × n, alors pour tout i fixé
+det A = (−1)i+1 ai,1 det Ai,1 + (−1)i+2 ai,2 det Ai,2 + · · · + (−1)i+n ai,n det Ai,n .
+Démonstration. La preuve se fait par récurrence sur l’ordre des matrices.
+Initialisation. Dans le cas n = 1, il est évident que toutes les propriétés souhaitées sont satisfaites.
+Hérédité. Supposons maintenant que l’application det : Mn−1 (K) → K soit définie et satisfasse les propriétés (i), (ii)
+et (iii). Pour faciliter l’exposition, la preuve va être faite pour i = n. Soit A = (ai, j ) notée aussi A = (C1 · · · Cn ) où
+ a1, j 
+ a1, j 
+.
+..
+C j = ..
+est la j-ème colonne de A. On notera aussi C̄ j =
+la colonne à (n − 1) éléments, égale à C j privée
+.
+an, j
+
+an−1, j
+
+de son dernier coefficient.
+• Propriété (i).
+Il s’agit de vérifier que l’application
+A 7→ det A = (−1)n+1 an,1 det An,1 + (−1)n+2 an,2 det An,2 + · · · + (−1)n+n an,n det An,n
+est linéaire par rapport à chaque colonne. Nous allons le prouver pour la dernière colonne, c’est-à-dire que :
+det(C1 , . . . , Cn−1 , λCn0 + µCn00 ) = λ det(C1 , . . . , Cn−1 , Cn0 ) + µ det(C1 , . . . , Cn−1 , Cn00 ) .
+Notons A, A0 , A00 les matrices (C1 · · · Cn−1 · · · λCn0 + µCn00 ), (C1 · · · Cn−1 · · · Cn0 ) et (C1 · · · Cn−1 · · · Cn00 ), et An, j , A0n, j , A00n, j
+les sous-matrices extraites en enlevant n-ème ligne et la j-ème colonne. En comparant les différentes matrices,
+0
+00
+0
+00
+0
+00
+on constate que an,
+j = an, j = an, j si j < n tandis que an,n = λan,n + µan,n . Similairement, An,n = An,n = An,n =
+(C̄1 · · · C̄n−1 ) puisque la n-ème colonne est enlevée. Par contre, pour j < n, An, j , A0n, j , A00n, j ont leurs (n − 2) premières
+colonnes identiques, et diffèrent par la dernière. Comme ce sont des déterminants de taille n − 1, on peut utiliser
+l’hypothèse de récurrence :
+det An, j
+
+=
+
+det(C̄1 , . . . , C̄ j−1 , C̄ j+1 , . . . , C̄n−1 , λC̄n0 + µC̄n00 )
+
+=
+
+λ det(C̄1 , . . . , C̄ j−1 , C̄ j+1 , . . . , C̄n−1 , C̄n0 )
++µ det(C̄1 , . . . , C̄ j−1 , C̄ j+1 , . . . , C̄n−1 , C̄n00 )
+
+=
+
+λ det A0n, j + µ det A00n, j
+
+Finalement, en mettant de côté dans la somme le n-ème terme :
+det A
+
+=
+=
+
+(−1)n+1 an,1 det An,1 + (−1)n+2 an,2 det A1,2 + · · · + (−1)n+n an,n det An,n
+ n−1
+
+X
+(−1)n+ j an, j det An, j + (−1)2n an,n det An,n
+
+=
+
+ n−1
+
+X
+0
+00
+(−1)n+ j an, j (λ det A0n, j + µ det A00n, j ) + (−1)2n (λan,n
++ µan,n
+) det An,n
+
+=
+
+n
+n
+X
+X
+0
+0
+00
+λ
+(−1)n+ j an,
+det
+A
++
+µ
+(−1)n+ j an,
+det A00n, j
+j
+n, j
+j
+
+j=1
+
+j=1
+
+j=1
+
+=
+
+j=1
+
+λ det A + µ det A
+0
+
+00
+
+La démonstration est similaire pour les autres colonnes (on peut aussi utiliser la propriété (ii) ci-dessous).
+• Propriété (ii).
+Supposons que C r = Cs pour r < s. Si k est différent de r et de s, la matrice An,k possède encore deux colonnes
+identiques C̄ r et C̄s . Par hypothèse de récurrence, det An,k = 0. Par conséquent,
+det A = (−1)n+r det An,r + (−1)n+s det An,s
+Or An,r et An,s possèdent toutes les deux les mêmes colonnes : An,r = (C̄1 · · · C̄ r−1 C̄ r+1 · · · C̄s · · · C̄n ) et An,s =
+(C̄1 · · · C̄ r · · · C̄s−1 C̄s+1 · · · C̄n ), car C̄ r = C̄s . Pour passer de An,s à An,r , il faut faire s − r − 1 échanges de colonnes
+C̄ j ↔ C̄ j+1 successifs, qui par hypothèse de récurrence changent le signe par (−1)s−r−1 : det An,s = (−1)s−r−1 det An,r .
+On conclut immédiatement que
+
+det A = (−1)n+r + (−1)n+2s−r−1 det An,r = 0 .
+• Propriété (iii). Si l’on considère pour A la matrice identité I n , ses coefficients ai, j sont tels que :
+i = j =⇒ ai, j = 1
+i 6= j =⇒ ai, j = 0.
+
+DÉTERMINANTS
+
+3. PROPRIÉTÉS DU DÉTERMINANT
+
+9
+
+Donc det I n = (−1)n+n det An,n . Or, la matrice An,n obtenue à partir de la matrice identité en supprimant la dernière
+ligne et la dernière colonne est la matrice identité de taille (n − 1) × (n − 1). Par hypothèse de récurrence, on a
+det I n−1 = 1. On en déduit det I n = 1.
+Conclusion. Le principe de récurrence termine la preuve du théorème d’existence du déterminant.
+Remarque.
+La définition donnée ci-dessus suppose le choix d’un indice i de ligne (i = n dans la démonstration) et peut paraître
+arbitraire. Alors se pose naturellement la question : que se passe-t-il si l’on prend une autre valeur de i ? L’unicité du
+déterminant d’une matrice permet de répondre : quelle que soit la ligne choisie, le résultat est le même.
+Mini-exercices.
+1. En utilisant la linéarité du déterminant, calculer det (−I n ).
+2. Pour A ∈ Mn (K), calculer det(λA) en fonction de det A.
+3. Montrer que le déterminant reste invariant par l’opération Ci ← Ci +
+
+P
+
+j=1..n λ j C j (on ajoute à une colonne de A
+j6=i
+
+une combinaison linéaire des autres colonnes de A).
+
+3. Propriétés du déterminant
+Nous allons voir trois propriétés importantes du déterminant : le déterminant d’un produit de matrices, le déterminant
+de l’inverse d’une matrice, le déterminant de la transposée d’une matrice. Pour prouver ces propriétés, nous aurons
+besoin des matrices élémentaires.
+
+3.1. Déterminant et matrices élémentaires
+Pour chacune des opérations élémentaires sur les colonnes d’une matrice A, on associe une matrice élémentaire E,
+telle que la matrice obtenue par l’opération élémentaire sur A soit A0 = A × E.
+6 0 : ECi ←λCi = diag(1, . . . , 1, λ, 1, . . . , 1) est la matrice diagonale ne comportant que des 1, sauf
+1. Ci ← λCi avec λ =
+en position (i, i) ;
+2. Ci ← Ci + λC j avec λ ∈ K (et j 6= i) : ECi ←Ci +λC j est comme la matrice identité, sauf en position ( j, i) où son
+coefficient vaut λ ;
+3. Ci ↔ C j : ECi ↔C j est comme la matrice identité, sauf que ses coefficients (i, i) et ( j, j) s’annulent, tandis que les
+coefficients (i, j) et ( j, i) valent 1.
+1
+
+1
+
+.
+.
+ ..
+
+ ..
+
+
+
+1
+
+
+1
+λ
+
+
+0
+1
+
+
+
+
+1
+..
+
+
+
+
+.
+
+
+.
+ECi ←Ci +λC j = 
+
+..
+ ECi ↔C j = 
+.
+
+
+..
+
+
+1
+
+
+
+
+1
+0
+
+
+1
+
+
+1
+
+
+..
+..
+.
+.
+1
+1
+
+Nous allons détailler le cas de chaque opération et son effet sur le déterminant :
+Proposition 5.
+1. det ECi ←λCi = λ
+2. det ECi ←Ci +λC j = +1
+3. det ECi ↔C j = −1
+4. Si E est une des matrices élémentaires ci-dessus, det (A × E) = det A × det E
+Démonstration. Nous utilisons les propositions 3 et 4.
+1. La matrice ECi ←λCi est une matrice diagonale, tous les éléments diagonaux valent 1, sauf un qui vaut λ. Donc son
+déterminant vaut λ.
+
+DÉTERMINANTS
+
+3. PROPRIÉTÉS DU DÉTERMINANT
+
+10
+
+2. La matrice ECi ←Ci +λC j est triangulaire inférieure ou supérieure avec des 1 sur la diagonale. Donc son déterminant
+vaut 1.
+3. La matrice ECi ↔C j est aussi obtenue en échangeant les colonnes i et j de la matrice I n . Donc son déterminant vaut
+−1.
+4. La formule det A × E = det A × det E est une conséquence immédiate de la proposition 3.
+
+Cette proposition nous permet de calculer le déterminant d’une matrice A de façon relativement simple, en utilisant
+l’algorithme de Gauss. En effet, si en multipliant successivement A par des matrices élémentaires E1 , . . . , E r on obtient
+une matrice T échelonnée, donc triangulaire
+T = A · E1 · · · E r
+alors, en appliquant r-fois la proposition précédente, on obtient :
+det T
+
+=
+=
+=
+=
+
+det(A · E1 · · · E r )
+det(A · E1 · · · E r−1 ) · det E r
+···
+det A · det E1 · det E2 · · · det E r
+
+Comme on sait calculer le déterminant de la matrice triangulaire T et les déterminants des matrices élémentaires Ei ,
+on en déduit le déterminant de A.
+En pratique cela ce passe comme sur l’exemple suivant.
+Exemple 3.
+
+
+0
+Calculer det A, où A = 1
+5
+
+3
+−6
+9
+
+
+2
+6
+1
+
+
+det A =
+
+=
+
+=
+
+=
+
+=
+=
+=
+
+
+0 3 2
+det 1 −6 6
+5 9 1
+(opération 
+C1 ↔ C2 pour
+ avoir un pivot en haut à gauche)
+3 0 2
+(−1) × det −6 1 6
+9 5 1
+1
+par rapport
+à la première colonne)
+(C1 ← 3 C1 , linéarité
+
+
+1 0 2
+(−1) × 3 × det −2 1 6
+3
+1
+(−1) × 3 × det −2
+3
+1
+(−1) × 3 × det −2
+3
+(−1) × 3 × (−55)
+165
+
+5 1 
+0 0
+1 10 
+C3 ← C3 − 2C1
+5 −5 
+0
+0
+1
+0 
+C3 ← C3 − 10C2
+5 −55
+car la matrice est triangulaire
+
+3.2. Déterminant d’un produit
+Théorème 3.
+det(AB) = det A · det B
+
+Démonstration. La preuve utilise les matrices élémentaires ; en effet, par la proposition 5, pour A une matrice quelconque et E une matrice d’une opération élémentaire alors :
+det(A × E) = det A × det E.
+
+DÉTERMINANTS
+
+3. PROPRIÉTÉS DU DÉTERMINANT
+
+11
+
+Passons maintenant à la démonstration du théorème. On a vu dans le chapitre « Matrices » qu’une matrice B est
+inversible si et seulement si sa forme échelonnée réduite par le pivot de Gauss est égale à I n , c’est-à-dire qu’il existe
+des matrices élémentaires Ei telles que
+BE1 · · · E r = I n .
+D’après la remarque préliminaire appliquée r fois, on a
+det(B · E1 E2 · · · E r ) = det B · det E1 · det E2 · · · det E r = det I n = 1
+On en déduit
+det B =
+
+1
+·
+det E1 · · · det E r
+
+Pour la matrice AB, il vient
+(AB) · (E1 · · · E r ) = A · I n = A.
+Ainsi
+det(ABE1 · · · E r ) = det(AB) · det E1 · · · det E r = det A.
+Donc :
+det(AB) = det A ×
+
+1
+= det A × det B.
+det E1 · · · det E r
+
+D’où le résultat dans ce cas.
+Si B n’est pas inversible, rg B < n, il existe donc une relation de dépendance linéaire entre les colonnes de B, ce qui
+revient à dire qu’il existe un vecteur colonne X tel que BX = 0. Donc det B = 0, d’après le corollaire 1. Or BX = 0
+implique (AB)X = 0. Ainsi AB n’est pas inversible non plus, d’où det(AB) = 0 = det Adet B dans ce cas également.
+
+3.3. Déterminant des matrices inversibles
+Comment savoir si une matrice est inversible ? Il suffit de calculer son déterminant !
+Corollaire 3.
+Une matrice carrée A est inversible si et seulement si son déterminant est non nul. De plus si A est inversible, alors :
+
+det A−1 =
+
+1
+det A
+
+Démonstration.
+• Si A est inversible, il existe une matrice A−1 telle que AA−1 = I n , donc det(A) det(A−1 ) = det I n = 1. On en déduit
+que det A est non nul et det(A−1 ) = det1 A .
+• Si A n’est pas inversible, alors elle est de rang strictement inférieur à n. Il existe donc une relation de dépendance
+linéaire entre ses colonnes, c’est-à-dire qu’au moins l’une de ses colonnes est combinaison linéaire des autres. On
+en déduit det A = 0.
+
+Exemple 4.
+Deux matrices semblables ont même déterminant.
+En effet : soit B = P −1 AP avec P ∈ G L n (K) une matrice inversible. Par multiplicativité du déterminant, on en déduit
+que :
+det B = det(P −1 AP) = det P −1 det Adet P = det A,
+1
+−1
+puisque det P = det P .
+
+3.4. Déterminant de la transposée
+Corollaire 4.
+
+
+det AT = det A
+
+DÉTERMINANTS
+
+4. CALCULS DE DÉTERMINANTS
+
+12
+
+Démonstration. Commençons par remarquer que la matrice E d’une opération élémentaire est soit triangulaire
+(substitution), soit symétrique c’est-à-dire égale à sa transposée (échange de lignes et homothétie). On vérifie
+facilement que det E T = det E.
+Supposons d’abord que A soit inversible. On peut alors l’écrire comme produit de matrices élémentaires, A = E1 · · · E r .
+On a alors
+AT = E rT · · · E1T
+et
+det(AT ) = det(E rT ) · · · det(E1T ) = det(E r ) · · · det(E1 ) = det(A).
+D’autre part, si A n’est pas inversible, alors AT n’est pas inversible non plus, et det A = 0 = det AT .
+
+Remarque.
+Une conséquence du dernier résultat, est que par transposition, tout ce que l’on a dit des déterminants à propos des
+colonnes est vrai pour les lignes. Ainsi, le déterminant est multilinéaire par rapport aux lignes, si une matrice a deux
+lignes égales, son déterminant est nul, on ne modifie pas un déterminant en ajoutant à une ligne une combinaison
+linéaire des autres lignes, etc.
+Voici le détail pour les opérations élémentaires sur les lignes :
+1. L i ← λL i avec λ 6= 0 : le déterminant est multiplié par λ.
+2. L i ← L i + λL j avec λ ∈ K (et j 6= i) : le déterminant ne change pas.
+3. L i ↔ L j : le déterminant change de signe.
+Mini-exercices.
+
+
+
+
+a 1 3
+1
+1. Soient A = 0 b 2 et B =  0
+0 0 c
+−2
+B, A−1 , B −1 , AT , B T , AB, BA.
+
+0
+d
+0
+
+
+2
+0. Calculer, lorsque c’est possible, les déterminants des matrices A,
+1
+
+2. Calculer le déterminant de chacune des matrices suivantes en se ramenant par des opérations élémentaires à
+une matrice triangulaire.
+
+
+
+ 
+
+1
+2
+4
+8
+
+
+1 0 6
+1 1 1
+1 3 9
+2iπ
+a b
+27 
+
+
+3 4 15 1 j j 2  avec j = e 3
+
+c d
+1 4 16 64 
+2
+5 6 21
+1 j
+j
+1 5 25 125
+
+4. Calculs de déterminants
+Une des techniques les plus utiles pour calculer un déterminant est le « développement par rapport à une ligne (ou
+une colonne) ».
+
+4.1. Cofacteur
+Définition 1.
+Soit A = ai j ∈ Mn (K) une matrice carrée.
+• On note Ai j la matrice extraite, obtenue en effaçant la ligne i et la colonne j de A.
+• Le nombre det Ai j est un mineur d’ordre n − 1 de la matrice A.
+• Le nombre Ci j = (−1)i+ j det Ai j est le cofacteur de A relatif au coefficient ai j .
+
+DÉTERMINANTS
+
+4. CALCULS DE DÉTERMINANTS
+
+13
+
+
+
+
+a11 . . . a1, j−1 a1, j a1, j+1 . . . a1n
+
+
+..
+..
+..
+ ..
+
+ .
+
+.
+.
+.
+a
+
+ i−1,1 . . . ai−1, j−1 ai−1, j ai−1, j+1 . . . ai−1,n 
+
+
+
+
+ai,1 . . . ai, j−1 ai, j ai, j+1 . . . ai,n 
+A= 
+
+
+
+
+ ai+1,1 . . . ai+1, j−1 ai+1, j ai+1, j+1 . . . ai+1,n 
+
+
+
+
+..
+..
+..
+ ..
+
+ .
+
+.
+.
+.
+an1 . . . an, j−1 an, j an, j+1 . . . ann
+
+
+
+a1,1
+ ..
+ .
+
+ai−1,1
+Ai j = 
+a
+ i+1,1
+ .
+ ..
+an,1
+Exemple5.
+1
+Soit A = 4
+0
+
+2
+2
+1
+
+...
+
+a1, j−1
+..
+.
+ai−1, j−1
+ai+1, j−1
+..
+.
+an, j−1
+
+...
+...
+...
+
+...
+
+a1, j+1
+..
+.
+ai−1, j+1
+ai+1, j+1
+
+...
+...
+
+an, j+1
+
+...
+
+
+a1,n
+.. 
+. 
+
+ai−1,n 
+
+ai+1,n 
+
+.. 
+. 
+an,n
+
+
+3
+1. Calculons A11 , C11 , A32 , C32 .
+1
+
+
+A11 = 
+
+
+1
+
+2
+
+3
+
+4
+
+2
+
+1
+
+0
+
+1
+
+1
+
+
+
+
+ = 2
+
+1
+
+
+
+A32 = 
+
+
+
+1
+1
+
+1
+
+2
+
+3
+
+4
+
+2
+
+1
+
+0
+
+1
+
+1
+
+C11 = (−1)1+1 det A11 = +1.
+
+
+
+
+ = 1
+
+4
+
+
+3
+1
+
+C32 = (−1)3+2 det A32 = (−1) × (−11) = 11.
+
+Pour déterminer si Ci j = + det Ai j ou Ci j = − det Ai j , on peut se souvenir que l’on associe des signes en suivant le
+schéma d’un échiquier :
+
+
++ − + − ...
+ − + − + . . .
+
+
+A =  + − + − . . .
+
+
+.. .. .. ..
+. . . .
+Donc C11 = + det A11 , C12 = − det A12 , C21 = − det A21 ...
+
+4.2. Développement suivant une ligne ou une colonne
+Théorème 4 (Développement suivant une ligne ou une colonne).
+Formule de développement par rapport à la ligne i :
+n
+n
+X
+X
+det A =
+(−1)i+ j ai j det Ai j =
+ai j Ci j
+j=1
+
+j=1
+
+Formule de développement par rapport à la colonne j :
+n
+n
+X
+X
+det A =
+(−1)i+ j ai j det Ai j =
+ai j Ci j
+i=1
+
+i=1
+
+DÉTERMINANTS
+
+4. CALCULS DE DÉTERMINANTS
+
+14
+
+Démonstration. Nous avons déjà démontré la formule de développement suivant une ligne lors de la démonstration du
+théorème 1 d’existence et d’unicité du déterminant. Comme det A = det AT , on en déduit la formule de développement
+par rapport à une colonne.
+Exemple 6.
+Retrouvons la formule des déterminants 3 × 3, déjà présentée par la règle de Sarrus, en développement par rapport à
+la première ligne.
+a11
+a21
+a31
+
+a12
+a22
+a32
+
+a13
+a23
+a33
+
+=
+
+a11 C11 + a12 C12 + a13 C13
+
+=
+
+a22 a23
+a
+a23
+a
+a22
+− a12 21
++ a13 21
+a32 a33
+a31 a33
+a31 a32
+a11 (a22 a33 − a32 a23 ) − a12 (a21 a33 − a31 a23 )
++ a13 (a21 a32 − a31 a22 )
+a11 a22 a33 − a11 a32 a23 + a12 a31 a23 − a12 a21 a33
++ a13 a21 a32 − a13 a31 a22 .
+
+=
+=
+
+a11
+
+4.3. Exemple
+Exemple 7.
+
+
+
+4 0 3 1
+4 2 1 0 
+
+A=
+0 3 1 −1
+1 0 2 3
+On choisit de développer par rapport à la seconde colonne (car c’est là qu’il y a le plus de zéros) :
+det A =
+
+0C12 + 2C22 + 3C32 + 0C42
+(développement par rapport à la deuxième colonne)
+
+=
+
+4 3 1
+4 3 1
++2 0 1 −1 − 3 4 1 0
+1 2 3
+1 2 3
+on n’oublie pas les signes des cofacteurs et on recommence
+
+=
+
+en développant chacun de ces deux déterminants 3 × 3
+
+
+1 −1
+3 1
+3 1
++1
++2 +4
+−0
+1 −1
+2 3
+2 3
+(par rapport à la première colonne)
+
+
+3 1
+4 1
+4 3
+−3 −4
++1
+−0
+2 3
+1 3
+1 2
+(par rapport à la deuxième ligne)
+
+
++2 + 4 × 5 − 0 + 1 × (−4) − 3 − 4 × 7 + 1 × 11 − 0
+
+=
+
+83
+
+=
+
+Remarque.
+Le développement par rapport à une ligne permet de ramener le calcul d’un déterminant n× n à celui de n déterminants
+(n − 1) × (n − 1). Par récurrence descendante, on se ramène ainsi au calcul de n! sous-déterminants, ce qui devient
+vite fastidieux. C’est pourquoi le développement par rapport à une ligne ou une colonne n’est utile pour calculer
+explicitement un déterminant que si la matrice de départ a beaucoup de zéros. On commence donc souvent par faire
+apparaître un maximum de zéros par des opérations élémentaires sur les lignes et/ou les colonnes qui ne modifient
+pas le déterminant, avant de développer le déterminant suivant la ligne ou la colonne qui a le plus de zéros.
+
+DÉTERMINANTS
+
+4. CALCULS DE DÉTERMINANTS
+
+15
+
+4.4. Inverse d’une matrice
+Soit A ∈ Mn (K) une matrice carrée.
+Nous lui associons la matrice C des cofacteurs, appelée comatrice, et notée Com(A) :
+
+
+C11 C12 · · · C1n
+ C21 C22 · · · C2n 
+
+
+C = (Ci j ) =  .
+..
+.. 
+ ..
+.
+. 
+Cn1 Cn2 · · · Cnn
+Théorème 5.
+Soient A une matrice inversible, et C sa comatrice. On a alors
+A−1 =
+
+1
+CT
+det A
+
+Exemple8.
+
+
+1 1 0
+Soit A =  0 1 1 . Le calcul donne que det A = 2. La comatrice C s’obtient en calculant 9 déterminants 2 × 2
+1 0 1
+(sans oublier les signes +/−). On trouve :
+
+
+
+
+1 −1 1
+1
+1 −1
+1
+1
+1 −1
+1  et donc A−1 =
+· CT =  1
+C = −1 1
+det A
+2
+−1 1
+1
+1 −1 1
+La démonstration se déduit directement du lemme suivant.
+Lemme 1.
+Soit A une matrice (inversible ou pas) et C sa comatrice. Alors AC T = (det A)I n , autrement dit
+
+X
+det A si i = j
+aik C jk =
+0
+sinon
+k
+
+P
+Démonstration. Le terme de position (i, j) dans AC T est k aik C jk , et donc si i = j, le résultat découle de la formule
+de développement par rapport à la ligne i.
+Pour le cas i 6= j, imaginons que l’on remplace A par une matrice A0 = (ai0 j ) identique, si ce n’est que la ligne L j est
+remplacée par la ligne L i , autrement dit a0jk = aik pour tout k. De plus, comme A0 possède deux lignes identiques, son
+déterminant est nul. On appelle C 0 la comatrice de A0 , et la formule de développement pour la ligne j de A0 donne
+X
+X
+0
+0
+0 = det A0 =
+a0jk C jk
+=
+aik C jk
+k
+k
+0
+0
+Or, C jk se calcule à partir de la matrice extraite A jk , qui ne contient que les éléments de A0 sur les lignes différentes de
+0
+j et colonnes différents de k. Mais sur les lignes différentes de j, A0 est identique à A, donc C jk
+= C jk . On conclut que
+P
+k aik C jk = 0.
+
+Finalement,
+
+
+det A
+
+
+
+AC = 
+
+
+
+0
+
+...
+
+0
+..
+.
+
+
+
+
+
+0
+det A
+ = det A · I
+
+..
+..
+.
+.
+0 
+0
+...
+0 det A
+et en particulier, si det A 6= 0, c’est-à-dire si A est inversible, alors on a
+1
+CT .
+A−1 =
+det A
+T
+
+Mini-exercices.
+
+
+2
+1. Soient A = 0
+2
+
+0
+1
+0
+
+
+
+−2
+t
+−1 et B =  0
+0
+−t
+
+0
+t
+0
+
+
+t
+0. Calculer les matrices extraites, les mineurs d’ordre 2 et les
+t
+
+DÉTERMINANTS
+
+5. APPLICATIONS DES DÉTERMINANTS
+
+16
+
+cofacteurs de chacune des matrices A et B. En déduire le déterminant de A et de B. En déduire l’inverse de A et
+de B lorsque c’est possible.
+2. Par développement suivant une ligne (ou une colonne) bien choisie, calculer les déterminants :
+1
+0
+1
+0
+
+0
+0
+1
+0
+
+1
+0
+1
+0
+
+2
+1
+0
+−1
+
+t
+1
+0
+0
+
+0
+t
+1
+0
+
+1
+0
+t
+0
+
+0
+0
+0
+t
+
+3. En utilisant la formule de développement par rapport à une ligne, recalculer le déterminant d’une matrice
+triangulaire.
+
+5. Applications des déterminants
+Nous allons voir plusieurs applications des déterminants.
+
+5.1. Méthode de Cramer
+Le théorème suivant, appelé règle de Cramer, donne une formule explicite pour la solution de certains systèmes
+d’équations linéaires ayant autant d’équations que d’inconnues. Considérons le système d’équations linéaires à n
+équations et n inconnues suivant :
+
+a11 x 1 + a12 x 2 + · · · + a1n x n = b1
+
+
+
+a21 x 1 + a22 x 2 + · · · + a2n x n = b2
+...
+
+
+
+an1 x 1 + an2 x 2 + · · · + ann x n = bn
+Ce système peut aussi s’écrire sous forme matricielle AX = B où
+
+
+
+
+a11 a12 · · · a1n
+x1
+ a21 a22 · · · a2n 
+ x2 
+
+
+
+
+A= .
+X = . 
+ ∈ Mn (K),
+.
+.
+..
+.. 
+ ..
+ .. 
+an1
+
+an2
+
+···
+
+Définissons la matrice A j ∈ Mn (K) par
+
+
+ann
+
+a11
+ a21
+
+Aj =  .
+ ..
+an1
+
+
+
+et
+
+xn
+...
+...
+...
+
+a1, j−1
+a2, j−1
+..
+.
+an, j−1
+
+b1
+b2
+..
+.
+bn
+
+a1, j+1
+a2, j+1
+..
+.
+an, j+1
+
+
+b1
+ b2 
+
+
+B =  . .
+ .. 
+bn
+
+...
+...
+
+
+a1n
+a2n 
+
+.. 
+. 
+
+...
+
+ann
+
+Autrement dit, A j est la matrice obtenue en remplaçant la j-ème colonne de A par le second membre B. La règle de
+Cramer va nous permettre de calculer la solution du système dans le cas où det A 6= 0 en fonction des déterminants
+des matrices A et A j .
+Théorème 6 (Règle de Cramer).
+Soit
+AX = B
+un système de n équations à n inconnues. Supposons que det A 6= 0. Alors l’unique solution (x 1 , x 2 , . . . , x n ) du système
+est donnée par :
+det An
+det A1
+det A2
+x1 =
+x2 =
+...
+xn =
+.
+det A
+det A
+det A
+Démonstration. Nous avons supposé que det A 6= 0. Donc A est inversible. Alors X = A−1 B est l’unique solution du
+système. D’autre part, nous avons vu que A−1 = det1 A C T où C est la comatrice. Donc X = det1 A C T B. En développant,
+ 
+
+  
+
+
+x1
+C11 . . . Cn1
+b1
+C11 b1 + C21 b2 + · · · + Cn1 bn
+1  .
+1 
+.
+
+..   .. 
+..
+X =  ..  =
+ ..
+  . =
+
+
+.
+.
+det A
+det A
+xn
+C1n . . . Cnn
+bn
+C1n b1 + C2n b2 + · · · + Cnn bn
+
+DÉTERMINANTS
+
+5. APPLICATIONS DES DÉTERMINANTS
+
+17
+
+C’est-à-dire
+
+C11 b1 + · · · + Cn1 bn
+C1i b1 + · · · + Cni bn
+C1n b1 + · · · + Cnn bn
+, xi =
+, xn =
+det A
+det A
+det A
+Mais b1 C1i + · · · + bn Cni est le développement en cofacteurs de det Ai par rapport à sa i-ème colonne. Donc
+det Ai
+xi =
+·
+det A
+x1 =
+
+Exemple 9.
+Résolvons le système suivant :
+
+
+
+x1
+−3x 1
+
+−x 1
+
++
+−
+
++
++
++
+
+4x 2
+2x 2
+
+2x 3
+6x 3
+3x 3
+
+=
+=
+=
+
+6
+30
+8.
+
+On a
+
+
+
+
+6
+A1 =  30
+8
+
+0
+4
+−2
+
+1
+
+−3
+A=
+−1
+
+
+
+2
+6 
+3
+
+0
+4
+−2
+
+
+1
+A2 =  −3
+−1
+
+2
+6 
+3
+
+6
+30
+8
+
+
+6
+B =  30 
+8
+
+
+1
+2
+6 
+A3 =  −3
+
+
+0
+4
+−2
+
+3
+
+−1
+
+det A2 = 72
+
+det A3 = 152.
+
+
+6
+30 
+8
+
+et
+det A = 44
+
+det A1 = −40
+
+La solution est alors
+det A1
+det A3
+det A2
+40
+10
+72
+18
+152
+38
+=−
+=−
+x2 =
+=
+=
+x3 =
+=
+=
+·
+det A
+44
+11
+det A
+44
+11
+det A
+44
+11
+La méthode de Cramer n’est pas la méthode la plus efficace pour résoudre un système, mais est utile si le système
+contient des paramètres.
+x1 =
+
+5.2. Déterminant et base
+Soit E un K-espace vectoriel de dimension n. Fixons une base B de E. On veut décider si n vecteurs v1 , v2 , . . . , vn
+forment aussi une base de E. Pour cela, on écrit la matrice A ∈ Mn (K) dont la j-ème colonne est formée des coordonnées
+du vecteur v j par rapport à la base B (comme pour la matrice de passage). Le calcul de déterminant apporte la
+réponse à notre problème.
+Théorème 7.
+Soit E un K espace vectoriel de dimension n, et v1 , v2 , . . . , vn , n vecteurs de E. Soit A la matrice obtenue en juxtaposant
+les coordonnées des vecteurs par rapport à une base B de E. Les vecteurs (v1 , v2 , . . . , vn ) forment une base de E si et
+seulement si det A 6= 0.
+Corollaire 5.
+Une famille de n vecteurs de Rn
+
+
+
+a11
+ a21 
+ 
+ . 
+ .. 
+an1
+forme une base si et seulement si det (ai j ) 6= 0.
+
+
+
+
+a12
+ a22 
+ 
+ . 
+ .. 
+
+
+···
+
+an2
+
+
+a1n
+ a2n 
+ 
+ . 
+ .. 
+ann
+
+Exemple 10.
+Pour quelles valeurs de a, b ∈ R les vecteurs
+ 
+0
+a
+
+ 
+a
+ b
+
+ 
+b
+0
+
+b
+
+0
+
+a
+
+DÉTERMINANTS
+
+5. APPLICATIONS DES DÉTERMINANTS
+
+18
+
+forment une base de R3 ? Pour répondre, il suffit de calculer le déterminant
+0
+a
+b
+
+a
+b
+0
+
+b
+0 = −a3 − b3 .
+a
+
+Conclusion : si a3 6= −b3 alors les trois vecteurs forment une base de R3 . Si a3 = −b3 alors les trois vecteurs sont liés.
+(Exercice : montrer que a3 + b3 = 0 si et seulement si a = −b.)
+Démonstration. La preuve fait appel à des résultats du chapitre « Matrices et applications linéaires » (section « Rang
+d’une famille de vecteurs ») :
+(v1 , v2 , . . . , vn ) forment une base
+
+⇐⇒
+⇐⇒
+⇐⇒
+⇐⇒
+
+rg(v1 , v2 , . . . , vn ) = n
+rg A = n
+A est inversible
+det A 6= 0
+
+5.3. Mineurs d’une matrice
+Définition 2.
+Soit A = (ai j ) ∈ Mn,p (K) une matrice à n lignes et p colonnes à coefficients dans K. Soit k un entier inférieur à
+n et à p. On appelle mineur d’ordre k le déterminant d’une matrice carrée de taille k obtenue à partir de A en
+supprimant n − k lignes et p − k colonnes.
+Noter que A n’a pas besoin d’être une matrice carrée.
+Exemple 11.
+Soit la matrice
+
+
+
+1 2 3 4
+A = 1 0 1 7
+0 1 6 5
+• Un mineur d’ordre 1 est simplement un coefficient de la matrice A.
+de A. Par exemple en ne retenant que la ligne 1
+• Un mineur d’ordre 2 est le déterminant d’une matrice 2× 2 extraite
+
+2 4
+2 4
+et 3 et la colonne 2 et 4, on obtient la matrice extraite
+. Donc un des mineurs d’ordre 2 de A est
+= 6.
+1 5
+1 5
+• Un mineur d’ordre 3 est le déterminant d’une matrice 3 × 3 extraite de A. Par exemple, en ne retenant que les
+colonnes 1, 3 et 4 on obtient le mineur
+1 3 4
+1 1 7 = −28
+0 6 5
+• Il n’y a pas de mineur d’ordre 4 (car la matrice n’a que 3 lignes).
+
+5.4. Calcul du rang d’une matrice
+Rappelons la définition du rang d’une matrice.
+Définition 3.
+Le rang d’une matrice est la dimension de l’espace vectoriel engendré par les vecteurs colonnes. C’est donc le
+nombre maximum de vecteurs colonnes linéairement indépendants.
+Théorème 8.
+Le rang d’une matrice A ∈ Mn,p (K) est le plus grand entier r tel qu’il existe un mineur d’ordre r extrait de A non nul.
+La preuve sera vue en section 5.6.
+
+DÉTERMINANTS
+
+5. APPLICATIONS DES DÉTERMINANTS
+
+19
+
+Exemple 12.
+Soit α un paramètre réel. Calculons le rang de la matrice A ∈ M3,4 (R) :
+
+
+1 1 2 1
+A = 1 2 3 1 
+1
+
+1
+
+α
+
+1
+
+• Clairement, le rang ne peut pas être égal à 4, puisque 4 vecteurs de R3 ne sauraient être indépendants.
+• On obtient les mineurs d’ordre 3 de A en supprimant une colonne. Calculons le mineur d’ordre 3 obtenu en
+supprimant la première colonne, en le développant par rapport à sa première colonne :
+1
+2
+1
+
+2
+3
+α
+
+1
+3
+1 =
+α
+1
+
+1
+2
+−2
+1
+α
+
+1
+2
++
+1
+3
+
+1
+= α − 2.
+1
+
+Par conséquent, si α 6= 2, le mineur précédent est non nul et le rang de la matrice A est 3.
+Si
+α = 2, on vérifie que les 4 mineurs d’ordre 3 de A sont nuls :
+•
+1
+2
+1
+
+2
+3
+2
+
+1
+1
+1 = 1
+1
+1
+
+2
+3
+2
+
+1
+1
+1 = 1
+1
+1
+
+Donc dans ce cas, A est de rang inférieur ou égal à 2. Or
+
+1
+1
+
+1
+2
+1
+
+1
+1
+1 = 1
+1
+1
+
+1
+2
+1
+
+2
+3 =0
+2
+
+1
+= 1 (lignes 1, 2, colonnes 1, 2 de A) est un mineur
+2
+
+d’ordre 2 non nul. Donc si α = 2 , le rang de A est 2.
+
+5.5. Rang d’une matrice transposée
+Proposition 6.
+Le rang de A est égal au rang de sa transposée AT .
+Démonstration. Les mineurs de AT sont obtenus à partir des mineurs de A par transposition. Comme les déterminants
+d’une matrice et de sa transposée sont égaux, la proposition découle de la caractérisation du rang d’une matrice à
+l’aide des mineurs (théorème 8).
+
+5.6. Indépendance et déterminant
+Revenons sur le théorème 8 et sa preuve avec une version améliorée.
+Théorème 9 (Caractérisation de l’indépendance linéaire de p vecteurs).
+Soit E un K-espace vectoriel de dimension n et B = (e1 , . . . , en ) une base de E. Soient v1 , . . . , vp des vecteurs de E avec
+Pn
+p 6 n. Posons v j = i=1 ai, j ei pour 1 6 j 6 n. Alors les vecteurs {v1 ,. . . , vp } forment une famille libre si et seulement
+s’il existe un mineur d’ordre p non nul extrait de la matrice A = ai, j ∈ Mn,p (K).
+Démonstration. Supposons d’abord que la famille F = {v1 , . . . , vp } soit libre.
+• Si p = n, le résultat est une conséquence du théorème 7.
+• Si p < n, on peut appliquer le théorème de la base incomplète à la famille F et à la base B = {e1 , . . . , en } ; et quitte
+à renuméroter les vecteurs de B, on peut supposer que B 0 = (v1 , . . . , vp , e p+1 , . . . , en ) est une base de E. (Note :
+cette renumérotation change l’ordre de ei , autrement dit échange les lignes de la matrice A, ce qui n’a pas d’impact
+sur ses mineurs ; on appellera encore B la base renumérotée.) La matrice P de passage de B vers B 0 contient les
+
+DÉTERMINANTS
+
+5. APPLICATIONS DES DÉTERMINANTS
+
+20
+
+composantes des vecteurs (v1 , . . . , vp , e p+1 , . . . , en ) par rapport à la base (renumérotée) B = (e1 , . . . , en ) c’est-à-dire
+
+
+a1,1
+...
+a1,p
+0 ... 0
+..
+.. . .
+.
+ ..
+..
+ .
+.
+. .. 
+.
+.
+
+
+ ..
+..
+.. . .
+.
+..
+ .
+.
+. .. 
+.
+.
+
+
+P = a
+...
+a p,p
+0 . . . 0
+ p,1
+
+a
+
+ p+1,1 . . . a p+1,p 1 . . . 0
+ .
+
+.
+.
+.
+..
+..
+.. . . . .. 
+ ..
+.
+an,1
+
+...
+
+an,p
+
+0
+
+...
+
+1
+
+Le déterminant det P est non nul puisque les vecteurs (v1 , . . . , vp , e p+1 , . . . , en ) forment une base de E. Or ce
+déterminant se calcule en développant par rapport aux dernières colonnes autant de fois que nécessaire (soit n − p
+fois). Et l’on trouve que
+a1,1 . . . a1,p
+.
+..
+..
+det P = ..
+.
+.
+a p,1 . . . a p,p
+a1,1
+.
+Le mineur ..
+a p,1
+
+...
+..
+.
+...
+
+a1,p
+..
+. est donc non nul.
+a p,p
+
+Montrons maintenant la réciproque. Supposons que le mineur correspondant aux lignes i1 , i2 , . . . , i p soit non nul.
+Autrement dit, la matrice
+
+
+ai1 ,1 . . . ai1 ,p
+ .
+.. 
+..
+B =  ..
+.
+. 
+aip ,1 . . . aip ,p
+satisfait det B 6= 0. Supposons aussi
+λ1 v1 + · · · + λ p vp = 0
+En exprimant chaque vi dans la base (e1 , . . . , en ), on voit aisément que cette relation équivaut au système suivant à n
+lignes et p inconnues :
+
+a1,1 λ1 + . . . + a1,p λ p = 0
+
+
+
+ a2,1 λ1 + . . . + a2,p λ p = 0
+..
+..
+..
+..
+..
+.. ..
+
+.
+.
+.
+.
+.
+. .
+
+
+
+an,1 λ1 + . . . + an,p λ p = 0
+Ce qui implique, en ne retenant que les lignes i1 , . . . , i p :
+
+ai1 ,1 λ1 + . . . + ai1 ,p λ p = 0
+
+
+
+ ai ,1 λ1 + . . . + ai ,p λ p = 0
+2
+2
+..
+..
+..
+..
+..
+.. ..
+
+.
+.
+.
+.
+.
+. .
+
+
+a λ + . . . + a λ
+= 0
+i p ,1 1
+i p ,p p
+ce qui s’écrit matriciellement
+
+
+
+λ1
+ . 
+B  ..  = 0.
+
+λp
+Comme B est inversible (car det B 6= 0), cela implique λ1 = · · · = λ p = 0. Ce qui montre l’indépendance des vi .
+Mini-exercices.
+1. Résoudre ce système linéaire, en fonction du paramètre t ∈ R :
+
+
+
+
+ty +z
+2x + t y
+
+− y + tz
+
+=
+=
+=
+
+1
+2
+3
+
+DÉTERMINANTS
+
+5. APPLICATIONS DES DÉTERMINANTS
+
+21
+
+2. Pour quelles valeurs de a, b ∈ R, les vecteurs suivants forment-ils une base de R3 ?
+
+    
+3a
+2a
+a
+1 ,  1  ,  1 
+−2b
+
+b
+
+b
+
+3. Calculer le rang de la matrice suivante selon les paramètres a, b ∈ R.
+
+
+1 2 b
+0 a 1 
+
+
+1 0 2 
+1
+
+2
+
+1
+
+Auteurs du chapitre
+• D’après un cours de Sophie Chemla de l’université Pierre et Marie Curie, reprenant des parties d’un cours de H.
+Ledret et d’une équipe de l’université de Bordeaux animée par J. Queyrut,
+• et un cours de Eva Bayer-Fluckiger, Philippe Chabloz, Lara Thomas de l’École Polytechnique Fédérale de Lausanne,
+• réécrit et complété par Arnaud Bodin, Niels Borne. Relu par Laura Desideri et Pascal Romon.

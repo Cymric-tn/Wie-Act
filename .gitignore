@@ -33,3 +33,9 @@ app/**/uploads/
 app/**/node_modules/
 app/client/dist/
 app/.dev-logs/
+
+# runtime index moved aside during a FelCloud slot; LaTeX build files
+_legacy/index-courses-*/
+docs/report/*.aux
+docs/report/*.log
+docs/report/*.out

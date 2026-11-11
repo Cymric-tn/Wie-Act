@@ -523,3 +523,151 @@ degraded `quota_low`. Five changes and one script; evidence below, none of it me
 - **Progress map: planets share orbits (up to 3)** instead of one orbit each: 11 concepts on 11 rings cannot fit. The canvas is laid out in real pixels (`lib/mapLayout.js`, tested over many orbit positions), so sizes and the 32px margin hold at every width.
 - **Planets stay in one DOM order** (they no longer move between "behind" and "in front of" the sun lists), so keyboard focus survives their motion. Inner orbits are placed to clear the sun and its label, so the two lists were no longer needed.
 - **"Example data" on the map appears only if the learner's mastery could not be loaded:** the course graph and mastery are real otherwise.
+
+## Voice chat and "Ask Lumi" (2026-11-10, branch `restyle-glass-aurora` working tree, from `VOICE_CHAT_IMPLEMENTATION.md`; feature layer, `engine/` not touched)
+
+- **The answer goes through `engine.run`, not a new FelCloud prompt in Python** (the spec's `POST /voice/ask` with its own system prompt). Hard rules: every LLM call goes through the gatekeeper, and the engine is frozen, so the feature layer calls `engine.run`. A spoken question takes the tutor's path: classify, then `follow_up`, then explain (with the board text as `board_text` and the last 4 voice turns as `history`), hint or quiz. It gets the cache, quota pacing, retrieval with the professor boost, metrics, the run log and review flags at no extra cost. The cost: the spec's "2 to 4 spoken sentences, peer tone" prompt does not apply. The answer is the explain answer, trimmed for speech to 600 characters at a sentence end, and the full text (up to 1,500 characters) shows in the strip.
+- **The bridge does speech to text only** (`POST /voice/transcribe`, JSON with base64 audio). The spec asked for multipart, but the bridge is standard-library HTTP and every other route is JSON. 2 MB of audio is 2.7 MB of base64, well under the bridge's 30 MB body limit.
+- **Whisper picks among fr / en / ar** (`WHISPER_LANGUAGES`). It detects the language over the whole list, and the best of the three is used for decoding. The spec said "do not pin `language=`". This still detects, but a short, accented or Darija question can no longer come out as Spanish or Persian. Darija is heard as Arabic (Arabic script). Classify then labels it DARIJA, and the reply language follows classify.
+- **The reader voice follows the answer's script, not the question's language** (`speech.guessLang`). The engine's Darija answers often have a French body (open quality issue), and an `ar-SA` voice reading French is unusable.
+- **Chit-chat and off-topic get a fixed line in fr / en / ar** after classify, with no explain call. Degraded results (quota, room busy, bridge down) become a fixed spoken line with the engine's `eta_seconds`, so the room is never left waiting in silence.
+- **`lumi:error` goes to the whole voice channel** with `askedBy` (the spec sends it to the asker only). Otherwise the others' "Lumi is thinking…" never clears. Only the asker shows the message. The `lumi:ask` ack also carries the error.
+- **`lumi:thinking` is sent twice:** `listening` when the audio arrives, then `answering` with the transcript. The room sees the question while the model works.
+- **Overall deadline 60 s** (`LUMI_VOICE_TIMEOUT_MS`), not 30 s. STT is capped at 30 s and explain alone is bounded at 25 s plus classify. On a deadline the room lock is released, and the engine run finishes into the cache.
+- **Voice membership = the socket has joined that board room.** There are no accounts, so the board's access code is the room's only gate. Leaving the board, switching rooms or disconnecting leaves the voice channel. The join ack also carries the ICE servers (`ICE_SERVERS`, so TURN credentials stay server-side), `lumi` (the tier check) and the room's last answers for latecomers.
+- **Tiers do not exist yet.** `canUseLumiVoice(user)` allows everyone unless `user.tier === "free"`, which nothing sets today. Server enforcement is tested with an injected rule (`createServer({ voice: { canUseLumi } })`).
+- **Recording uses a clone of the call's mic track, forced on,** as the spec decided: a member muted to the group can still ask. The recorder is webm/opus at 32 kbps (20 s ≈ 80 KB).
+- **TTS is queued sentence by sentence** (≤ 200 characters each), because Chrome cuts long utterances after about 15 s. A safety timer always lifts the mic suppression.
+- **Entry points (added 2026-11-10 after "I don't see voice chat"):** the call lives on a room's board, which was its only door. The dashboard's old placeholder Voice Chat page (hidden, `/app/voice` sent you home) is now the hub: a room code field with "Start voice session", the room list, and how it works. Every room row (Group Rooms, Voice Chat, Whiteboard) has a Voice button. Both open the board and join the call on arrival (`openVoice` sets a one-shot `sessionStorage` flag that `VoicePanel` reads). The click is the user gesture the microphone needs, since the app never reloads the page.
+- **Verified:** server `npm test` 41/41 (16 new voice tests), `tests/test_bridge.py` 23/23 (3 new), client tests 92/92. End to end with two headless Chromiums whose fake microphones loop a synthesized English question (espeak-ng), against the fake engine with real Whisper `small`: the WebRTC peer connection comes up, Ana's speaking ring lights from Ben's remote audio, and mute shows on the other side and silences the ring. A tap is discarded. Holding the button sent the question, Whisper transcribed "What is the derivative of x squared?", both members got the answer, leaving updates the other side, a latecomer gets the strip, and there is no horizontal scroll at 390px. Real Whisper on the clips: English correct (about 3 s on CPU). The espeak French and Arabic clips are too robotic to judge accuracy.
+- **Not verified:** FR / AR / Darija accuracy with real voices; the real engine on FelCloud (latency of classify + explain over voice); audio across two machines or through a NAT; speechSynthesis voices (headless Chromium has none, so the "no voice" note showed); Safari / iOS (MediaRecorder gives `audio/mp4`, which the bridge accepts but no test covered).
+
+## Progress map as a constellation, and a light theme (2026-11-10, working tree on `restyle-glass-aurora`; `app/client` only)
+
+- **The map shows the course's prerequisite graph instead of orbits.** Each concept is a star and each line means "builds on". Concepts sit in steps by their longest prerequisite chain (5 steps for `analyse`), left to right (right to left in Arabic), and the order within a step is chosen to keep lines short (barycentre sweeps). The orbit layout hid this structure. It also cut 4 of the 11 names to "Derivative of a p…" and kept everything moving. Logic and geometry are in `lib/constellation.js`, with no DOM, tested in `test/constellation.test.js` (steps of the real course, next-up rules, no overlapping labels at 600–1500px, RTL mirror).
+- **Status by colour and shape** (mastered gold with a check, in progress glow with a ring, needs review rose with "!", not started hollow, "ready" dashed). A ring shows the percentage. Lines turn gold once their prerequisite is mastered. **"Next up"** is the one ready concept to suggest: one already in progress, else one that needs review, else the earliest new one. It is the only thing that moves (a slow pulse, off with reduced motion).
+- **Hover, focus or selection highlights the star's chains** (what it builds on and what builds on it) and dims the rest. The full page has a panel: step n of N, status, "builds on" and "unlocks" (clickable), "Study this concept" (Prep's study page, `?study=<concept>`) and "Ask Lumi" (opens the companion with a question). With nothing selected it shows an overview. A star on the dashboard card opens the full map on that concept (`?concept=`).
+- **Below 560px the map is a list by step**, not a shrunken drawing.
+- **One course, so no "All courses" level and no per-concept "moons" view.** The moons view only ever showed one "Practice" moon or the prerequisites, which the panel now lists. Course tabs appear if a second course is added. `lib/mapLayout.js` and its test are no longer used; I kept them pending approval to delete.
+- **Light theme: Dark (default) / Light / System,** per browser (`lumi-theme`), applied to `<html data-theme>` before the first paint (`lib/themeMode.js`). Dark stays the default because it is the look the app was designed in. Toggle in the dashboard top bar, the landing and sign-in headers. The three-way choice is under Settings › Display.
+- **Theme roles instead of literal colours** (`lumi-tokens.css`): overlays are `rgb(var(--tint) / a)` and scrims `rgb(var(--base) / a)`. The strongest fill is `--contrast` / `--on-contrast` (white on dark, ink on light). Text on a bright accent is `--on-accent`. An accent read as text uses `--glow-ink` / `--spark-ink` / `--rose-ink` (darker in light, to stay above 4.5:1). 73 hardcoded white or near-black values were converted. The hue of glow, spark and rose stays the same in both themes.
+- **The canvas does not follow the theme.** `lumiColors()` reads `--night` for its dark, and a board's surface is the learner's own choice. A learner who never picked one gets Paper in the light theme and the dark grid otherwise.
+- **Light aurora:** the same three colours at about a third of the strength, no stars. The landing and sign-in brightened `--lumi-slate` for the full aurora; in light it is `--text-2`.
+- **Verified:** client tests 105/105; screenshots of the dashboard, map (desktop, phone, Arabic), settings, prep, landing and board in both themes; a browser run of the toggle (persists, System follows the OS live), the dashboard → map link, Escape, keyboard selection, Study → Prep and Ask Lumi. **Not verified:** contrast measured with a tool (values were picked for ≥ 4.5:1 but not measured on the aurora), and the screens not captured (materials, review, diagrams, the voice panel in light).
+
+## OCR prompt v2 (2026-11-11, FelCloud slot; engine change on an explicit go-ahead)
+
+- **The prompt is one sentence, "Transcribe the math exactly."** (`prompts/ocr_transcribe.md` v2), sent alone after the
+  image (`_ocr_build` no longer appends a user section). CONFIRMED(felcloud): deepseek-ocr answered `''` (1 output token)
+  to v1, a legible image of f(x) = x³ − 2x came back `low_confidence` "no text read" (scenario HS-08). Same image, direct
+  calls: the one sentence reads it with the image first or last; v1's text returns `''` either way, and so does one
+  sentence more ("…line by line. Write [?] for a symbol you cannot read."). On a three-line worked solution and a scanned
+  exo7 page the two-sentence prompt also returned `''`, the one sentence read both. Any added instruction is dropped,
+  including `[?]` for an unreadable symbol, so the `unreadable` note now depends on the model writing `[?]` or `�` on its own.
+- **The model wraps each formula line in `\[ … \]`.** `analyze_ocr` removes math delimiters around a whole line and the
+  opening and closing marks of a display block split over lines, keeping inline `\( … \)` inside prose, so the board's
+  "Add as text" and "Fact-check it" get plain lines. Readings cached before this get cleaned on output too (`_ocr_decorate`).
+- **Verified:** through the app on the real engine, all three images read with no note; the scanned 4-page PDF re-ingested
+  in 95 s (18 chunks) with its section headings recovered (v1 gave "Page n" sections). `pytest -q`: 1127 passed, after
+  `data/index/courses/` (written by the live app's uploads during the slot, which fails
+  `test_tests_never_write_runtime_material_into_the_repo`) moved to `_legacy/index-courses-2026-11-11/`. One misread kept: `f'(1) = 11` read as `f(1) = 11`. Still no real phone photo.
+
+## App checkup (2026-11-11, working tree on `restyle-glass-aurora`; feature layer only, `engine/` not touched)
+
+- **Class-only uploads were broken from the UI.** "My class or group" sent no `class_id`: the engine refused the file
+  ("visibility 'class' needs a class_id", status failed) and the list hid it even from its uploader. The client now
+  sends one demo class id (`ENGINE_CLASS` = `l1-mi-g1`, the id the 2026-11-11 slot used) with uploads, the materials
+  list, file links and every AI request's context. One class and no enrolment: every signed-in user is in it.
+  The voice path ("Ask Lumi") sends no class id, since its answer is read to the whole room.
+- **The server refuses a class upload without a class (400)** before storing anything, and **an upload is always
+  visible to its uploader.**
+- **`app/server` tests look for the repo's `myenv` python** (as `dev.sh` and the client tests do). Before, on a
+  machine whose `python3` lacks the engine's requirements, the whole "AI API through the bridge" suite (18 tests) was
+  skipped and the run still read "41 passed".
+- **Inputs in a flex row get `width: 0`** (`.d-join-field input`, `.dg-row input`): an input's default 20-character
+  width set the row's minimum, wider than a 390px screen in the Arabic font (Home, Rooms, Diagrams scrolled sideways).
+- **Two dead `className="input"` props removed** (history slider, concept tag select): a second `className` on the
+  same element replaced them, so nothing changes on screen.
+- **Verified:** `pytest -q` 1127 passed; server 59/59; client 105/105; build and lint clean of errors; simulated mixed
+  load passes its four checks; headless Chromium over every dashboard section for student and professor (desktop,
+  phone, dark, light, Arabic on a phone): no console error, no failed request, no sideways scroll; a class-only upload
+  through the Materials screen is indexed and listed. Fake engine only, nothing run on FelCloud.
+- **Not changed:** the engine findings of `reports/felcloud-2026-11-11-scenarios.md` (HS-07a, HS-12, UNI-01, UNI-10,
+  UNI-02 pacing, the relevance gate on filler words, the derivative exercise after every explain), which need a
+  go-ahead; AI answers show LaTeX as typed (`\[ … \]`), no math rendering in `AnswerText`; `nodemon` (dev only) pulls
+  a `minimatch` with a moderate advisory.
+
+## Engine v1.5: the scenario findings (2026-11-11, FelCloud slot, working tree; engine change on an explicit go-ahead)
+
+Fixes for the failing cases and findings of `reports/felcloud-2026-11-11-scenarios.md`. Replay on the real engine at
+the end of that report.
+
+- **Stopwords include the words a question is wrapped in** ("je ne comprends pas … tu peux expliquer ?", "can you help
+  me understand …", `rag/normalize.py`). They name no topic and, counted in the coverage gate, turned an on-topic
+  question into "not in the course" (0.32 against 0.4; now 0.59 and, after the page change below, 1.0). "calculer" is
+  not one of them: the glossary uses it as a course term.
+- **An English question takes the French hits when they cover it better** (`rag/retriever.search_plan`, used by the
+  engine and by `scripts.eval_retrieval`): higher best coverage, or equal coverage and a higher top score; a full tie
+  stays English. Before, any English hit stopped the search. Arabic keeps the plain order (coverage against a French
+  chunk is not comparable). The English definition draft stays a draft: UNI-01 is answered from the French definition.
+- **The formula page names its rules** (`data/docs/derivee-formules.fr.md`: "Règle du produit : la dérivée d'un
+  produit …", "Règle du quotient : la dérivée d'un quotient …", and the `(uv)' = u'v + uv'` spelling). The section never
+  said "dérivée" or "règle", so "comment calculer la dérivée d'un quotient ?" retrieved the definition pages instead.
+  Maths unchanged; `data/index/chunks.json` rebuilt. Cross-language hit@3 7/8 → 8/8, the other eval numbers unchanged.
+- **check_claim reads a derivative stated in words** (`engine/claims.spoken_derivatives`): "la dérivée de 1/x est
+  1/x²" becomes "(1/x)' = 1/x²" and sympy decides it (CONTRADICTED, "Plutôt : (1/x)' = -1/x²"), in French, English
+  and Arabic. Only when both runs are math; "la dérivée de x² est positive" is left to the model.
+- **QUIZ on a message that asks for no exercise goes to explain** (`router/policy.follow_up(…, message)`, the same rule
+  in `FakeEngine`; the bridge and the Node server pass the message). The 3B read "Écris un algorithme …" as QUIZ and
+  quiz served a derivative exercise. Without a message the rule does not apply (old callers behave as before).
+- **explain prompt v5:** the reply language is repeated as the last line of the user message, and the English rule says
+  to translate French material. v4 gave a French body under "Reply in: English".
+- **Upload tags:** a concept id that is only part of its title ("produit" of "Dérivée d'un produit") is no longer a
+  query of its own, and in a file that never names the topic (no "dérivée" in any language the glossary knows, no
+  f'(…) notation) every guessed tag is capped at 0.49. **explain appends no exercise on a tag below
+  `INGEST_MIN_TAG_CONFIDENCE`.** Sample files: sorting, arrays, binary search, matrices, determinants, elasticity → 0
+  confident tags; cinematics 21, the exo7 derivative chapter 30.
+- **Formula checker, three false positives:** worked arithmetic on a named quantity (`detA = (2)(5) - (3)(4)`) is
+  skipped, not `ungrounded`; "u is 1" is an assignment, not a false identity (`wrong_math`); `f'(a) = lim h→0
+  (f(a + h) − f(a)) / h` is the definition and counts as verified however the limit is written. A wrong step in the
+  same line (`10 - 12 = 5`), a bare invented number and a wrong limit point are still reported.
+- **prep_plan pacing:** each day aims at its share of what is left and may go up to the pace (11 pages over 4 days at
+  60 min: 60, 60, 60, 40; was 40, 40, 40, 100). Early days are now the fuller ones. The server sends `start` with
+  `deadline`, both from one clock: the engine's "today" is local and the server's date was UTC, so between midnight
+  and 01:00 a 5-day plan was built over 4 days.
+- **Verified offline:** `pytest -q` 1153 passed; server 59/59. **On FelCloud (app on the real engine, about 12
+  requests, no server 429):** HS-07a CONTRADICTED by sympy; HS-12 "not in the course"; the filler-word question
+  explains the product rule with its example; UNI-01 gives the limit definition in English, not degraded; UNI-10
+  answers the quotient rule in English, not degraded; UNI-02 gives 60, 40, 40, 40, 40; answers from re-uploaded
+  physics and determinant notes carry no exercise and no flag.
+- **Not fixed:** UNI-04 (no note on the sign error) and the odd guiding question of HS-06; the quotient answer is
+  followed by a product exercise (the bank has no quotient exercise on a published page); "explain the rules of
+  football" in English passes the gate through the glossary's "rule"; the determinant answer from the 104-chunk text
+  file missed the 2×2 section, and "½(vi+vf)" was extracted as "12(vi+vf)" from the speed article.
+
+## Submission round: security, plans, learning-style diagnostic, report (2026-11-11, working tree; feature layer and docs)
+
+- **Security, small and dependency-free** (`app/server/src/security.js`): every response carries `nosniff`, no
+  framing, no referrer and a `default-src 'none'` policy, API answers are `no-store`, `x-powered-by` is off. **An
+  upload must be what its type says** (PDF header, zip header for .docx, valid UTF-8 without control bytes for text),
+  else 400. **An uploaded file is served inert:** Markdown and text as `text/plain` under a CSP sandbox, Word as a
+  download; a PDF gets the strict policy without the sandbox, which stops Chrome's viewer. Already in place and kept:
+  the bridge on localhost behind a constant-time token check, hashed room codes, input validation, rate limits.
+- **Plans from the business model canvas, enforced on the server** (`app/server/src/plans.js`, mirrored for the screens
+  in `app/client/src/lib/plans.js`): Free has no AI on the whiteboard (a request with a `room_id` is 403), no Lumi in
+  voice (`user.tier` at `board:join`, the check `canUseLumiVoice` already made), 30 AI requests a day per learner (429
+  `plan_cap`; rules tasks and bank practice do not count), one exam in prep, no class material and no answer review.
+  Educator, Campus and Enterprise are not limited. `GET /api/plans`. **The plan arrives with the request, like the
+  role:** there are no accounts, so this enforces the rule, not who may claim a plan. A request without a plan gets
+  `LUMI_DEFAULT_PLAN` (default `campus`), so demos and the existing tests are not capped. Counters are in memory.
+  Settings shows the four plans. LMS integration (LTI 1.3) from the canvas is not built.
+- **Learning-style diagnostic** (the spec's "diagnostic step"; `app/client/src/lib/learningStyle.js`): four questions the
+  first time the companion opens, each option votes for one of six styles (visual, analogy, steps, examples,
+  repetition, practice); the winner is sent as `context.style` (the engine already put `Style: …` in the explain prompt
+  and in the cache key; the client never set it). Stored in the browser, changeable or retaken in Settings, skippable.
+  It does not yet adapt from later answers.
+- **Root README rewritten for the submission** (what it does, screenshots in `docs/screenshots/`, the GenAI module, run,
+  tests, privacy, declared external services). **Technical report:** `docs/report/lumi-technical-report.{tex,pdf}`,
+  6 pages (`pdflatex` twice), with the business-model note.
+- **Verified:** `pytest -q` 1153; server 61/61; client 108/108; build clean; in headless Chromium on the preview engine:
+  the plan picker, the Free lock in the board's AI tab, the diagnostic and the style in the request body.

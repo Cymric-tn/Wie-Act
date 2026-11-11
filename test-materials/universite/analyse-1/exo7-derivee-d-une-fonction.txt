@@ -1,0 +1,1222 @@
+Exo7 — Dérivée d'une fonction
+Source: https://exo7.emath.fr/cours/ch_derivee.pdf
+Author: Arnaud Bodin, Exo7
+Licence: CC BY-NC-SA 3.0 FR (Exo7)
+Text extracted with pdftotext on 2026-11-10 for Lumi testing (formulas may be garbled).
+
+Dérivée d’une fonction
+Vidéo  partie 1. Définition
+Vidéo  partie 2. Calculs
+Vidéo  partie 3. Extremum local, théorème de Rolle
+Vidéo  partie 4. Théorème des accroissements finis
+Fiche d'exercices  Fonctions dérivables
+
+Motivation
+p
+Nous souhaitons calculer 1, 01 ou du moins en trouver une valeur approchée. Comme 1, 01 est proche de 1 et
+p
+p
+que 1 = 1 on se doute bien que 1, 01 sera proche de 1. Peut-on être plus précis ? Si l’on appelle f la fonction
+p
+définie par f (x) = x, alors la fonction f est une fonction continue en x 0 = 1. La continuité nous affirme que pour x
+suffisamment proche de x 0 , f (x) est proche de f (x 0 ). Cela revient à dire que pour x au voisinage de x 0 on approche
+f (x) par la constante f (x 0 ).
+y
+
+y = (x − 1) 12 + 1
+y=
+
+x
+
+y =1
+
+1
+
+0
+
+p
+
+x
+
+1
+
+Nous pouvons faire mieux qu’approcher notre fonction par une droite horizontale ! Essayons avec une droite quelconque.
+Quelle droite se rapproche le plus du graphe de f autour de x 0 ? Elle doit passer par le point (x 0 , f (x 0 )) et doit
+« coller » le plus possible au graphe : c’est la tangente au graphe en x 0 . Une équation de la tangente est
+y = (x − x 0 ) f 0 (x 0 ) + f (x 0 )
+où f 0 (x 0 ) désigne le nombre dérivé de f en x 0 .
+p
+On sait que pour f (x) = x, on a f 0 (x) = 2p1 x . Une équation de la tangente en x 0 = 1 est donc y = (x − 1) 12 + 1.
+p
+Et donc pour x proche de 1 on a f (x) ≈ (x − 1) 12 + 1. Qu’est-ce que cela donne pour notre calcul de 1, 01 ? On
+pose x = 1, 01 donc f (x) ≈ 1 + 12 (x − 1) = 1 + 0,01
+de approximation
+2 = 1, 005. Et c’est effectivement une très bonne
+p
+p
+de 0, 01 = 1, 00498 . . .. En posant h = x − 1 on peut reformuler notre approximation en : 1 + h ≈ 1 + 12 h qui est
+valable pour h proche de 0.
+
+DÉRIVÉE D’UNE FONCTION
+
+1. DÉRIVÉE
+
+2
+
+Dans ce chapitre nous allons donc définir ce qu’est la dérivée d’une fonction et établir les formules des dérivées des
+fonctions usuelles. Enfin, pour connaître l’erreur des approximations, il nous faudra travailler beaucoup plus afin
+d’obtenir le théorème des accroissements finis.
+
+1. Dérivée
+1.1. Dérivée en un point
+Soit I un intervalle ouvert de R et f : I → R une fonction. Soit x 0 ∈ I.
+Définition 1.
+f (x)− f (x 0 )
+f est dérivable en x 0 si le taux d’accroissement
+a une limite finie lorsque x tend vers x 0 . La limite
+x−x 0
+s’appelle alors le nombre dérivé de f en x 0 et est noté f 0 (x 0 ). Ainsi
+f 0 (x 0 ) = lim
+
+x→x 0
+
+f (x) − f (x 0 )
+x − x0
+
+Définition 2.
+f est dérivable sur I si f est dérivable en tout point x 0 ∈ I. La fonction x 7→ f 0 (x) est la fonction dérivée de f ,
+df
+elle se note f 0 ou d x .
+Exemple 1.
+La fonction définie par f (x) = x 2 est dérivable en tout point x 0 ∈ R. En effet :
+x 2 − x 02
+f (x) − f (x 0 )
+(x − x 0 )(x + x 0 )
+=
+=
+= x + x 0 −−−→ 2x 0 .
+x→x 0
+x − x0
+x − x0
+x − x0
+On a même montré que le nombre dérivé de f en x 0 est 2x 0 , autrement dit : f 0 (x) = 2x.
+Exemple 2.
+Montrons que la dérivée de f (x) = sin x est f 0 (x) = cos x. Nous allons utiliser les deux assertions suivantes :
+p−q
+p+q
+sin x
+−−→ 1
+et
+sin p − sin q = 2 sin
+· cos
+.
+x x→0
+2
+2
+Remarquons déjà que la première assertion prouve
+Pour x 0 quelconque on écrit :
+
+f (x)− f (0)
+= sinx x → 1 et donc f
+x−0
+
+est dérivable en x 0 = 0 et f 0 (0) = 1.
+
+x−x
+
+0
+sin
+f (x) − f (x 0 )
+sin x − sin x 0
+x + x0
+=
+= x−x20 · cos
+.
+x − x0
+x − x0
+2
+2
+
+Lorsque x → x 0 alors d’une part cos
+Ainsi
+
+x+x 0
+x−x 0
+alors u → 0 et on a sinu u → 1.
+2 → cos x 0 et d’autre part en posant u = 2
+
+f (x)− f (x 0 )
+→ cos x 0 et donc f 0 (x) = cos x.
+x−x 0
+
+1.2. Tangente
+f (x)− f (x )
+
+La droite qui passe par les points distincts (x 0 , f (x 0 )) et (x, f (x)) a pour coefficient directeur x−x 0 0 . À la limite
+on trouve que le coefficient directeur de la tangente est f 0 (x 0 ). Une équation de la tangente au point (x 0 , f (x 0 )) est
+donc :
+y = (x − x 0 ) f 0 (x 0 ) + f (x 0 )
+
+DÉRIVÉE D’UNE FONCTION
+
+1. DÉRIVÉE
+
+3
+
+M0
+
+M
+
+x0
+
+x
+
+1.3. Autres écritures de la dérivée
+Voici deux autres formulations de la dérivabilité de f en x 0 .
+Proposition 1.
+
+f (x 0 + h) − f (x 0 )
+existe et est finie.
+h
+• f est dérivable en x 0 si et seulement s’il existe ` ∈ R (qui sera f 0 (x 0 )) et une fonction ε : I → R telle que
+ε(x) −−−→ 0 avec
+• f est dérivable en x 0 si et seulement si lim
+
+h→0
+
+x→x 0
+
+f (x) = f (x 0 ) + (x − x 0 )` + (x − x 0 )ε(x).
+
+Démonstration. Il s’agit juste de reformuler la définition de f 0 (x 0 ). Par exemple, après division par x − x 0 , la deuxième
+écriture devient
+f (x) − f (x 0 )
+= ` + ε(x).
+x − x0
+Proposition 2.
+Soit I un intervalle ouvert, x 0 ∈ I et soit f : I → R une fonction.
+• Si f est dérivable en x 0 alors f est continue en x 0 .
+• Si f est dérivable sur I alors f est continue sur I.
+Démonstration. Supposons f dérivable en x 0 et montrons qu’elle est aussi continue en ce point. Voici une démonstration
+concise : partant de l’écriture alternative donnée dans la proposition 1, nous écrivons
+f (x) = f (x 0 ) + (x − x 0 )` + (x − x 0 )ε(x) .
+| {z } |
+{z
+}
+→0
+
+→0
+
+Donc f (x) → f (x 0 ) lorsque x → x 0 et ainsi f est continue en x 0 .
+On reprend cette démonstration sans utiliser les limites mais uniquement la définition de continuité et dérivabilité :
+fixons ε0 > 0 et écrivons f (x) = f (x 0 )+ (x − x 0 )` + (x − x 0 )ε(x) grâce à la proposition 1, où ε(x) −−−→ 0 et ` = f 0 (x 0 ).
+Choisissons δ > 0 de sorte qu’il vérifie tous les points suivants :
+• δ 6 1,
+• δ|`| < ε0 ,
+• si |x − x 0 | < δ alors |ε(x)| < ε0 (c’est possible car ε(x) → 0).
+
+x→x 0
+
+DÉRIVÉE D’UNE FONCTION
+
+2. CALCUL DES DÉRIVÉES
+
+4
+
+Alors l’égalité ci-dessus devient :
+f (x) − f (x 0 ) = (x − x 0 )` + (x − x 0 )ε(x)
+
+6 |x − x 0 | · |`| + |x − x 0 | · |ε(x)|
+6 δ|`|
+0
+
++
+0
+
+δε0
+
+pour |x − x 0 | < δ
+
+0
+
+6 ε + ε = 2ε
+
+Nous venons de prouver que si |x − x 0 | < δ alors f (x) − f (x 0 ) < 2ε0 , ce qui exprime exactement que f est continue
+en x 0 .
+Remarque.
+La réciproque est fausse : par exemple, la fonction valeur absolue est continue en 0 mais n’est pas dérivable en 0.
+y
+
+y = |x|
+
+1
+
+0
+
+1
+
+En effet, le taux d’accroissement de f (x) = |x| en x 0 = 0 vérifie :
+¨
++1
+f (x) − f (0)
+|x|
+=
+=
+x −0
+x
+−1
+
+x
+
+si x > 0
+si x < 0
+
+.
+
+Il y a bien une limite à droite (qui vaut +1), une limite à gauche (qui vaut −1) mais elles ne sont pas égales : il n’y a
+pas de limite en 0. Ainsi f n’est pas dérivable en x = 0.
+Cela se lit aussi sur le dessin, il y a une demi-tangente à droite, une demi-tangente à gauche, mais elles ont des
+directions différentes.
+Mini-exercices.
+1. Montrer que la fonction f (x) = x 3 est dérivable en tout point x 0 ∈ R et que f 0 (x 0 ) = 3x 02 .
+p
+2. Montrer que la fonction f (x) = x est dérivable en tout point x 0 > 0 et que f 0 (x 0 ) = 2p1x 0 .
+p
+3. Montrer que la fonction f (x) = x (qui est continue en x 0 = 0) n’est pas dérivable en x 0 = 0.
+4. Calculer l’équation de la tangente (T0 ) à la courbe d’équation y = x 3 − x 2 − x au point d’abscisse x 0 = 2. Calculer
+x 1 afin que la tangente (T1 ) au point d’abscisse x 1 soit parallèle à (T0 ).
+5. Montrer que si une fonction f est paire et dérivable, alors f 0 est une fonction impaire.
+
+2. Calcul des dérivées
+2.1. Somme, produit,...
+Proposition 3.
+Soient f , g : I → R deux fonctions dérivables sur I. Alors pour tout x ∈ I :
+• ( f + g)0 (x) = f 0 (x) + g 0 (x)
+• (λ f )0 (x) = λ f 0 (x) où λ est un réel fixé
+• (f × g)0 (x) = f 0 (x)g(x) + f (x)g 0 (x)
+0
+f 0 (x)
+1
+• f (x) = − f (x)2 (si f (x) 6= 0)
+ 0
+f
+f 0 (x)g(x) − f (x)g 0 (x)
+(x) =
+(si g(x) 6= 0)
+•
+g
+g(x)2
+
+DÉRIVÉE D’UNE FONCTION
+
+2. CALCUL DES DÉRIVÉES
+
+5
+
+Remarque.
+Il est plus facile de mémoriser les égalités de fonctions :
+( f + g)0 = f 0 + g 0
+
+(λ f )0 = λ f 0
+
+ 0
+f0
+1
+=− 2
+f
+f
+
+( f × g)0 = f 0 g + f g 0
+
+ 0
+f
+f 0 g − f g0
+=
+g
+g2
+
+Démonstration. Prouvons par exemple ( f × g)0 = f 0 g + f g 0 .
+Fixons x 0 ∈ I. Nous allons réécrire le taux d’accroissement de f (x) × g(x) :
+f (x)g(x) − f (x 0 )g(x 0 )
+f (x) − f (x 0 )
+g(x) − g(x 0 )
+=
+g(x) +
+f (x 0 )
+x − x0
+x − x0
+x − x0
+−−−→ f 0 (x 0 )g(x 0 ) + g 0 (x 0 ) f (x 0 ).
+x→x 0
+
+Ceci étant vrai pour tout x 0 ∈ I la fonction f × g est dérivable sur I de dérivée f 0 g + f g 0 .
+
+2.2. Dérivée de fonctions usuelles
+Le tableau de gauche est un résumé des principales formules à connaître, x est une variable. Le tableau de droite est
+celui des compositions (voir paragraphe suivant), u représente une fonction x 7→ u(x).
+
+Fonction
+xn
+
+Dérivée
+nx n−1
+
+1
+x
+
+p
+
+x
+
+xα
+
+Fonction
+
+(n ∈ Z)
+
+un
+
+− x12
+
+1
+u
+
+1 p1
+2 x
+
+p
+u
+
+αx α−1
+
+(α ∈ R)
+
+uα
+
+Dérivée
+nu0 un−1
+
+(n ∈ Z)
+
+0
+− uu2
+
+u0
+1p
+2 u
+
+αu0 uα−1
+
+(α ∈ R)
+
+ex
+
+ex
+
+eu
+
+u0 eu
+
+ln x
+
+1
+x
+
+ln u
+
+u0
+u
+
+cos x
+
+− sin x
+
+cos u
+
+−u0 sin u
+
+sin x
+
+cos x
+
+sin u
+
+u0 cos u
+
+tan x
+
+1 + tan2 x = cos12 x
+
+tan u
+
+u0 (1 + tan2 u) = cosu2 u
+
+0
+
+Remarque.
+1 p
+• Notez que les formules pour x n , x , x et x α sont aussi des conséquences de la dérivée de l’exponentielle. Par
+exemple x α = eα ln x et donc
+d α ln x
+1
+1
+d
+(x α ) =
+(e
+) = α eα ln x = α x α = αx α−1 .
+dx
+dx
+x
+x
+• Si vous devez dériver une fonction avec un exposant dépendant de x il faut absolument repasser à la forme
+exponentielle. Par exemple si f (x) = 2 x alors on réécrit d’abord f (x) = e x ln 2 pour pouvoir calculer f 0 (x) =
+ln 2 · e x ln 2 = ln 2 · 2 x .
+
+2.3. Composition
+Proposition 4.
+Si f est dérivable en x et g est dérivable en f (x) alors g ◦ f est dérivable en x de dérivée :
+0
+
+g ◦ f (x) = g 0 f (x) · f 0 (x)
+
+DÉRIVÉE D’UNE FONCTION
+
+2. CALCUL DES DÉRIVÉES
+
+6
+
+Démonstration. Faisons l’hypothèse que f (x) 6= f (x 0 ) pour x proche de x 0 (avec x =
+6 x 0 ). La preuve est alors similaire
+à celle ci-dessus pour le produit en écrivant cette fois :
+
+
+g f (x) − g f (x 0 )
+g ◦ f (x) − g ◦ f (x 0 )
+f (x) − f (x 0 )
+=
+×
+x − x0
+f (x) − f (x 0 )
+x − x0
+
+0
+0
+−−−→ g f (x 0 ) × f (x 0 ).
+x→x 0
+
+Exemple 3.
+Calculons la dérivée de ln(1 + x 2 ). Nous avons g(x) = ln(x) avec g 0 (x) = 1x ; et f (x) = 1 + x 2 avec f 0 (x) = 2x. Alors
+la dérivée de ln(1 + x 2 ) = g ◦ f (x) est
+0
+
+
+2x
+g ◦ f (x) = g 0 f (x) · f 0 (x) = g 0 1 + x 2 · 2x =
+.
+1 + x2
+Corollaire 1.
+Soit I un intervalle ouvert. Soit f : I → J dérivable et bijective dont on note f −1 : J → I la bijection réciproque. Si f 0
+ne s’annule pas sur I alors f −1 est dérivable et on a pour tout x ∈ J :
+0
+f −1 (x) =
+
+1
+
+f 0 f −1 (x)
+
+Démonstration. Notons g = f −1 la bijection réciproque de f . Soit y0 ∈ J et x 0 ∈ I tel que y0 = f (x 0 ). Le taux
+d’accroissement de g en y0 est :
+g( y) − g( y0 )
+g( y) − x 0
+
+=
+y − y0
+f g( y) − f (x 0 )
+1
+1
+. Ainsi g 0 ( y0 ) = f 0 (x
+.
+Lorsque y → y0 alors g( y) → g( y0 ) = x 0 et donc ce taux d’accroissement tend vers f 0 (x
+0)
+0)
+
+Remarque.
+Il peut être plus simple de retrouver la formule à chaque fois en dérivant l’égalité
+
+f g(x) = x
+où g = f −1 est la bijection réciproque de f .
+
+
+En effet à droite la dérivée de x est 1 ; à gauche la dérivée de f g(x) = f ◦ g(x) est f 0 g(x) · g 0 (x). L’égalité
+f g(x) = x conduit donc à l’égalité des dérivées :
+
+f 0 g(x) · g 0 (x) = 1.
+Mais g = f −1 donc
+0
+f −1 (x) =
+
+1
+f0
+
+.
+
+f −1 (x)
+
+Exemple 4.
+Soit f : R → R la fonction définie par f (x) = x + exp(x). Étudions f en détail.
+Tout d’abord :
+1. f est dérivable car f est la somme de deux fonctions dérivables. En particulier f est continue.
+2. f est strictement croissante car f est la somme de deux fonctions strictement croissante.
+3. f est une bijection car lim x→−∞ f (x) = −∞ et lim x→+∞ f (x) = +∞.
+4. f 0 (x) = 1 + exp(x) ne s’annule jamais (pour tout x ∈ R).
+Notons g = f −1 la bijection réciproque de f . Même si on ne sait pas a priori exprimer g, on peut malgré tout connaître
+des informations
+sur cette fonction : par le corollaire ci-dessus g est dérivable et l’on calcule g 0 en dérivant l’égalité
+
+f g(x) = x. Ce qui donne f 0 g(x) · g 0 (x) = 1 et donc ici
+g 0 (x) =
+
+1
+
+f0
+
+1
+=
+.
+g(x)
+1 + exp g(x)
+
+DÉRIVÉE D’UNE FONCTION
+
+2. CALCUL DES DÉRIVÉES
+
+7
+
+
+
+Pour cettefonction f particulière on peut préciser davantage : comme f g(x) = x alors g(x) + exp g(x) = x donc
+exp g(x) = x − g(x). Cela conduit à :
+1
+g 0 (x) =
+.
+1 + x − g(x)
+y
+y = x + exp(x)
+y=x
+
+y = 12 (x − 1)
+y = g(x)
+
+1
+
+0
+
+x
+
+1
+
+0
+Par exemple f (0) = 1 donc g(1) = 0 et donc g 0 (1) = 12 . Autrement dit f −1 (1) = 12 . L’équation de la tangente au
+graphe de f −1 au point d’abscisse x 0 = 1 est donc y = 12 (x − 1).
+
+2.4. Dérivées successives
+Soit f : I → R une fonction dérivable et soit f 0 sa dérivée. Si la fonction f 0 : I → R est aussi dérivable on note
+f 00 = ( f 0 )0 la dérivée seconde de f . Plus généralement on note :
+0
+f (0) = f , f (1) = f 0 , f (2) = f 00 et f (n+1) = f (n)
+Si la dérivée n-ième f (n) existe on dit que f est n fois dérivable.
+Théorème 1 (Formule de Leibniz).
+f ·g
+
+(n)
+
+= f (n) · g +
+
+ 
+ 
+n
+n
+f (n−k) · g (k) + · · · + f · g (n)
+f (n−1) · g (1) + · · · +
+k
+1
+
+Autrement dit :
+f ·g
+
+(n)
+
+=
+
+n  
+X
+n
+k=0
+
+k
+
+f (n−k) · g (k) .
+
+La démonstration est similaire à celle de la formule du binôme de Newton et les coefficients que l’on obtient sont les
+mêmes.
+Exemple 5.
+• Pour n = 1 on retrouve ( f · g)0 = f 0 g + f g 0 .
+• Pour n = 2, on a ( f · g)00 = f 00 g + 2 f 0 g 0 + f g 00 .
+Exemple 6.
+Calculons les dérivées n-ème de exp(x) · (x 2 + 1) pour tout n > 0. Notons f (x) = exp(x) alors f 0 (x) = exp(x),
+f 00 (x) = exp(x),..., f (k) (x) = exp(x). Notons g(x) = x 2 + 1 alors g 0 (x) = 2x, g 00 (x) = 2 et pour k > 3, g (k) (x) = 0.
+Appliquons la formule de Leibniz :
+ 
+(n)
+n
+f ·g
+(x) = f (n) (x) · g(x) +
+f (n−1) (x) · g (1) (x)+
+1
+ 
+ 
+n
+n
+(n−2)
+(2)
+f
++
+(x) · g (x) +
+f (n−3) (x) · g (3) (x) + · · ·
+2
+3
+
+DÉRIVÉE D’UNE FONCTION
+
+3. EXTREMUM LOCAL, THÉORÈME DE ROLLE
+
+8
+
+On remplace f (k) (x) = exp(x) et on sait que g (3) (x) = 0, g (4) (x) = 0,. . . Donc cette somme ne contient que les trois
+premiers termes :
+ 
+ 
+(n)
+n
+n
+f ·g
+(x) = exp(x) · (x 2 + 1) +
+exp(x) · 2x +
+exp(x) · 2.
+1
+2
+Que l’on peut aussi écrire :
+
+
+(n)
+f ·g
+(x) = exp(x) · x 2 + 2nx + n(n − 1) + 1 .
+Mini-exercices.
+1. Calculer les dérivées des fonctions suivantes : f1 (x) = x ln x, f2 (x) = sin 1x , f3 (x) =
+ 13
+1
+x
+ln( 1+x
+1−x ) , f 5 (x) = x , f 6 (x) = arctan x + arctan x .
+
+p
+
+1+
+
+p
+1 + x 2 , f4 (x) =
+
+f0
+
+2. On note ∆( f ) = f . Calculer ∆( f × g).
+3. Soit f :]1, +∞[→] − 1, +∞[ définie par f (x) = x ln(x) − x. Montrer que f est une bijection. Notons g = f −1 .
+Calculer g(0) et g 0 (0).
+4. Calculer les dérivées successives de f (x) = ln(1 + x).
+5. Calculer les dérivées successives de f (x) = ln(x) · x 3 .
+
+3. Extremum local, théorème de Rolle
+3.1. Extremum local
+Soit f : I → R une fonction définie sur un intervalle I.
+Définition 3.
+• On dit que x 0 est un point critique de f si f 0 (x 0 ) = 0.
+• On dit que f admet un maximum local en x 0 (resp. un minimum local en x 0 ) s’il existe un intervalle ouvert
+J contenant x 0 tel que
+pour tout x ∈ I ∩ J f (x) 6 f (x 0 )
+(resp. f (x) > f (x 0 )).
+• On dit que f admet un extremum local en x 0 si f admet un maximum local ou un minimum local en ce point.
+
+y
+maximum global
+
+minimums locaux
+
+maximums locaux
+
+x
+I
+
+Dire que f a un maximum local en x 0 signifie que f (x 0 ) est la plus grande des valeurs f (x) pour les x proches
+de x 0 . On dit que f : I → R admet un maximum global en x 0 si pour toutes les autres valeurs f (x), x ∈ I, on a
+f (x) 6 f (x 0 ) (on ne regarde donc pas seulement les f (x) pour x proche de x 0 ). Bien sûr un maximum global est
+aussi un maximum local, mais la réciproque est fausse.
+
+DÉRIVÉE D’UNE FONCTION
+
+3. EXTREMUM LOCAL, THÉORÈME DE ROLLE
+
+9
+
+Théorème 2.
+Soit I un intervalle ouvert et f : I → R une fonction dérivable. Si f admet un maximum local (ou un minimum local)
+en x 0 alors f 0 (x 0 ) = 0.
+En d’autres termes, un maximum local (ou un minimum local) x 0 est toujours un point critique. Géométriquement,
+au point (x 0 , f (x 0 )) la tangente au graphe est horizontale.
+y
+
+x
+I
+
+Exemple 7.
+Étudions les extremums de la fonction fλ définie par fλ (x) = x 3 + λx en fonction du paramètre λ ∈ R. La dérivée est
+fλ0 (x) = 3x 2 + λ. Si x 0 est un extremum local alors fλ0 (x 0 ) = 0.
+• Si λ > 0 alors fλ0 (x) > 0 et ne s’annule jamais il n’y a pas de points critiques donc pas non plus d’extremums. En
+anticipant sur la suite : fλ est strictement croissante sur R.
+• Si λ = 0 alors fλ0 (x) = 3x 2 . Le seul point critique est x 0 = 0. Mais ce n’est ni un maximum local, ni un minimum
+local. En effet si x < 0, f0 (x) < 0 = f0 (0)Ç
+et si x > 0,Çf0 (x) > 0 = f0 (0).
+Ç
+Ç
+
+
+|λ|
+|λ|
+|λ|
+|λ|
+0
+2
+x
+x
+−
+Si
+λ
+<
+0
+alors
+f
+(x)
+=
+3x
+−
+|λ|
+=
+3
++
+.
+Il
+y
+a
+deux
+points
+critiques
+x
+=
+−
+et
+x
+=
++
+•
+1
+2
+3
+3
+3
+3 .
+λ
+0
+0
+En anticipant sur la suite : fλ (x) > 0 sur ] − ∞, x 1 [ et ]x 2 , +∞[ et fλ (x) < 0 sur ]x 1 , x 2 [ ; maintenant fλ est
+croissante sur ] − ∞, x 1 [, puis décroissante sur ]x 1 , x 2 [, donc x 1 est un maximum local. D’autre part fλ est
+décroissante sur ]x 1 , x 2 [ puis croissante sur ]x 2 , +∞[ donc x 2 est un minimum local.
+
+x2
+x1
+
+λ>0
+
+λ=0
+
+λ<0
+
+Remarque.
+1. La réciproque du théorème 2 est fausse. Par exemple la fonction f : R → R, définie par f (x) = x 3 vérifie f 0 (0) = 0
+mais x 0 = 0 n’est ni maximum local ni un minimum local.
+2. L’intervalle du théorème 2 est ouvert. Pour le cas d’un intervalle fermé, il faut faire attention aux extrémités. Par
+exemple si f : [a, b] → R est une fonction dérivable qui admet un extremum en x 0 , alors on est dans l’une des
+situations suivantes :
+• x 0 = a,
+
+DÉRIVÉE D’UNE FONCTION
+
+3. EXTREMUM LOCAL, THÉORÈME DE ROLLE
+
+10
+
+• x 0 = b,
+• x 0 ∈]a, b[ et dans ce cas on a bien f 0 (x 0 ) = 0 par le théorème 2.
+Aux extrémités on ne peut rien dire pour f 0 (a) et f 0 (b), comme le montre les différents maximums sur les dessins
+suivants.
+
+x0
+
+a
+
+I
+
+I
+
+I
+
+b
+
+3. Pour déterminer max[a,b] f et min[a,b] f (où f : [a, b] → R est une fonction dérivable) il faut comparer les valeurs
+de f aux différents points critiques et en a et en b.
+Preuve du théorème. Supposons que x 0 soit un maximum local de f , soit donc J l’intervalle ouvert de la définition
+contenant x 0 tel que pour tout x ∈ I ∩ J on a f (x) 6 f (x 0 ).
+f (x)− f (x 0 )
+> 0 et donc à la limite
+• Pour x ∈ I ∩ J tel que x < x 0 on a f (x) − f (x 0 ) 6 0 et x − x 0 < 0 donc
+x−x 0
+lim x→x 0−
+
+f (x)− f (x 0 )
+> 0.
+x−x 0
+
+• Pour x ∈ I ∩ J tel que x > x 0 on a f (x) − f (x 0 ) 6 0 et x − x 0 > 0 donc
+f (x)− f (x 0 )
+6 0.
+x−x 0
+
+f (x)− f (x 0 )
+x−x 0
+
+6 0 et donc à la limite
+
+lim
+Or f est dérivable en x 0 donc
+x→x 0+
+
+f (x) − f (x 0 )
+f (x) − f (x 0 )
+= lim+
+= f 0 (x 0 ).
+x − x0
+x − x0
+x→x 0
+x→x 0
+lim−
+
+La première limite est positive, la seconde est négative, la seule possibilité est que f 0 (x 0 ) = 0.
+
+3.2. Théorème de Rolle
+Théorème 3 (Théorème de Rolle).
+Soit f : [a, b] → R telle que
+• f est continue sur [a, b],
+• f est dérivable sur ]a, b[,
+• f (a) = f (b).
+Alors il existe c ∈]a, b[ tel que f 0 (c) = 0.
+
+f (a) = f (b)
+
+a
+
+c
+
+b
+
+Interprétation géométrique : il existe au moins un point du graphe de f où la tangente est horizontale.
+Démonstration. Tout d’abord, si f est constante sur [a, b] alors n’importe quel c ∈]a, b[ convient. Sinon il existe
+x 0 ∈ [a, b] tel que f (x 0 ) 6= f (a). Supposons par exemple f (x 0 ) > f (a). Alors f est continue sur l’intervalle fermé et
+borné [a, b], donc elle admet un maximum en un point c ∈ [a, b]. Mais f (c) > f (x 0 ) > f (a) donc c =
+6 a. De même
+comme f (a) = f (b) alors c 6= b. Ainsi c ∈]a, b[. En c, f est donc dérivable et admet un maximum (local) donc
+f 0 (c) = 0.
+
+DÉRIVÉE D’UNE FONCTION
+
+4. THÉORÈME DES ACCROISSEMENTS FINIS
+
+11
+
+Exemple 8.
+Soit P(X ) = (X − α1 )(X − α2 ) · · · (X − αn ) un polynôme ayant n racines réelles différentes : α1 < α2 < · · · < αn .
+1. Montrons que P 0 a n − 1 racines distinctes.
+On considère P comme une fonction polynomiale x 7→ P(x). P est une fonction continue et dérivable sur R. Comme
+P(α1 ) = 0 = P(α2 ) alors par le théorème de Rolle il existe c1 ∈]α1 , α2 [ tel que P 0 (c1 ) = 0. Plus généralement, pour
+1 6 k 6 n − 1, comme P(αk ) = 0 = P(αk+1 ) alors le théorème de Rolle implique l’existence de ck ∈]αk , αk+1 [ tel
+que P 0 (ck ) = 0. Nous avons bien trouvé n − 1 racines de P 0 : c1 < c2 < · · · < cn−1 . Comme P 0 est un polynôme de
+degré n − 1, toutes ses racines sont réelles et distinctes.
+2. Montrons que P + P 0 a n − 1 racines distinctes.
+L’astuce consiste à considérer la fonction auxiliaire f (x) = P(x) exp x. f est une fonction
+continue et dérivable sur
+
+R. f s’annule comme P en α1 , . . . , αn . La dérivée de f est f 0 (x) = P(x) + P 0 (x) exp x. Donc par le théorème de
+Rolle, pour chaque 1 6 k 6 n − 1, comme f (αk ) = 0 = f (αk+1 ) alors il existe γk ∈]αk , αk+1 [ tel que f 0 (γk ) = 0.
+Mais comme la fonction exponentielle ne s’annule jamais alors (P + P 0 )(γk ) = 0. Nous avons bien trouvé n − 1
+racines distinctes de P + P 0 : γ1 < γ2 < · · · < γn−1 .
+3. Déduisons-en que P + P 0 a toutes ses racines réelles.
+P + P 0 est un polynôme à coefficients réels qui admet n − 1 racines réelles. Donc (P + P 0 )(X ) = (X − γ1 ) · · · (X −
+γn−1 )Q(X ) où Q(x) = X − γn est un polynôme de degré 1. Comme P + P 0 est à coefficients réels et que les γi sont
+aussi réels, ainsi γn ∈ R. Ainsi on a obtenu une n-ème racine réelle γn (pas nécessairement distincte des autres γi ).
+Mini-exercices.
+1. Dessiner le graphe de fonctions vérifiant : f1 admet deux minimums locaux et un maximum local ; f2 admet
+un minimum local qui n’est pas global et un maximum local qui est global ; f3 admet une infinité d’extremums
+locaux ; f4 n’admet aucun extremum local.
+2. Calculer en quel point la fonction f (x) = ax 2 + bx + c admet un extremum local.
+3. Soit f : [0, 2] → R une fonction deux fois dérivable telle que f (0) = f (1) = f (2) = 0. Montrer qu’il existe c1 , c2
+tels que f 0 (c1 ) = 0 et f 0 (c2 ) = 0. Montrer qu’il existe c3 tel que f 00 (c3 ) = 0.
+4. Montrer que chacune des trois hypothèses du théorème de Rolle est nécessaire.
+
+4. Théorème des accroissements finis
+4.1. Théorème des accroissements finis
+Théorème 4 (Théorème des accroissements finis).
+Soit f : [a, b] → R une fonction continue sur [a, b] et dérivable sur ]a, b[. Il existe c ∈]a, b[ tel que
+f (b) − f (a) = f 0 (c) (b − a)
+
+A
+
+B
+
+a
+
+c
+
+b
+
+DÉRIVÉE D’UNE FONCTION
+
+4. THÉORÈME DES ACCROISSEMENTS FINIS
+
+12
+
+Interprétation géométrique : il existe au moins un point du graphe de f où la tangente est parallèle à la droite (AB)
+où A = (a, f (a)) et B = (b, f (b)).
+f (b)− f (a)
+
+f (b)− f (a)
+
+Démonstration. Posons ` = b−a et g(x) = f (x) − ` · (x − a). Alors g(a) = f (a), g(b) = f (b) − b−a · (b −
+a) = f (a). Par le théorème de Rolle, il existe c ∈]a, b[ tel que g 0 (c) = 0. Or g 0 (x) = f 0 (x) − `. Ce qui donne
+f (b)− f (a)
+f 0 (c) = b−a .
+
+4.2. Fonction croissante et dérivée
+Corollaire 2.
+Soit f : [a, b] → R une fonction continue sur [a, b] et dérivable sur ]a, b[.
+1. ∀x ∈]a, b[
+
+f 0 (x) > 0
+
+⇐⇒
+
+f est croissante ;
+
+2. ∀x ∈]a, b[
+
+f (x) 6 0
+
+⇐⇒
+
+f est décroissante ;
+
+3. ∀x ∈]a, b[
+
+f 0 (x) = 0
+
+⇐⇒
+
+f est constante ;
+
+4. ∀x ∈]a, b[
+
+f (x) > 0
+
+=⇒
+
+f est strictement croissante ;
+
+5. ∀x ∈]a, b[
+
+f (x) < 0
+
+=⇒
+
+f est strictement décroissante.
+
+0
+
+0
+0
+
+Remarque.
+La réciproque au point (4) (et aussi au (5)) est fausse. Par exemple la fonction x 7→ x 3 est strictement croissante et
+pourtant sa dérivée s’annule en 0.
+Démonstration. Prouvons par exemple (1).
+Sens =⇒. Supposons d’abord la dérivée positive. Soient x, y ∈]a, b[ avec x 6 y. Alors par le théorème des
+accroissements finis, il existe c ∈]x, y[ tel que f (x) − f ( y) = f 0 (c)(x − y). Mais f 0 (c) > 0 et x − y 6 0 donc
+f (x) − f ( y) 6 0. Cela implique que f (x) 6 f ( y). Ceci étant vrai pour tout x, y alors f est croissante.
+Sens ⇐=. Réciproquement, supposons que f est croissante. Fixons x ∈]a, b[. Pour tout y > x nous avons y − x > 0
+f ( y)− f (x)
+et f ( y)− f (x) > 0, ainsi le taux d’accroissement vérifie y−x > 0. À la limite, quand y → x, ce taux d’accroissement
+tend vers la dérivée de f en x et donc f 0 (x) > 0.
+
+4.3. Inégalité des accroissements finis
+Corollaire 3 (Inégalité des accroissements finis).
+Soit f : I → R une fonction dérivable sur un intervalle I ouvert. S’il existe une constante M telle que pour tout x ∈ I,
+f 0 (x) 6 M alors
+∀x, y ∈ I
+
+f (x) − f ( y) 6 M |x − y|
+
+Démonstration. Fixons x, y ∈ I, il existe alors c ∈]x, y[ ou ] y, x[ tel que f (x) − f ( y) = f 0 (c)(x − y) et comme
+| f 0 (c)| 6 M alors f (x) − f ( y) 6 M |x − y|.
+Exemple 9.
+Soit f (x) = sin(x). Comme f 0 (x) = cos x alors | f 0 (x)| 6 1 pour tout x ∈ R. L’inégalité des accroissements finis s’écrit
+alors :
+pour tout x, y ∈ R
+| sin x − sin y| 6 |x − y|.
+En particulier si l’on fixe y = 0 alors on obtient
+| sin x| 6 |x|
+ce qui est particulièrement intéressant pour x proche de 0.
+
+DÉRIVÉE D’UNE FONCTION
+
+4. THÉORÈME DES ACCROISSEMENTS FINIS
+
+y
+
+13
+
+y=x
+
+y = sin x
+x
+y = − sin x
+
+y = −x
+
+4.4. Règle de l’Hospital
+Corollaire 4 (Règle de l’Hospital).
+Soient f , g : I → R deux fonctions dérivables et soit x 0 ∈ I. On suppose que
+• f (x 0 ) = g(x 0 ) = 0,
+• ∀x ∈ I \ {x 0 } g 0 (x) 6= 0.
+Si
+
+f 0 (x)
+= ` (∈ R)
+x→x 0 g 0 (x)
+lim
+
+alors
+
+lim
+
+f (x)
+
+x→x 0 g(x)
+
+= `.
+
+Démonstration. Fixons a ∈ I \ {x 0 } avec par exemple a < x 0 . Soit h : I → R définie par h(x) = g(a) f (x) − f (a)g(x).
+Alors
+• h est continue sur [a, x 0 ] ⊂ I,
+• h est dérivable sur ]a, x 0 [,
+• h(x 0 ) = h(a) = 0.
+Donc par le théorème de Rolle il existe ca ∈]a, x 0 [ tel que h0 (ca ) = 0. Or h0 (x) = g(a) f 0 (x) − f (a)g 0 (x) donc
+f 0 (c )
+f (a)
+g(a) f 0 (ca ) − f (a)g 0 (ca ) = 0. Comme g 0 ne s’annule pas sur I \ {x 0 } cela conduit à g(a) = g 0 (caa ) . Comme a < ca < x 0
+lorsque l’on fait tendre a vers x 0 on obtient ca → x 0 . Cela implique
+f 0 (ca )
+f 0 (ca )
+f (a)
+= lim 0
+= lim 0
+= `.
+a→x 0 g(a)
+a→x 0 g (c )
+ca →x 0 g (c )
+a
+a
+lim
+
+Exemple 10.
+ln(x 2 +x−1)
+Calculer la limite en 1 de
+. On vérifie que :
+ln(x)
+2x+1
+• f (x) = ln(x 2 + x − 1), f (1) = 0, f 0 (x) = x 2 +x−1 ,
+1
+0
+• g(x) = ln(x), g(1) = 0, g (x) = x ,
+• Prenons I =]0, 1], x 0 = 1, alors g 0 ne s’annule pas sur I \ {x 0 }.
+
+f 0 (x)
+2x + 1
+2x 2 + x
+=
+×
+x
+=
+−−→ 3.
+g 0 (x)
+x2 + x − 1
+x 2 + x − 1 x→1
+Donc
+
+f (x)
+−−→ 3.
+g(x) x→1
+
+Mini-exercices.
+3
+
+2
+
+1. Soit f (x) = x3 + x2 − 2x + 2. Étudier la fonction f . Tracer son graphe. Montrer que f admet un minimum local
+et un maximum local.
+p
+2. Soit f (x) = x. Appliquer le théorème des accroissements finis sur l’intervalle [100, 101]. En déduire l’encadrep
+1
+1
+ment 10 + 22
+6 101 6 10 + 20
+.
+3. Appliquer le théorème des accroissements finis pour montrer que ln(1 + x) − ln(x) < 1x (pour tout x > 0).
+
+DÉRIVÉE D’UNE FONCTION
+
+4. THÉORÈME DES ACCROISSEMENTS FINIS
+
+14
+
+4. Soit f (x) = e x . Que donne l’inégalité des accroissements finis sur [0, x] ?
+5. Appliquer la règle de l’Hospital pour calculer les limites suivantes (quand x → 0) :
+1 − cos x x − sin x
+;
+.
+tan x
+x3
+
+Auteurs du chapitre Arnaud Bodin, Niels Borne, Laura Desideri
+
+x
+ln(x + 1)
+;
+;
+p
+n
+(1 + x) − 1
+x

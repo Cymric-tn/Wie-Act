@@ -1,0 +1,2122 @@
+Programmes d'informatique, 3e et 4e année de l'enseignement secondaire (Tunisie, 2006)
+Source: https://edutice.hal.science/edutice-00560705/file/a1002f_3_4.pdf
+Author: Direction des Programmes et des Manuels Scolaires
+Licence: Official public curriculum (Ministère de l'Éducation, Tunisie)
+Text extracted with pdftotext on 2026-11-10 for Lumi testing (formulas may be garbled).
+
+RÉPUBLIQUE TUNISIENNE
+
+MINISTÈRE DE L’ÉDUCATION & DE LA FORMATION
+DIRECTION GÉNÉRALE DES PROGRAMMES
+& DE LA FORMATION CONTINUE
+
+Direction des Programmes & des Manuels Scolaires
+
+PROGRAMMES
+D’INFORMATIQUE
+
+3ème année & 4ème année
+de l’Enseignement secondaire
+
+Septembre 2006
+
+Préambule .......................................................................................................................................................................................................04
+Algorithmique et Programmation
+Section sciences de l’informatique
+Présentation.................................................................................................................................................................................06
+Démarche pédagogique ..............................................................................................................................................................07
+Programme de 3ème année secondaire.......................................................................................................................................08
+Programme de 4ème année secondaire.......................................................................................................................................10
+
+Technologie de l’Information et de la communication
+Section sciences de l’informatique
+Présentation.................................................................................................................................................................................13
+Démarche pédagogique ..............................................................................................................................................................14
+Programme de 3ème année secondaire.......................................................................................................................................15
+Programme de 4ème année secondaire.......................................................................................................................................16
+
+Système d’exploitation et réseaux informatiques
+Section sciences de l’informatique
+Présentation.................................................................................................................................................................................18
+Démarche pédagogique ..............................................................................................................................................................19
+Programme de 3ème année secondaire.......................................................................................................................................20
+
+Bases de Donnée
+Section sciences de l’informatique
+Présentation.................................................................................................................................................................................. 23
+Démarche pédagogique ............................................................................................................................................................... 24
+Programme de 4ème année secondaire........................................................................................................................................ 25
+2/44
+
+Informatique
+Sections : Mathématiques / Sciences expérimentales ..........................................................................................................................27
+Présentation.................................................................................................................................................................................28
+Démarche pédagogique ..............................................................................................................................................................29
+Programme de 3ème année secondaire.......................................................................................................................................30
+Programme de 4ème année secondaire.......................................................................................................................................32
+
+Sections Economie et Gestion .......................................................................................................................................................................33
+Présentation.................................................................................................................................................................................34
+Démarche pédagogique ..............................................................................................................................................................35
+Programme de 3ème année secondaire.......................................................................................................................................36
+Programme de 4ème année secondaire.......................................................................................................................................38
+
+Section Lettres ...................................................................................................................................................................................................39
+Présentation.................................................................................................................................................................................40
+Démarche pédagogique ..............................................................................................................................................................41
+Programme de 3ème année secondaire.......................................................................................................................................42
+Programme de 4ème année secondaire.......................................................................................................................................44
+
+3/44
+
+PREAMBULE
+-
+
+L’informatique est une science qui joue un rôle de plus en
+plus important dans notre vécu quotidien. Elle a contribué à une
+transformation rapide de la société partout dans le monde. Le
+progrès de l’informatique, tant au niveau matériel que logiciel, a
+provoqué une croissance énorme des quantités d’informations
+disponibles et une grande évolution des technologies de
+l’information et de la communication. L’accès aux informations
+est devenu plus facile. Ce progrès continu, provoque des mises
+à jour des savoirs et des savoir-faire dans tous les domaines.
+Dans le marché de l'emploi plusieurs métiers ont vu le jour et
+on s'attend encore à davantage de créations, d'expansion et de
+transformation dans ce domaine. L'environnement socioculturel
+s'est vu affecté par ce progrès
+
+-
+
+faciliter l’accès à l’information en exploitant les TICs,
+acquérir une certaine autonomie et favoriser l’auto
+apprentissage,
+résoudre des problèmes,
+développer un esprit critique chez l’apprenant,
+développer un esprit coopératif,
+diversifier les modes de communication et en améliorer
+la qualité.
+
+La matière informatique au secondaire :
+Les programmes d’informatique au secondaire visent à
+développer chez les apprenants un esprit scientifique et un
+savoir-faire technologique. Ces programmes amènent les
+apprenants à développer leurs aptitudes à :
+
+L'enseignement de l'informatique s'inscrit en droite ligne
+avec la logique de la réforme du système éducatif. La loi
+d'orientation de l'éducation et de l'enseignement scolaire stipule
+que l'école a "la double mission d'assurer la formation cognitive
+des apprenants et celle de leur faire acquérir les méthodologies
+de travail et de résolution de problèmes".
+
+-
+
+Le domaine de l'éducation ne peut rester indifférent au
+progrès des technologies de l'information et de la
+communication. En effet dans le "Programme des programmes",
+l'informatique contribue aux objectifs transversaux suivants :
+
+4/44
+
+chercher et exploiter l'information,
+résoudre des problèmes,
+manipuler et produire de l'information sous différentes
+formes,
+gérer et exploiter les ressources d'un système
+informatique.
+
+3
+
+ème
+
+&4
+
+ème
+
+année secondaire
+
+Section : Sciences de l’informatique
+
+5/44
+
+Présentation de la matière «Algorithmique et programmation»
+Ces programmes comportent une grande partie
+permettant à l'élève de s'approprier les outils nécessaires pour
+concevoir et réaliser une application permettant de résoudre
+un problème donné. Ils allouent une place prépondérante à
+l'apprentissage de l’algorithmique et de la programmation.
+
+Les programmes de la matière «Algorithmique et
+programmation» en 4ème "Sciences de l’informatique" :
+L’enseignement de cette matière en 4ème année
+secondaire de la section "Sciences de l’informatique" vise les
+objectifs généraux suivants :
+
+Les programmes de la matière «Algorithmique et
+programmation» en 3ème "Sciences de l’informatique" :
+
+-
+
+L’enseignement de cette matière en 3ème année
+secondaire de la section "Sciences de l’informatique" vise les
+objectifs généraux suivants :
+- identifier et utiliser les structures de données pour
+résoudre un problème.
+- utiliser les structures de contrôle adéquates pour
+résoudre un problème.
+- Appliquer une approche modulaire dans la résolution
+d’un problème.
+- acquérir des habilités de résolution de problèmes à
+travers l’apprentissage d’algorithmes de tri, de
+recherches, d’approximation et d’optimisation.
+
+6/44
+
+Mettre à profit les structures d’enregistrements et de
+fichiers pour résoudre des problèmes
+Ecrire des algorithmes récursifs
+Acquérir des habilités de résolution de problèmes à
+travers l’apprentissage d’algorithmes de tri et de calcul
+numérique.
+
+DEMARCHE PEDAGOGIQUE
+L’enseignant de l’informatique aidera ses élèves à
+développer une méthodologie de résolution de problèmes et à
+élaborer des stratégies pour résoudre un problème en
+- établissant des connexions entre le problème et des
+situations déjà rencontrées,
+- utilisant leurs pensées intuitives,
+- se représentant des stratégies de résolution.
+
+En 4ème année, l'apprenant approfondit plus ses
+connaissances au niveau des apprentissages dispensées en 3ème
+année.
+Les activités supports doivent être puisées du domaine
+réel ou scolaire et les algorithmes traités sont naturels.
+
+Pour consolider les connaissances des apprenants et afin
+de développer chez eux l'aptitude d'assurer l'intégration de
+connaissances, des projets sont prévus à la fin de certains
+modules. Les sujets des projets seront inspirés de problèmes et
+de situations de la vie courantes et en faisant recours à d'autres
+disciplines.
+
+Pour garantir l'appropriation des savoirs et des savoirfaire par les élèves, il est conseillé de faire plusieurs activités
+diversifiées et de favoriser l'auto-apprentissage.
+Une évaluation des acquis devrait se faire au cours et à la
+fin de chaque séance d'apprentissage.
+
+Pour mettre en œuvre les principes de construction et
+d’intégration
+des
+connaissances,
+l’enseignement
+de
+l’informatique sera basé sur les méthodes actives. Ces méthodes
+responsabilisent l’apprenant et l’encouragent à construire luimême les connaissances, à s’approprier des habiletés et à les
+intégrer dans des situations significatives.
+
+Enfin, dans les limites de l’horaire imparti à
+l’enseignement de la matière et sans sortir du cadre de ces
+démarches décrites, l’enseignant d’informatique a toute latitude
+de prendre les initiatives et d’organiser les activités dans l’ordre
+qu’il juge le mieux adapté pour atteindre les objectifs visés.
+
+Pour les leçons qui figurent dans le programme de la 3ème
+année et apparaissent dans le programme de la 4ème année,
+l’enseignant tiendra compte des contenus enseignés en 3ème
+année et détaillera les compléments proposés en 4ème année.
+
+7/44
+
+3ème année
+Objectifs
+
+Contenus
+
+- Identifier
+et
+utiliser
+les Les structures de données et les structures de données pour structures algorithmiques simples
+- Les constantes
+résoudre un problème
+- Les variables
+- Comprendre le déroulement
+- Les types standard
+d’un algorithme comportant
+- Les opérations d’entrée/sortie
+des
+affectations
+et
+des
+- Les types énumérés
+opérations d’entrée/sortie.
+- Les types utilisateurs,
+- Les tableaux à 1 et à 2 dimensions
+Les structures
+contrôle
+- Utiliser
+la
+structure
+algorithmique de contrôle
+adéquate pour résoudre un
+problème
+
+-
+
+-
+
+algorithmiques
+
+Commentaires et recommandations
+
+Horaire
+
+Appuyer l’apprentissage des structures de données à
+travers divers algorithmes comportant des affectations,
+des opérateurs arithmétiques et logiques, des opérations
+d’entrée/sortie. (L’affectation sera présentée lors de
+l’apprentissage de la notion de variable)
+Evoquer les opérateurs et les fonctions usuels relatifs à
+chaque type de données.
+Faire des exécutions manuelles des algorithmes.
+Traduire des algorithmes solution en des programmes.
+
+12 h
+
+Prévoir un rappel sur les prédicats,
+Diversifier les situations pour distinguer les différentes
+structures,
+Prévoir la traduction des algorithmes solutions en
+programmes.
+
+16 h
+
+de
+
+Les structures conditionnelles :
+- L’alternative
+- La structure généralisée
+- La structure à choix
+Les structures itératives
+- La structure complète
+- Les structures à condition d’arrêt
+
+-
+
+Les sous-programmes
+- Décomposer un problème en
+modules.
+
+-
+
+- Les fonctions
+- Les procédures
+
+-
+
+8/44
+
+Insister sur les modes de transfert de paramètres,
+Etudier des situations où des modules feront appel à
+d'autres modules,
+Prévoir la traduction des algorithmes solutions en
+programme.
+
+12 h
+
+Objectifs
+
+Contenus
+Algorithmes de tri et de recherche
+
+Algorithmes récurrents
+Acquérir des habilités de
+résolution de problèmes à travers Algorithmes d’arithmétique
+l’apprentissage d’algorithmes de
+tri, de recherches et de calcul
+numérique.
+
+Algorithmes d'approximation
+
+9/44
+
+Commentaires et recommandations
+
+Horaire
+
+Le cours traitera essentiellement :
+- les méthodes de tri par sélection et à bulles.
+- les méthodes de recherche séquentielle et dichotomique
+
+12 h
+
+On traitera divers problèmes en axant sur la relation de
+récurrence d'ordre 1.
+
+16 h
+
+Le cours traitera essentiellement :
+- Les calculs de PGCD et de PPCM
+- Les nombres premiers
+- Les nombres parfaits, nombres amis
+- La décomposition en facteurs premiers
+- Le factoriel d'un entier
+
+16 h
+
+Le cours traitera essentiellement :
+- Les problèmes d’optimisation
+- La résolution de l’équation de la forme f(x) =0
+
+16 h
+
+4ème année
+
+Objectifs
+
+Contenus
+
+Commentaires et recommandations
+
+Les enregistrements et les fichiers
+- Les enregistrements
+ Structures
+Mettre à profit les structures
+ Vecteur d’enregistrements
+d’enregistrements et
+de
+- Les fichiers
+fichiers pour résoudre des
+ Fichiers textes, fichiers typés
+problèmes
+ Traitements
+(création,
+lecture,
+écriture, mise à jour, …)
+
+Ecrire
+des
+récursifs
+
+algorithmes
+
+Horaire
+
+20 h
+
+La récursivité
+-
+
+Définition
+Applications
+
+Montrer, quand c'est possible, le passage d’une formulation
+itérative à une formulation récursive et inversement
+
+10/44
+
+12 h
+
+Objectifs
+
+Contenus
+
+Commentaires et recommandations
+
+Horaire
+
+Algorithmes de tri
+-
+
+Le tri par insertion
+Le tri shell
+Applications
+
+Algorithmes récurrents
+Algorithmes d’arithmétique
+Acquérir des habilités de
+résolution de problèmes à
+travers
+l’apprentissage
+d’algorithmes de tri et de
+calcul numérique.
+
+Algorithmes d'approximation
+
+Algorithmes avancés
+
+On pourra traiter d'autres algorithmes de tri.
+
+On traitera divers problèmes en axant sur
+récurrence d'ordre 2 et plus.
+
+10 h
+
+la relation de
+
+Le cours traitera essentiellement :
+- Une version récursive du calcul du PGCD
+- Quelques règles de divisibilité
+- La suite de Fibonacci
+- Les conversions entre bases de numération
+- Les calculs de C(n,p) et de A(n,p)
+Le cours traitera essentiellement :
+- La recherche du point fixe d’une fonction (f(x)=x)
+- Des méthodes de calcul d’une valeur approchée de
+constantes connues (π, e, …)
+- Calcul d'aires (rectangles, trapèzes)
+Le cours traitera essentiellement :
+- Le problème du voyageur
+- Le tri rapide
+- Le problème des huit dames
+- Le tour de Hanoi
+
+11/44
+
+16 h
+
+16 h
+
+10 h
+
+16 h
+
+3
+
+ème
+
+et 4
+
+ème
+
+année secondaire
+
+Section : Sciences de l’informatique
+
+12/44
+
+Présentation de la matière « Technologies de l’information et de la communication »
+Les objectifs visés en 3ème année de la section « Sciences de
+l’informatique »
+L’enseignement de cette matière en 3ème année secondaire de
+la section "Sciences de l’informatique" vise les objectifs suivants :
+1. Acquérir des techniques de recherches de l'information
+2. Développer l'esprit critique
+3. Savoir communiquer
+4. Identifier les types et les caractéristiques des différents média
+5. Mettre à profit les outils matériels et logiciels pour réaliser des
+produits multimédia.
+6. Identifier les techniques de publication relatives à différents
+supports
+7. Publier des produits électroniques
+8. Réaliser et publier un site web statique
+
+L'enseignement de la matière "Technologies de l’information
+et de la communication" en 3ème et en 4ème année est d'une grande
+utilité. Les apprenants renforcent leurs savoirs en la matière ce qui
+leur permet une adhésion aisée à la société numérique.
+Ces programmes visent à développer chez l'apprenant des
+aptitudes à utiliser les techniques avancés pour gérer et produire des
+documents multimédia, à créer des sites web statiques et
+dynamiques, à créer et à intégrer des scripts dans un code et à
+exploiter une base de données dans un site web.
+Bien entendu, l'apprenant saura aussi qu'avec des
+logiciels dédiés les solutions aux problèmes posés seront plus
+simples. Cette option devrait développer chez l'apprenant une
+certaine autonomie d'apprentissage lui permettant de compter sur
+ses propres capacités en l'absence de l'enseignant. En parallèle à
+cette formation, un développement socioculturel chez l'apprenant
+devrait être assuré. C'est le côté citoyenneté de l'apprenant qui, est
+visé. Cet objectif figure parmi les objectifs généraux stipulés dans
+la nouvelle loi d'orientation.
+
+Les objectifs visés en 4ème année de la section « Sciences de
+l’informatique »
+L’enseignement de cette matière en 4ème année secondaire de la
+section "Sciences de l’informatique" vise les objectifs suivants :
+1. Exploiter des outils de collaboration
+2. Réaliser des animations
+3. Créer des sites Web statiques et dynamiques
+4. Echanger des données à distance à travers une page Web
+5. Publier des sites Web dynamiques
+N.B : Quelques apprentissages dispensés en 3ème année seront
+repris et approfondis en classe de 4ème année.
+
+A la fin de la 4ème année, les élèves sont appelés à réaliser un
+projet. Celui ci vient clôturer l'apprentissage et l'acquisition de
+plusieurs savoirs et capacités. Par conséquent, il sera une activité
+essentiellement intégrative. Les thèmes ainsi que le cahier des
+charges devront être arrêtés avec les apprenants. L'encadrement
+devra permettre aux apprenants de consolider ses acquis et de les
+exploiter convenablement pour résoudre un problème donné dans
+une situation donnée.
+
+13/44
+
+DEMARCHE PEDAGOGIQUE
+L'application de ces programmes repose essentiellement
+sur l'aspect pratique lequel ne doit pas occulter la présentation
+des concepts de base. Par conséquent, l'enseignement devra se
+dérouler dans un laboratoire d'informatique et exploiter toutes
+les ressources disponibles comme le réseau local, le réseau
+étendu, les logiciels, les imprimantes etc. L'utilisation ou
+l'exploitation des technologies de l'information et de la
+communication (TIC) doit être une pratique courante lors des
+séances d'apprentissage. Les effectifs réduits favorisent la
+qualité d'apprentissage. Il ne faudra pas dépasser deux élèves
+par machine.
+
+En 4ème année, l'apprenant approfondit plus ses
+connaissances au niveau des apprentissages dispensés en 3ème
+année.
+Pour consolider les connaissances des apprenants et afin
+de développer chez eux l'aptitude d'assurer l'intégration de
+connaissances, des projets sont prévus en fin de certains
+modules. Les sujets des projets seront inspirés de problèmes et
+de situations de la vie courantes et en faisant recours à d'autres
+disciplines.
+
+Pour garantir l'appropriation des savoirs et des savoirfaire par les élèves, il est conseillé de faire plusieurs activités
+diversifiées, de favoriser l'auto-apprentissage. Une évaluation
+des acquis devrait se faire au cours et à la fin de chaque séance
+d'apprentissage.
+
+14/44
+
+3ème année
+Objectifs
+- Acquérir des techniques de recherches
+de l'information
+- Développer l'esprit critique
+- Savoir communiquer
+
+Contenus
+
+Commentaires et recommandations
+
+Information et communication
+- Définition
+- Ressources de l'information
+- Techniques de recherche
+- Communication
+- Ethique et déontologie des TICs
+
+Horaire
+
+8h
+
+Production électronique
+- Identifier les types et les caractéristiques
+des différents média
+- Mettre à profit les outils matériels et
+logiciels pour réaliser des produits
+multimédia.
+
+Traitement de texte
+
+
+
+
+-
+
+Image numérique
+
+
+
+
+-
+
+-
+
+Identifier
+les
+techniques
+de
+publication relatives à différents
+supports
+Publier des produits électroniques
+
+Réaliser et publier un site web statique
+
+20 h
+
+Caractéristiques
+Acquisition
+Traitements
+
+Vidéo numérique
+
+
+
+
+-
+
+Dans ces apprentissages, on favorisera le coté
+pratique.
+
+Caractéristiques
+Acquisition
+Traitements
+
+Son numérique
+
+
+
+
+-
+
+Mise en page d'un document
+Insertion d'objets
+Mise en forme d'un document
+
+Caractéristiques
+Acquisition
+Traitements
+
+-
+
+Dans ces apprentissages, on favorisera le coté
+pratique.
+On présentera essentiellement les supports
+suivants : CD, DVD, réseaux
+On pourra exploiter les produits réalisés dans le
+chapitre précédent
+
+10 h
+
+La réalisation du site web intègrera l'apprentissage
+d'un logiciel de création de pages Web.
+
+12 h
+
+Publication électronique
+- Supports et techniques de publication
+- Publication de produits
+Projet : réalisation et publication
+d'un site web statique
+
+15/44
+
+-
+
+4ème année
+Objectifs
+
+Contenus
+-
+
+Outils de collaboration
+Exploiter des outils de collaboration
+
+-
+
+Présentation
+Applications dans un réseau local
+Forums
+Visio-conférence
+
+-
+
+Commentaires et recommandations
+Dans ces apprentissages, on favorisera le coté
+pratique.
+Prévoir l'organisation ou la participation à des
+forums
+Exploiter les équipements de transmission vidéo
+en direct dans des situations de collaboration
+
+Horaire
+
+10 h
+
+Production électronique avancée
+- Animation
+
+
+
+- Réaliser des animations
+- Créer des sites Web statiques et
+dynamiques
+- Echanger des données à distance
+à travers une page Web
+
+
+
+Création
+Insertion d'objets (sons, scripts d'action)
+Exportation
+
+- Pages Web
+
+
+
+Langage de création de pages Web
+Langage de script (exemple : VB Script,
+Java Script, …)
+
+- Pages Web dynamiques
+
+
+
+
+Environnement de développement
+Langage de script côté serveur (PHP,
+ASP, …)
+langage de requêtes
+
+-
+
+Dans ces apprentissages, on favorisera le côté
+pratique.
+Créer et intégrer des scripts dans une page Web
+Exploiter les structures de données et de contrôles
+présentées dans le cours « Algorithmique et
+programmation »
+La création d'un site Web doit permettre
+l'intégration des habilités en multimédia et en
+technologies WEB dynamique
+
+30 h
+
+Publication électronique
+- Publier
+des
+dynamiques
+
+sites
+
+Web
+
+
+
+
+
+Hébergement
+Référencement
+Sécurisation
+
+10 h
+
+16/44
+
+3
+
+ème
+
+année secondaire
+
+Section : Sciences de l’informatique
+
+17/44
+
+Présentation de matière « Systèmes d’exploitation et Réseaux »
+Les objectifs visés en 3ème année de la section "Sciences de
+l’informatique"
+
+L'enseignement
+de
+la
+matière
+"Systèmes
+d’exploitation et Réseaux" de la section "Sciences de
+l’informatique" en 3ème année est d'une grande utilité. Les
+apprenants renforcent leurs savoirs en la matière ce qui leur
+permet une adhésion aisée à la société numérique.
+
+L’enseignement de cette matière en 3ème année secondaire
+de la section "Sciences de l’informatique" vise les objectifs
+généraux suivants :
+1. Mettre à profit les différentes fonctionnalités d’un
+système d’exploitation
+2. Installer et configurer un système d’exploitation
+3. Exploiter un réseau et installer des composants d’un
+réseau
+
+Ce programme vise à développer chez l'apprenant des
+aptitudes à exploiter, à gérer, à détecter et à corriger des erreurs
+et à assurer un certain niveau de sécurité des systèmes
+informatiques ainsi qu'à exploiter des services d'internet.
+Bien entendu, l'apprenant saura aussi qu'avec des
+logiciels dédiés, les solutions aux problèmes posés seront plus
+simples. Cette option devrait développer chez l'apprenant une
+certaine autonomie d'apprentissage lui permettant de compter
+sur ses propres capacités. En parallèle à cette formation, un
+développement socioculturel chez l'apprenant devrait être
+assuré. C'est le côté citoyenneté de l'apprenant qui est visé. Cet
+objectif figure parmi les objectifs généraux stipulés dans la
+nouvelle loi d'orientation.
+
+18/44
+
+DEMARCHE PEDAGOGIQUE
+
+Pour garantir l'appropriation des savoirs et des savoirfaire par les élèves, il est conseillé de faire plusieurs activités
+diversifiées, de favoriser l'auto-apprentissage. Une évaluation
+des acquis devrait se faire au cours et à la fin de chaque séance
+d'apprentissage.
+
+L'application de ce programme repose essentiellement sur
+l'aspect pratique lequel ne doit pas occulter la présentation des
+concepts de base. Par conséquent, l'enseignement devra se
+dérouler dans un laboratoire d'informatique et exploiter toutes
+les ressources disponibles comme le réseau local, le réseau
+étendu, les logiciels, les imprimantes etc. L'utilisation ou
+l'exploitation des technologies de l'information et de la
+communication (TIC) doit être une pratique courante lors des
+séances d'apprentissage. Les effectifs réduits favorisent la
+qualité d'apprentissage. Il ne faudra pas dépasser deux élèves
+par machine.
+
+19/44
+
+Partie I : Système d'exploitation
+Objectifs
+
+Mettre à profit les principales
+fonctions
+d'un
+système
+d'exploitation
+
+Installer et configurer un système
+d'exploitation
+
+Contenus
+LES SYSTEMES D'EXPLOITATION
+IIntroduction
+IIFonctions d'un SE
+- Gestion de la mémoire centrale et des
+processus
+1. Définition d'un processus
+2. Applications : consultation du journal des
+processus, arrêt d'un processus, occupation
+mémoire, …
+3. Installation et désinstallation de logiciels
+- Gestion des périphériques
+1. Présentation
+2. Applications : Installation, désinstallation et
+configuration de périphériques
+- Gestion des supports de stockage
+1. Présentation
+2. Applications : partitionnement, formatage, …
+- Gestion des fichiers et des répertoires
+1. Présentation
+2. Applications : organisation, création, copie,
+déplacement, …
+Administration système
+- Introduction
+- Installation de systèmes d'exploitation
+- Paramétrage du système d'exploitation
+- Gestion des comptes utilisateurs
+- Outils système et sécurité
+
+20/44
+
+Recommandations
+
+Horaire
+
+- Dans ces apprentissages, on favorisera le
+côté pratique.
+- Prévoir des applications de ce cours sous
+un système d'exploitation libre.
+
+16 h
+
+Dans ces apprentissages, on favorisera le côté
+pratique.
+
+8h
+
+Partie II : Réseaux
+Objectifs
+
+Contenus
+
+Recommandations
+
+Horaire
+
+- Identifier les caractéristiques d'un
+réseau
+- Comprendre le fonctionnement d'un
+réseau
+- Montrer les avantages et les
+inconvénients de chaque topologie.
+- Identifier les différentes couches du
+modèle OSI
+- Comprendre le protocole TCP/IP
+
+Introduction aux réseaux
+- Généralités : définition, intérêt, normalisation,
+topologies
+- réseau local et étendu,
+- réseau clients-serveur et poste à poste,
+- réseau Ethernet,
+- réseau sans fil
+Protocoles réseaux
+- Introduction
+- Le modèle OSI
+- Le protocole TCP/IP
+
+Utiliser des supports multimédia pour
+présenter les concepts traités
+
+6h
+
+Utiliser des supports multimédia pour
+présenter les concepts traités
+
+4h
+
+- Connaître les différents supports de
+transmission
+- Identifier les composants actifs et
+passifs des réseaux
+
+Equipements matériels
+- Supports de transmission
+- Composants actifs
+- Composants passifs
+
+Utiliser des supports multimédia pour
+présenter les concepts traités
+
+6h
+
+- Configurer la composante logicielle
+d'un réseau
+- Administrer et exploiter un réseau
+local
+- Utiliser des outils de diagnostic et de
+sécurité.
+
+Configuration et administration d'un réseau local
+- Configuration logicielle d'un réseau local
+utilisant TCP/IP
+- Administration et partage des ressources
+- Sécurité
+
+- Dans ces apprentissages, on favorisera le
+côté pratique.
+- On utilisera les outils de maintenance
+offerts par le système d'exploitation ou
+par des applications dédiées.
+
+21/44
+
+10 h
+
+4
+
+ème
+
+année secondaire
+
+Section : Sciences de l’informatique
+
+22/44
+
+Présentation de la matière «Bases de données »
+
+Ce programme permet la manipulation des bases de
+données à travers la rédaction d’un code ou l’utilisation des
+SGBD.
+Le programmes de la matière "Bases de données" en 4ème
+de la section "Sciences de l’informatique" :
+L’enseignement de cette matière en 4ème année secondaire
+de la section "Sciences de l’informatique" vise les objectifs
+généraux suivants :
+1.
+2.
+3.
+
+Utiliser les fonctions de base d'un SGBDR pour créer,
+gérer et interroger une base de données.
+Utiliser les fonctions de base pour charger des données,
+interroger une base de données et imprimer des données.
+Créer des applications de gestion des bases de données.
+
+23/44
+
+DEMARCHE PEDAGOGIQUE
+Pour consolider les connaissances des apprenants et afin
+de développer chez eux l'aptitude d'assurer l'intégration de
+connaissances, des projets sont prévus en fin de certains
+modules. Les sujets des projets seront inspirés de problèmes et
+de situations de la vie courantes et en faisant recours à d'autres
+disciplines.
+
+Pour garantir l'appropriation des savoirs et des savoirfaire par les élèves, il est conseillé de faire plusieurs activités
+diversifiées et de favoriser l'auto-apprentissage.
+
+Pour mettre en œuvre les principes de construction et
+d’intégration
+des
+connaissances,
+l’enseignement
+de
+l’informatique sera basé sur les méthodes actives. Ces méthodes
+responsabilisent l’apprenant et l’encouragent à construire luimême les connaissances, à s’approprier des habiletés et à les
+intégrer dans des situations significatives.
+
+Enfin, dans les limites de l’horaire imparti à
+l’enseignement de la matière et sans sortir du cadre de ces
+démarches décrites, l’enseignant d’informatique a toute latitude
+de prendre les initiatives et d’organiser les activités dans l’ordre
+qu’il juge le mieux adapté pour atteindre les objectifs visés.
+
+Une évaluation des acquis devrait se faire au cours et à la
+fin de chaque séance d'apprentissage.
+
+Les activités supports doivent être puisées du domaine
+réel ou scolaire.
+
+24/44
+
+Objectifs
+
+Contenus
+
+Recommandations
+
+Horaire
+
+Généralités
+
+- Décrire l’intérêt des bases
+données et leurs systèmes
+gestion.
+
+de
+de
+
+- Utiliser les fonctions de base d'un
+SGBDR pour créer, gérer et
+interroger une base de données
+- Utiliser les fonctions de base
+pour charger des données, interroger
+une base de données et imprimer
+des données.
+- Utiliser les fonctions de base d’un
+SGBDR pour gérer une base de
+données existante
+
+- Créer des applications de gestion des
+bases de données
+
+- Définition d'une base de données
+- Intérêt de l'utilisation d'une base de
+données
+- Définition d'un SGBD
+Réalisation d'une base de données
+- Tables et relations
+ Création d'une table (champs,
+enregistrement, clés, …)
+ Relations
+- Formulaires
+- Requêtes
+
+Création assistée de requêtes
+
+Ecriture de requêtes en utilisant
+un langage d'interrogation d'une
+base de données
+Etats
+
+Création et impression d’états
+Sécurisation d’une base de
+données
+
+Droits d’accès et cryptage
+
+Le cours est entièrement axé sur l’aspect
+pratique.
+Choisir des applications de complexité et
+d’intégration progressive : on commencera par
+étudier une base de données à une seule table
+puis on montrera l'intérêt de l'utilisation d'une
+base de données à plusieurs tables.
+On pourra exploiter des bases de données
+existantes
+
+A travers des énoncés traduisant le monde réel,
+dégager les données manipulées et les
+représenter sous forme d’entités et de relations.
+
+Applications
+
+25/44
+
+30 h
+
+20 h
+
+3
+
+ème
+
+&4
+
+ème
+
+année secondaire
+
+26/44
+
+Sections :
+3 Mathématiques
+3 Sciences expérimentales
+3 Sciences techniques
+
+27/44
+
+Les programmes d’informatique pour les sections scientifiques
+1- identifier les principaux composants d’un microordinateur,
+2- utiliser les principales fonctions d’un système
+d’exploitation,
+3- exploiter des ressources d’un réseau,
+4- exploiter les principaux services d’Internet,
+5- résoudre de problèmes en utilisant un langage de
+programmation structurée.
+
+Pour les trois sections dérivant de la filière
+« Sciences », l'enseignement de l'informatique est d'une
+grande utilité. En plus d'un savoir minimum en la matière
+permettant d'adhérer à la société numérique,
+les
+programmes d’informatique permettent à l’apprenant le
+recours à l'utilisation des services d’Internet et favorisent la
+capacité de produire, de faire part de ses idées, de chercher
+l'information et l'exploiter.
+La plus grande partie de ces programmes développent
+des aptitudes de résolution de problèmes chez l’apprenant.
+La démarche de résolution adoptée ainsi que la multitude de
+stratégies de résolution contribuent à améliorer les facultés
+cognitives et intellectuelles de l’apprenant. Les produits
+obtenus comme programmes solutions des problèmes posés
+favorisent l’esprit auto-critique et aide à l’auto-évaluation.
+
+Le programme d’informatique en 4ème année :
+L’enseignement de l’informatique en 4ème année
+secondaire des sections « Mathématiques », « Sciences
+expérimentales » et « Sciences techniques » vise les
+objectifs généraux suivants :
+1- résoudre de problèmes en utilisant un langage de
+programmation structurée,
+2- écrire des programmes de tri et de recherches.
+
+Le programme d’informatique en 3ème année :
+L’enseignement de l’informatique en 3ème année
+secondaire des sections « Mathématiques », « Sciences
+expérimentales » et « Sciences techniques » vise les
+objectifs généraux suivants :
+
+28/44
+
+DEMARCHE PEDAGOGIQUE
+L'application
+de
+ces
+programmes
+repose
+essentiellement sur la présentation des concepts de base de la
+programmation ainsi que de quelques aspects pratiques liés à
+l’apprentissage d’un système d’exploitation, l’utilisation d’un
+réseau et l’exploitation des services d’Internet. Par
+conséquent, l'enseignement devra se dérouler dans un
+laboratoire d'informatique et exploiter toutes les ressources
+disponibles comme le réseau local, le réseau étendu, les
+logiciels, les imprimantes etc.
+
+- établissant des connexions entre le problème et des
+situations déjà rencontrées,
+- utilisant leurs pensées intuitives,
+- se représentant des stratégies de résolution.
+L'utilisation ou l'exploitation des technologies de
+l'information et de la communication (TIC) doit être une
+pratique courante lors des séances d'apprentissage. Les
+effectifs réduits favorisent la qualité d'apprentissage. Il ne
+faudra pas dépasser deux élèves par machine.
+Pour garantir l'appropriation des savoirs et des savoirfaire par les élèves, il est conseillé de faire plusieurs activités
+diversifiées, de favoriser l'auto-apprentissage. Une évaluation
+des acquis devrait se faire au cours et à la fin de chaque
+séance d'apprentissage. En 4ème année, l'apprenant
+approfondit plus ses connaissances au niveau des
+apprentissages dispensées en 3ème année.
+
+Pour mettre en œuvre les principes constructivistes et
+intégratrices des connaissances, l’enseignement de
+l’informatique doit être basé sur les méthodes actives. Ces
+méthodes responsabilisent l’apprenant et l’encouragent à
+construire lui-même les connaissances, à s’approprier des
+habiletés et à les intégrer dans des situations significatives.
+L’enseignant d’informatique aidera les élèves de ces
+sections à développer une méthodologie de résolution de
+problèmes et à élaborer des stratégies pour résoudre un
+problème en
+
+Enfin, dans les limites de l’horaire imparti à
+l’enseignement de la matière et sans sortir du cadre de ces
+démarches décrites, l’enseignant d’informatique a toute
+latitude de prendre les initiatives et d’organiser les activités
+dans l’ordre qu’il juge le mieux adapté à l'atteinte des
+objectifs visés.
+
+29/44
+
+3ème année
+Objectifs
+
+Contenus
+Introduction à l'informatique
+
+- Acquérir une culture informatique
+
+- Définitions
+- Domaines d'application
+
+Recommandations
+
+Horaire
+
+- Utiliser des outils didactiques pour mettre en
+évidence l'importance de l'informatique dans la
+vie courante
+
+2h
+
+- Exploiter le matériel existant et dans le cas échéant
+utiliser des outils didactiques
+
+6h
+
+- Ce cours est essentiellement axé sur l'aspect
+pratique
+
+6h
+
+- Exploiter le réseau local du labo.
+- Exploiter les services usuels du réseau Internet
+
+6h
+
+Architecture d’un micro-ordinateur
+- Identifier
+les
+principaux
+composants d'un micro-ordinateur
+et connaîtreleurs caractéristiques
+
+- Définir le rôle d'un système
+d'exploitation
+- Utiliser les principales fonctions
+d'un système d'exploitation
+- Connaître les différents types de
+réseaux
+- Travailler dans un environnement
+réseau
+- Identifier et utiliser les services
+Internet
+
+- L'unité centrale
+- Les périphériques et les supports de stockage
+- Les connecteurs et les ports
+Système d'exploitation
+- Présentation et types
+- Principales fonctionnalités
+- Exploitation
+Réseaux informatiques
+- Définition, rôle et avantage
+- Différents types (LAN et WAN)
+- Internet
+
+30/44
+
+Objectifs
+
+Contenus
+
+Recommandations
+
+Horaire
+
+Démarche de résolution de problèmes
+- Résoudre un problème en
+utilisant une approche d'analyse
+
+- Introduction
+- Etapes de résolution
+- Analyse modulaire
+
+- Utiliser des exemples de la vie courante
+
+4h
+
+- Introduire les nouvelles notions à travers des
+activités
+- Consolider les requis par des applications
+
+6h
+
+- Introduire les nouvelles notions à travers des
+activités
+- Prévoir des applications variées
+
+6h
+
+- Introduire les nouvelles notions à travers des
+activités
+- Prévoir des applications variées
+
+14 h
+
+Structures de données
+- Identifier et utiliser les différents
+types de données utilisés
+
+- Constantes
+- Variables
+- Types de données
+
+Structures de contrôle simples
+- Utiliser les structures simples
+pour résoudre des problèmes
+
+- Utiliser les structures de contrôle
+algorithmique pour résoudre des
+problèmes
+
+- Entrée de données
+- Affectation
+- Sortie de données
+
+Structures de contrôle
+- Conditionnelles
+- Itératives complètes
+
+31/44
+
+4ème année
+Objectifs
+- Utiliser les structures de contrôle
+algorithmiques pour résoudre des
+problèmes.
+
+Contenus
+
+Recommandations
+
+Horaire
+
+Structures de contrôle I
+-
+
+Axer le rappel des différentes structures sur des
+activités pratiques
+
+-
+
+Utiliser les fonctions prédéfinies du langage
+
+-
+
+Monter la différence au niveau du choix d’une
+structure itérative.
+
+- Structures de données (Rappel)
+- Structures conditionnelles
+
+12 h
+
+- Structures itératives
+- Utiliser les structures de contrôle
+algorithmiques pour résoudre des
+problèmes.
+
+Structures de contrôle II
+- Structures itératives à condition d’arrêt :
+- La structure : REPETER …Jusqu’à …
+
+12 h
+
+- La structure TANT QUE … Faire
+Sous programmes
+- Utiliser l'analyse modulaire pour
+résoudre des problèmes
+
+-
+
+- Analyse modulaire
+
+Insister sur les traitements des :
+• tableaux
+• chaînes de caractères
+
+- Modules
+
+16 h
+
+Traitement avancés
+- Ecrire des programmes de tri et
+de recherches.
+
+- Méthodes de tri
+
+10 h
+
+- Recherches
+
+32/44
+
+Section :
+3 Economie & Gestion
+
+33/44
+
+Les programmes d’informatique pour la section Economie et Gestion
+problèmes posés seront plus simples. Cette option devrait
+développer chez l'apprenant une certaine autonomie
+d'apprentissage lui permettant de compter sur ses propres
+capacités en l'absence de l'enseignant. En effet, le cours sur
+l'utilisation des services d’Internet et celui sur la réalisation
+de sites web favoriseront chez l'élève la capacité de produire,
+de faire part de ses idées, de chercher l'information et de
+l'exploiter. En parallèle à cette formation, un développement
+socioculturel chez l'apprenant devrait être assuré. C'est le
+côté citoyenneté de l'apprenant qui est visé. Cet objectif
+figure parmi les objectifs généraux stipulés dans la nouvelle
+loi d'orientation.
+
+Pour la section « Economie et Gestion, »
+l'enseignement de l'informatique est d'une grande utilité. En
+plus d'un savoir minimum en la matière permettant à
+l'apprenant d'adhérer à la société numérique, des savoirs et
+des savoir-faire spécifiques formeront le squelette des
+programmes des ces sections. En effet, ils comportent une
+grande partie permettant à l'élève de s'approprier les outils
+nécessaires pour concevoir et réaliser une publication ou un
+rapport numérique. L'apprentissage d'un traitement de texte
+permettra de répondre à ces objectifs et aussi d'automatiser
+beaucoup de tâches jadis assez compliquées quand on les
+faisait à la main. Nous en citons le publipostage. De plus,
+une grande partie de l'apprentissage dans ces sections est
+basé sur les calculs, les statistiques et les interprétations des
+graphiques et des courbes. Pour cette raison, le programme
+d'informatique alloue à l'apprentissage d'un tableur une place
+prépondérante. Pratiquement, tous les problèmes de calculs
+trouveront solution avec un tableur. Bien entendu, l'apprenant
+saura aussi qu'avec des logiciels dédiés, les solutions aux
+
+Pour compléter ce programme, un cours allégé sur
+les bases de données permettra à l'élève de comprendre le
+fonctionnement du monde informatique dans lequel il vit. En
+effet, l'élève sera en mesure de comprendre l'intérêt d'une
+base de données, de la décrire, de la gérer grâce à des
+SGBD. En classe de 4ème année, l'élève sera capable de créer
+des bases de données et de les manipuler.
+
+34/44
+
+DEMARCHE PEDAGOGIQUE
+L'application
+de
+ces
+programmes
+repose
+essentiellement sur l'aspect pratique lequel ne doit pas
+occulter la présentation des concepts théoriques de base. Par
+conséquent, l'enseignement devra se dérouler dans un
+laboratoire d'informatique
+afin d’exploiter toutes les
+ressources disponibles comme le réseau local, le réseau
+étendu, les logiciels, les imprimantes etc. L'utilisation ou
+l'exploitation des technologies de l'information et de la
+communication (TIC) doit être une pratique courante lors des
+séances d'apprentissage. Les effectifs réduits favorisent la
+qualité de ces apprentissages. Il ne faudra pas dépasser deux
+élèves par machine. Quant aux activités supports, elles
+doivent être puisées du domaine de gestion et du commerce.
+La concertation avec les enseignants des disciplines
+économiques et de gestion faciliterait l'élaboration de bons
+scénarios pédagogiques.
+
+Pour garantir l'appropriation des savoirs et des savoirfaire par les élèves, il est conseillé de faire plusieurs activités
+diversifiées et de favoriser l'auto-apprentissage. Une
+évaluation des acquis devrait se faire au cours et à la fin de
+chaque séance d'apprentissage.
+Notons qu’à la fin de la 4ème année, les élèves sont
+appelés à réaliser un projet. Celui vient clôturer
+l'apprentissage et l'acquisition de plusieurs savoirs et
+capacités. Par conséquent, le projet est une activité
+essentiellement intégratrice. Les thèmes ainsi que le cahier
+devront être arrêtés avec les élèves. L'encadrement devra
+permettre aux élèves de consolider ses acquis et des les
+exploiter convenablement pour résoudre un problème donné
+dans une situation donnée.
+
+35/44
+
+3ème année
+Objectifs
+
+- Utiliser
+les
+fonctionnalités
+avancées d'un traitement de texte
+
+- Créer, mettre en forme et
+manipuler une feuille de calcul
+- Utiliser des formules et des
+fonctions de calcul
+
+Contenus
+
+-
+
+Recommandations
+
+Publication
+électronique
+
+- Ce cours est entièrement axé sur l’aspect
+pratique.
+
+Traitement de texte
+
+- Faire un rappel sur la saisie, l'enregistrement, la
+manipulation de blocs, la recherche et le
+remplacement, …)
+
+Rappel des fonctions de base
+Insertion d'objets
+Mise en forme
+Publipostage
+
+8h
+
+- On pourra utiliser des documents existants
+(textes ou feuilles de calcul).
+- Faire un rappel sur la saisie, l'enregistrement, la
+mise en forme, le quadrillage, …
+
+Tableur
+-
+
+Horaire
+
+Rappel les fonctions de base
+Fonctions de calcul
+Fonctions conditionnelles
+Mise en forme conditionnelle
+Graphiques
+
+- Exploiter les fonctions prédéfinies
+
+10 h
+
+- Prévoir des activités traitant des données de
+plusieurs feuilles d'un classeur
+
+Eléments de présentation
+- Produire une présentation
+
+Création d'une présentation
+-
+
+Réalisation
+Techniques d'animation et de
+transition
+Insertion d'objets et des liens
+Création de pages Web statiques
+
+- Produire des pages Web
+
+-
+
+Création et mise en forme
+Insertion d'objets
+Arrière plan et thèmes
+Liens hypertextes
+36/44
+
+- Ce cours est entièrement axé sur l’aspect
+pratique.
+- Prévoir l'intégration de différents médias dans
+une même présentation
+
+10 h
+
+Objectifs
+
+Contenus
+
+- Exploiter les services Internet
+- Mettre à profil les
+techniques
+de
+d'information
+
+Recommandations
+
+Horaire
+
+- Ce cours est essentiellement axé sur l'aspect
+pratique
+
+Internet
+
+différents
+recherche - Services d’Internet
+- Recherche d'informations
+- Projet
+
+- Insister
+sur
+les
+services
+Web,
+de
+communication, de messagerie électronique et
+de téléchargement
+
+8h
+
+- Orienter les recherches vers des besoins
+pédagogiques
+- Prévoir des activités de création et exploitation
+des comptes de courriers électroniques
+
+Base de données
+
+- Le cours est entièrement axé sur l’aspect
+pratique.
+
+- Décrire l’intérêt des bases de
+données et des systèmes de gestion - Présentation d’un SGBD
+- Exploitation d’un SGBD
+de bases de données.
+- Utiliser les fonctions de base du
+Tables et Relations
+SGBD pour gérer une base de
+données
+- Champs (types de données, domaine..)
+Enregistrements
+- Utiliser les fonctions de base
+pour charger des données, interroger - Clés
+une base de données et imprimer
+Requêtes de sélection
+des données.
+- Création assistée de requêtes
+
+37/44
+
+- On pourra exploiter des bases de données
+existantes
+- Insister sur l'importance des clés
+l'exploitation d'une base de données
+
+dans
+
+- Créer de relations, formulaires, requêtes et états
+sur des exemples de base de données simples
+- Pour les requêtes, se limier à la consultation du
+code généré par le SGBD.
+
+14 h
+
+4ème année
+Objectifs
+
+Contenus
+
+Recommandations
+
+Horaire
+
+Publication électronique
+- Tableur
+- Créer, mettre en forme et - Création,
+mise
+en
+forme
+et
+manipuler une feuille de calcul
+manipulations d'une feuille de calcul
+- Mettre en forme et mettre en - Insertion de fonctions de calcul avancées
+- Tri des données
+page une feuille de calcul
+- Filtres (automatique et élaboré)
+- Utiliser des formules et des - Graphiques avancés
+fonctions de calcul
+- Macro commandes
+- Tableau croisé dynamique
+- Réaliser des graphiques
+- Protection des données
+- Exploiter les services Internet
+- Exploiter Internet dans
+commerce électronique
+
+- Ce cours est entièrement axé sur l’aspect pratique.
+- On pourra utiliser des feuilles de calcul existantes.
+- Utiliser les fonctions prédéfinies spécifiques à la
+section
+- Se limiter à l'enregistrement et l'appel des macrocommandes
+- Utiliser l’assistant pour créer des macro-commandes
+
+Internet
+
+- Orienter les recherches vers des besoins pédagogiques
+- Services d’Internet
+le - Exploitation d’Internet dans le commerce - Consultation des vitrines de commerces électroniques
+électronique
+- Choisir des applications
+d’intégration progressive.
+
+Base de données
+- Créer
+les
+composantes
+nécessaires d’une base de
+données
+- Interroger et modifier une base
+de données
+
+16 h
+
+-
+
+Création de tables
+Création des relations
+Création de formulaires, …
+Création et impression d’états
+Création de requêtes à l'aide
+l'assistant
+
+- Insister sur les requêtes :
+de
+
+• de recherche et de sélection
+• paramétrées
+• de mise à jour
+
+38/44
+
+complexité
+
+et
+
+- Pour l’interrogation et la modification d’une base de
+données, on fera appel à l'assistant du SGBD utilisé.
+
+• d’ajout
+
+Projet
+
+de
+
+10 h
+
+24 h
+
+Section :
+3 Lettres
+
+39/44
+
+Les programmes d’informatique pour la section Lettres
+
+l'apprenant saura aussi qu'avec des logiciels dédiés, les
+solutions aux problèmes posés seront plus simples. Cette
+option devrait développer chez l'apprenant une certaine
+autonomie d'apprentissage lui permettant de compter sur ses
+propres capacités en l'absence de l'enseignant. En effet, le
+cours sur l'utilisation des services d’Internet et celui sur la
+réalisation de sites web et la manipulation de documents
+multimédias, favoriseront chez l'élève la capacité de produire,
+de faire part de ses idées, de chercher l'information et de
+l'exploiter. En parallèle à cette formation, un développement
+socioculturel chez l'apprenant devrait être assuré. C'est le
+côté citoyenneté de l'apprenant qui est visé. Cet objectif
+figure parmi les objectifs généraux stipulés dans la nouvelle
+loi d'orientation.
+
+Pour la section Lettres, l'enseignement de
+l'informatique est d'une grande utilité. En plus d'un savoir
+minimum en la matière permettant à l'apprenant d'adhérer à
+la société numérique, des savoirs et des savoir-faire
+spécifiques formeront le squelette des programmes des ces
+sections. En effet, ils
+comportent une grande partie
+permettant à l'élève de s'approprier les outils nécessaires pour
+concevoir et réaliser une publication ou un rapport
+numérique.
+L'apprentissage d'un traitement de textes permettra
+de répondre à ces objectifs et aussi d'automatiser beaucoup
+de tâches jadis assez compliquées quand on les faisait à la
+main. Nous en citons le publipostage. Bien entendu,
+
+40/44
+
+DEMARCHE PEDAGOGIQUE
+
+élèves par machine. Quant aux activités supports, elles
+doivent être puisées du domaine des lettres. La concertation
+avec les enseignants des disciplines littéraires et de gestion
+faciliterait l'élaboration de bons scénarios pédagogiques.
+
+L'application
+de
+ces
+programmes
+repose
+essentiellement sur l'aspect pratique lequel ne doit pas
+occulter la présentation des concepts théoriques de base. Par
+conséquent, l'enseignement devra se dérouler dans un
+laboratoire d'informatique
+afin d’exploiter toutes les
+ressources disponibles comme le réseau local, le réseau
+étendu, les logiciels, les imprimantes etc. L'utilisation ou
+l'exploitation des technologies de l'information et de la
+communication (TIC) doit être une pratique courante lors des
+séances d'apprentissage. Les effectifs réduits favorisent la
+qualité de ces apprentissages. Il ne faudra pas dépasser deux
+
+Pour garantir l'appropriation des savoirs et des savoirfaire par les élèves, il est conseillé de faire plusieurs activités
+diversifiées et de favoriser l'auto-apprentissage. Une
+évaluation des acquis devrait se faire au cours et à la fin de
+chaque séance d'apprentissage.
+
+41/44
+
+3ème année
+Objectifs
+- Situer l’évolution de l’informatique
+dans le temps
+- Mettre en évidence la sécurité des
+informations
+- Montrer l’importance des logiciels et en
+énumérer les types usuels
+- Identifier les principaux composants
+internes d’un micro-ordinateur
+- Identifier les principaux périphériques
+- Spécifier les caractéristiques techniques
+des principaux composants matériels
+d’un système informatique
+
+Contenus
+Culture informatique
+- Historique de l’informatique
+- L’information : présentation et sécurité
+- Logiciels : Présentation, caractéristiques et
+domaines d’application
+Architecture d’un micro-ordinateur
+- Les composants internes : le processeur, les
+mémoires, les ports, …
+- Les périphériques d’entrée, de sortie et
+d’entrée/sortie
+- Les unités de stockage
+
+Recommandations
+- Prévoir des activités et exploiter des sites et
+des CD
+- Evoquer l’intégrité de l’information, le
+piratage informatique, les virus, etc.
+- Citer quelques domaines d’application de
+l’informatique
+- Identifier les principaux composants en
+utilisant des outils didactiques (composants
+réels, CD, illustrations, …).
+
+Horaire
+
+4h
+
+6h
+
+Système d’exploitation
+- Définir le rôle d’un système
+d’exploitation
+- Utiliser les principales fonctions d’un
+système d’exploitation
+
+- Présentation, types
+- Gestion du bureau et des fenêtres
+- Principales fonctions (gestion de dossiers,
+gestion de fichiers, …)
+
+- Ce cours est entièrement axé sur l’aspect
+pratique.
+
+6h
+
+Réseaux
+- Travailler
+réseau
+
+dans
+
+un
+
+- Types
+environnement - Protocoles
+- Gestion des ressources
+
+- Citer les avantages d’un réseau.
+- Ce cours est axé sur l’aspect pratique.
+
+42/44
+
+6h
+
+Objectifs
+- Exploiter les services de recherche
+d’informations, de téléchargement et
+de communication
+- Mettre à profit les services d’Internet
+pour réaliser un projet
+
+Contenus
+Internet
+- Présentation
+- Services et protocoles d’Internet
+- Recherche d’information sur Internet
+
+Recommandations
+La
+présentation
+d’Internet
+comporte la définition, la connexion,
+…
+
+Horaire
+
+6h
+
+Publication électronique
+Traitement de textes
+
+- Produire un document en utilisant un
+logiciel de traitement de textes ou un
+tableur
+
+- Présentation de l’environnement
+- Fonctions de base
+- Insertion d’objets
+Tableur
+- Présentation de l’environnement
+- Fonctions de base
+- Utilisation de formules et de fonctions
+prédéfinies
+- Graphiques
+- Impression
+
+- Réaliser une présentation comportant
+du textes, des images et des tableaux
+
+Eléments de présentation
+
+43/44
+
+8h
+- Ce cours est entièrement axé sur l’aspect
+pratique.
+- Axer la pratique sur les fonctions de bases
+(saisie, mise enforme, mise en page…)
+- Utiliser les fonctions simples (somme,
+moyenne, min ….)
+
+8h
+
+6h
+
+4ème année
+Objectifs
+Contenus
+- Utiliser les principales fonctions d’un Système d’exploitation & Réseaux
+système d’exploitation
+- Rappel
+- Gestion des applications
+- Utiliser les services usuels de l’Internet.
+- Gestion des périphériques
+- Internet
+
+Recommandations
+
+Horaire
+
+- Ce cours est entièrement axé sur l’aspect
+pratique.
+
+8h
+
+Publication électronique
+- Multimédia
+- Présentation
+- Image
+
+- Manipuler des composants multimédia.
+
+o Numérisation,
+o Conversion des fichiers images
+o Retouches
+
+12 h
+
+- Son
+
+o Numérisation
+o Caractéristiques
+o Mixage et effets
+- Vidéo
+
+o Présentation de la vidéo : définition, sources
+o Manipulations de base
+
+-
+
+Ce cours est entièrement axé sur l’aspect
+pratique.
+
+-
+
+Axer la pratique sur les fonctions avancées
+du traitement de textes (Publipostage,
+multicolonnage, …)
+
+-
+
+Axer la pratique sur les fonctions avancées
+du tableur
+
+- Traitement de textes
+
+- Utiliser les fonctions avancées des
+logiciels d’un traitement de texte et
+d’un tableur
+
+o Rappel
+o Fonctions avancées
+
+- Utiliser les fonctions avancées des
+logiciels d’un tableur
+
+o Rappel
+o Fonctions avancées
+
+- Tableur
+
+10 h
+8h
+
+Développement de sites Web
+- Développer des sites Web
+
+o Présentation de l’environnement
+o Création de sites Web
+o Projet
+44/44
+
+12 h

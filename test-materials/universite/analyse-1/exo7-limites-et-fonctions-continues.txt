@@ -1,0 +1,1397 @@
+Exo7 — Limites et fonctions continues
+Source: https://exo7.emath.fr/cours/ch_fonctions.pdf
+Author: Arnaud Bodin, Exo7
+Licence: CC BY-NC-SA 3.0 FR (Exo7)
+Text extracted with pdftotext on 2026-11-10 for Lumi testing (formulas may be garbled).
+
+Limites et
+fonctions continues
+Vidéo  partie 1. Notions de fonction
+Vidéo  partie 2. Limites
+Vidéo  partie 3. Continuité en un point
+Vidéo  partie 4. Continuité sur un intervalle
+Vidéo  partie 5. Fonctions monotones et bijections
+Fiche d’exercices  Limites de fonctions
+Fiche d’exercices  Fonctions continues
+
+Motivation
+Les équations en une variable x qu’on sait résoudre explicitement, c’est-à-dire en donnant une formule pour la solution,
+sont très particulières : par exemple les équations du premier degré ax + b = 0, celles du second degré ax 2 + bx + c = 0.
+Mais pour la plupart des équations, il n’est pas possible de donner une formule pour la ou les solutions. En fait il n’est
+même pas évident de déterminer seulement le nombre de solutions, ni même s’il en existe. Considérons par exemple
+l’équation extrêmement simple :
+x + exp x = 0
+Il n’y a pas de formule explicite (utilisant des sommes, des produits, des fonctions usuelles) pour trouver la solution x.
+Dans ce chapitre nous allons voir que grâce à l’étude de la fonction f (x) = x + exp x, il est possible d’obtenir
+beaucoup d’informations sur l’ensemble des solutions de l’équation x + exp x = 0, et même de l’équation plus générale
+x + exp x = y (où y ∈ R est fixé).
+x + exp(x)
+y
+
+x
+
+Nous serons capables de prouver que pour chaque y ∈ R l’équation « x + exp x = y » admet une solution x, que cette
+solution est unique, et nous saurons dire comment varie x en fonction de y. Le point clé de cette résolution est l’étude
+de la fonction f et en particulier de sa continuité. Même s’il n’est pas possible de trouver l’expression exacte de la
+solution x en fonction de y, nous allons mettre en place les outils théoriques qui permettent d’en trouver une solution
+approchée.
+
+LIMITES ET FONCTIONS CONTINUES
+
+1. NOTIONS DE FONCTION
+
+2
+
+1. Notions de fonction
+1.1. Définitions
+Définition 1.
+Une fonction d’une variable réelle à valeurs réelles est une application f : U → R, où U est une partie de R. En
+général, U est un intervalle ou une réunion d’intervalles. On appelle U le domaine de définition de la fonction f .
+Exemple 1.
+La fonction inverse :
+f : ] − ∞, 0[ ∪ ]0, +∞[
+
+−→
+
+R
+1
+x
+7−→
+.
+x
+Le graphe d’une fonction f : U → R est la partie Γ f de R2 définie par Γ f = (x, f (x)) | x ∈ U .
+Le graphe d’une fonction (à gauche), l’exemple du graphe de x 7→ 1x (à droite).
+y
+Γf
+
+f (x)
+
+(x, f (x))
+1
+x
+
+x
+x
+
+1.2. Opérations sur les fonctions
+Soient f : U → R et g : U → R deux fonctions définies sur une même partie U de R. On peut alors définir les fonctions
+suivantes :
+• la somme de f et g est la fonction f + g : U → R définie par ( f + g)(x) = f (x) + g(x) pour tout x ∈ U ;
+• le produit de f et g est la fonction f × g : U → R définie par ( f × g)(x) = f (x) × g(x) pour tout x ∈ U ;
+• la multiplication par un scalaire λ ∈ R de f est la fonction λ · f : U → R définie par (λ · f )(x) = λ · f (x) pour
+tout x ∈ U.
+Comment tracer le graphe d’une somme de fonction ?
+
+f +g
+( f + g)(x)
+f
+
+g(x)
+
+g
+f (x)
+
+x
+
+LIMITES ET FONCTIONS CONTINUES
+
+1. NOTIONS DE FONCTION
+
+3
+
+1.3. Fonctions majorées, minorées, bornées
+Définition 2.
+Soient f : U → R et g : U → R deux fonctions. Alors :
+• f > g si ∀x ∈ U f (x) > g(x) ;
+• f > 0 si ∀x ∈ U f (x) > 0 ;
+• f > 0 si ∀x ∈ U f (x) > 0 ;
+• f est dite constante sur U si ∃a ∈ R ∀x ∈ U f (x) = a ;
+• f est dite nulle sur U si ∀x ∈ U f (x) = 0.
+Définition 3.
+Soit f : U → R une fonction. On dit que :
+• f est majorée sur U si ∃M ∈ R ∀x ∈ U f (x) 6 M ;
+• f est minorée sur U si ∃m ∈ R ∀x ∈ U f (x) > m ;
+• f est bornée sur U si f est à la fois majorée et minorée sur U, c’est-à-dire si ∃M ∈ R ∀x ∈ U | f (x)| 6 M .
+Voici le graphe d’une fonction bornée (minorée par m et majorée par M ).
+y
+M
+
+x
+
+m
+
+1.4. Fonctions croissantes, décroissantes
+Définition 4.
+Soit f : U → R une fonction. On dit que :
+• f est croissante sur U si ∀x, y ∈ U
+
+x 6 y =⇒ f (x) 6 f ( y)
+
+• f est strictement croissante sur U si ∀x, y ∈ U x < y =⇒ f (x) < f ( y)
+• f est décroissante sur U si ∀x, y ∈ U x 6 y =⇒ f (x) > f ( y)
+• f est strictement décroissante sur U si ∀x, y ∈ U x < y =⇒ f (x) > f ( y)
+• f est monotone (resp. strictement monotone) sur U si f est croissante ou décroissante (resp. strictement
+croissante ou strictement décroissante) sur U.
+Un exemple de fonction croissante (et même strictement croissante) :
+
+LIMITES ET FONCTIONS CONTINUES
+
+1. NOTIONS DE FONCTION
+
+4
+
+f ( y)
+f (x)
+
+x
+
+y
+
+Exemple 2.
+¨
+
+[0, +∞[−→ R
+est strictement croissante.
+p
+x 7−→ x
+exp : R → R et logarithme ln :]0, +∞[→ R sont strictement croissantes.
+• Les fonctions exponentielle
+¨
+¨
+R −→ R
+[0, +∞[−→ R
+n’est ni croissante, ni décroissante. Par contre, la fonction
+• La fonction valeur absolue
+x 7−→ |x|
+x 7−→ |x|
+est strictement croissante.
+
+• La fonction racine carrée
+
+1.5. Parité et périodicité
+Définition 5.
+Soit I un intervalle de R symétrique par rapport à 0 (c’est-à-dire de la forme ] − a, a[ ou [−a, a] ou R). Soit
+f : I → R une fonction définie sur cet intervalle. On dit que :
+• f est paire si ∀x ∈ I f (−x) = f (x),
+• f est impaire si ∀x ∈ I f (−x) = − f (x).
+Interprétation graphique :
+• f est paire si et seulement si son graphe est symétrique par rapport à l’axe des ordonnées (figure de gauche).
+• f est impaire si et seulement si son graphe est symétrique par rapport à l’origine (figure de droite).
+y
+
+y
+
+x
+
+Exemple 3.
+• La fonction définie sur R par x 7→ x 2n (n ∈ N) est paire.
+• La fonction définie sur R par x 7→ x 2n+1 (n ∈ N) est impaire.
+• La fonction cos : R → R est paire. La fonction sin : R → R est impaire.
+
+x
+
+LIMITES ET FONCTIONS CONTINUES
+
+1. NOTIONS DE FONCTION
+y
+
+5
+
+x3
+
+x2
+
+x
+
+Définition 6.
+Soit f : R → R une fonction et T un nombre réel, T > 0. La fonction f est dite périodique de période T si
+∀x ∈ R f (x + T ) = f (x).
+
+f
+f (x) = f (x + T )
+
+~i
+
+x+T
+
+x
+
+Interprétation graphique : f est périodique de période T si et seulement si son graphe est invariant par la translation
+de vecteur T ~i, où ~i est le premier vecteur de coordonnées.
+Exemple 4.
+Les fonctions sinus et cosinus sont 2π-périodiques. La fonction tangente est π-périodique.
+y
++1
+
+cos x
+x
+
+−π
+
+0
+
+π
+
+2π
+
+3π
+
+sin x
+
+−1
+
+Mini-exercices.
+1. Soit U =] − ∞, 0[ et f : U → R définie par f (x) = 1/x. f est-elle monotone ? Et sur U =]0, +∞[ ? Et sur
+U =] − ∞, 0[ ∪ ]0, +∞[ ?
+2. Pour deux fonctions paires que peut-on dire sur la parité de la somme ? du produit ? et de la composée ? Et pour
+deux fonctions impaires ? Et si l’une est paire et l’autre impaire ?
+3. On note {x} = x − E(x) la partie fractionnaire de x. Tracer le graphe de la fonction x 7→ {x} et montrer qu’elle
+est périodique.
+x
+1
+4. Soit f : R → R la fonction définie par f (x) = 1+x
+2 . Montrer que | f | est majorée par 2 , étudier les variations de
+f (sans utiliser de dérivée) et tracer son graphe.
+
+5. On considère la fonction g : R → R, g(x) = sin π f (x) , où f est définie à la question précédente. Déduire de
+l’étude de f les variations, la parité, la périodicité de g et tracer son graphe.
+
+LIMITES ET FONCTIONS CONTINUES
+
+2. LIMITES
+
+6
+
+2. Limites
+2.1. Définitions
+Limite en un point
+Soit f : I → R une fonction définie sur un intervalle I de R. Soit x 0 ∈ R un point de I ou une extrémité de I.
+Définition 7.
+Soit ` ∈ R. On dit que f a pour limite ` en x 0 si
+∀ε > 0
+
+∃δ > 0
+
+|x − x 0 | < δ =⇒ | f (x) − `| < ε
+
+∀x ∈ I
+
+On dit aussi que f (x) tend vers ` lorsque x tend vers x 0 . On note alors lim f (x) = ` ou bien lim f = `.
+x→x 0
+
+x0
+
+y
+
+ε
+`
+
+ε
+
+x0
+x
+δ
+
+Remarque.
+• L’inégalité |x − x 0 | < δ équivaut à x ∈]x 0 − δ, x 0 + δ[. L’inégalité | f (x) − `| < ε équivaut à f (x) ∈]` − ε, ` + ε[.
+• On peut remplacer certaines inégalités strictes « < » par des inégalités larges « 6 » dans la définition : ∀ε >
+0 ∃δ > 0 ∀x ∈ I |x − x 0 | 6 δ =⇒ | f (x) − `| 6 ε
+• Dans la définition de la limite
+∀ε > 0
+
+∃δ > 0
+
+∀x ∈ I
+
+|x − x 0 | < δ =⇒ | f (x) − `| < ε
+
+le quantificateur ∀x ∈ I n’est là que pour être sûr que l’on puisse parler de f (x). Il est souvent omis et l’existence
+de la limite s’écrit alors juste :
+∀ε > 0
+
+∃δ > 0
+
+|x − x 0 | < δ =⇒ | f (x) − `| < ε.
+
+• N’oubliez pas que l’ordre des quantificateurs est important, on ne peut pas échanger le ∀ε avec le ∃δ : le δ dépend
+en général du ε. Pour marquer cette dépendance on peut écrire : ∀ε > 0 ∃δ(ε) > 0 . . .
+Exemple 5.
+p
+p
+• lim x = x 0 pour tout x 0 > 0,
+x→x 0
+
+• la fonction partie entière E n’a pas de limite aux points x 0 ∈ Z.
+
+LIMITES ET FONCTIONS CONTINUES
+
+2. LIMITES
+
+y
+
+7
+
+y
+E(x)
+p
+
+p
+
+x
+
+x0
+1
+0
+
+1
+1
+
+x0
+
+x
+
+0
+
+1
+
+x0 ∈ Z
+
+x
+
+Soit f une fonction définie sur un ensemble de la forme ]a, x 0 [∪]x 0 , b[.
+Définition 8.
+• On dit que f a pour limite +∞ en x 0 si
+∀A > 0
+
+∃δ > 0
+
+∀x ∈ I
+
+|x − x 0 | < δ =⇒ f (x) > A
+
+∀x ∈ I
+
+|x − x 0 | < δ =⇒ f (x) < −A
+
+On note alors lim f (x) = +∞.
+x→x 0
+
+• On dit que f a pour limite −∞ en x 0 si
+∀A > 0 ∃δ > 0
+On note alors lim f (x) = −∞.
+x→x 0
+
+y
+
+A
+
+x0
+
+x0 − δ
+
+x
+x0 + δ
+
+Limite en l’infini
+Soit f : I → R une fonction définie sur un intervalle de la forme I =]a, +∞[.
+Définition 9.
+• Soit ` ∈ R. On dit que f a pour limite ` en +∞ si
+∀ε > 0 ∃B > 0
+
+∀x ∈ I
+
+x > B =⇒ | f (x) − `| < ε
+
+On note alors lim f (x) = ` ou lim f = `.
+x→+∞
+
++∞
+
+• On dit que f a pour limite +∞ en +∞ si
+∀A > 0
+
+∃B > 0 ∀x ∈ I
+
+x > B =⇒ f (x) > A
+
+On note alors lim f (x) = +∞.
+x→+∞
+
+On définirait de la même manière la limite en −∞ pour des fonctions définies sur les intervalles du type ] − ∞, a[.
+
+LIMITES ET FONCTIONS CONTINUES
+
+2. LIMITES
+
+8
+
+y
+
+`
+
+x
+
+Exemple 6.
+On a les limites classiques suivantes pour tout n > 1 :
+¨
++∞ si n est pair
+n
+n
+lim x =
+• lim x = +∞ et
+x→+∞
+x→−∞
+−∞ si n est impair
+ 
+ 
+1
+1
+= 0 et
+lim
+= 0.
+• lim
+x→+∞ x n
+x→−∞ x n
+Exemple 7.
+Soit P(x) = an x n + an−1 x n−1 + · · · + a1 x + a0 avec an > 0 et Q(x) = bm x m + bm−1 x m−1 + · · · + b1 x + b0 avec bm > 0.
+
+
++∞
+
+P(x)
+= ban
+lim
+m
+x→+∞ Q(x)
+
+
+0
+
+si n > m
+si n = m
+si n < m
+
+Limite à gauche et à droite
+Soit f une fonction définie sur un ensemble de la forme ]a, x 0 [∪]x 0 , b[.
+Définition 10.
+• On appelle limite à droite en x 0 de f la limite de la fonction f
+
+]x 0 ,b[
+
+en x 0 et on la note lim
+f.
++
+x0
+
+f.
+• On définit de même la limite à gauche en x 0 de f : la limite de la fonction f ]a,x [ en x 0 et on la note lim
+−
+x0
+
+0
+
+• On note aussi lim f (x) pour la limite à droite et lim f (x) pour la limite à gauche.
+x→x 0
+x<x 0
+
+x→x 0
+x>x 0
+
+Dire que f : I → R admet une limite ` ∈ R à droite en x 0 signifie donc :
+∀ε > 0
+
+∃δ > 0
+
+x 0 < x < x 0 + δ =⇒ | f (x) − `| < ε
+
+Si la fonction f a une limite en x 0 , alors ses limites à gauche et à droite en x 0 coïncident et valent lim f .
+x0
+
+Réciproquement, si f a une limite à gauche et une limite à droite en x 0 et si ces limites valent f (x 0 ) (si f est bien
+définie en x 0 ) alors f admet une limite en x 0 .
+Exemple 8.
+Considérons la fonction partie entière au point x = 2 :
+E=2,
+• comme pour tout x ∈]2, 3[ on a E(x) = 2, on a lim
++
+2
+
+E = 1.
+• comme pour tout x ∈ [1, 2[ on a E(x) = 1, on a lim
+2−
+Ces deux limites étant différentes, on en déduit que E n’a pas de limite en 2.
+
+LIMITES ET FONCTIONS CONTINUES
+
+2. LIMITES
+
+9
+
+y
+E(x)
+
+limite à droite
+
+lim2+ E
+
+limite à gauche
+
+lim2− E
+
+0
+
+2
+
+x
+
+2.2. Propriétés
+Proposition 1.
+Si une fonction admet une limite, alors cette limite est unique.
+On ne donne pas la démonstration de cette proposition, qui est très similaire à celle de l’unicité de la limite pour les
+suites (un raisonnement par l’absurde).
+Soient deux fonctions f et g. On suppose que x 0 est un réel, ou que x 0 = ±∞.
+Proposition 2.
+Si lim f = ` ∈ R et lim g = `0 ∈ R, alors :
+x0
+
+x0
+
+• lim(λ · f ) = λ · ` pour tout λ ∈ R
+x0
+
+0
+
+• lim( f + g) = ` + `
+x0
+
+0
+
+• lim( f × g) = ` × `
+x0
+
+• si ` 6= 0, alors lim
+x0
+
+1
+1
+=
+f
+`
+
+De plus, si lim f = +∞ (ou −∞) alors lim
+x0
+
+x0
+
+1
+= 0.
+f
+
+Cette proposition se montre de manière similaire à la proposition analogue sur les limites de suites. Nous n’allons
+donc pas donner la démonstration de tous les résultats.
+Démonstration. Montrons par exemple que si f tend en x 0 vers une limite ` non nulle, alors 1f est bien définie dans
+un voisinage de x 0 et tend vers 1` .
+Supposons ` > 0, le cas ` < 0 se montrerait de la même manière. Montrons tout d’abord que 1f est bien définie et est
+bornée dans un voisinage de x 0 contenu dans l’intervalle I. Par hypothèse
+∀ε0 > 0
+
+∃δ > 0
+
+∀x ∈ I
+
+x 0 − δ < x < x 0 + δ =⇒ ` − ε0 < f (x) < ` + ε0 .
+
+Si on choisit ε0 tel que 0 < ε0 < `/2, alors on voit qu’il existe un intervalle J = I∩ ]x 0 − δ, x 0 + δ[ tel que pour tout x
+dans J, f (x) > `/2 > 0, c’est-à-dire, en posant M = 2/` :
+1
+∀x ∈ J 0 <
+< M.
+f (x)
+Fixons à présent ε > 0. Pour tout x ∈ J, on a
+|` − f (x)|
+1
+1
+M
+−
+=
+<
+|` − f (x)| .
+f (x) `
+f (x)`
+`
+Donc, si dans la définition précédente de la limite de f en x 0 on choisit ε0 = `ε
+M , alors on trouve qu’il existe un δ > 0
+tel que
+1
+M
+1
+M
+∀x ∈ J x 0 − δ < x < x 0 + δ =⇒
+−
+<
+|` − f (x)| < ε0 = ε.
+f (x) `
+`
+`
+
+LIMITES ET FONCTIONS CONTINUES
+
+2. LIMITES
+
+10
+
+Proposition 3.
+Si lim f = ` et lim g = `0 , alors lim g ◦ f = `0 .
+x0
+
+`
+
+x0
+
+Ce sont des propriétés que l’on utilise sans s’en apercevoir !
+Exemple 9.
+Ç
+1
+Soit x 7→ u(x) une fonction et x 0 ∈ R tel que u(x) → 2 lorsque x → x 0 . Posons f (x) = 1 + u(x)
+2 + ln u(x). Si elle
+existe, quelle est la limite de f en x 0 ?
+1
+1
+• Tout d’abord comme u(x) → 2 alors u(x)2 → 4 donc u(x)2 → 4 (lorsque x → x 0 ).
+• De même comme u(x) → 2 alors, dans un voisinage de x 0 , u(x) > 0 donc ln u(x) est bien définie dans ce voisinage
+et de plus ln u(x) → ln 2 (lorsque x → x 0 ).
+1
+1
+1
+• Cela entraîne que 1 + u(x)2 + ln u(x) → 1 + 4 + ln 2 lorsque x → x 0 . En particulier 1 + u(x)2 + ln u(x) > 0 dans un
+voisinage de x 0 , donc f (x) est bien définie dans un voisinage de x 0 .
+q
+• Et par composition avec la racine carrée alors f (x) a bien une limite en x 0 et lim x→x 0 f (x) =
+
+1 + 14 + ln 2.
+
+Il y a des situations où l’on ne peut rien dire sur les limites. Par exemple si lim x 0 f = +∞ et lim x 0 g = −∞ alors on
+ne peut à priori rien dire sur la limite de f + g (cela dépend vraiment de f et de g). On raccourci cela en +∞ − ∞
+est une forme indéterminée.
+∞ 0 ∞
+Voici une liste de formes indéterminées : +∞ − ∞ ; 0 × ∞ ;
+; ; 1 ; ∞0 .
+∞ 0
+Enfin voici une proposition très importante qui signifie qu’on peut passer à la limite dans une inégalité large.
+Proposition 4.
+0
+• Si f 6 g et si lim f = ` ∈ R et lim g = ` ∈ R, alors ` 6 `0 .
+x0
+
+x0
+
+• Si f 6 g et si lim f = +∞, alors lim g = +∞.
+x0
+
+x0
+
+• Théorème des gendarmes
+Si f 6 g 6 h et si lim f = lim h = ` ∈ R, alors g a une limite en x 0 et lim g = `.
+x0
+
+x0
+
+x0
+
+h
+
+lim x 0 f = lim x 0 g = lim x 0 h
+
+g
+
+f
+x0
+
+Mini-exercices.
+2
+
+2x −x−2
+1. Déterminer, si elle existe, la limite de 3x
+2 +2x+2 en 0. Et en +∞ ?
+
+p x ?
+2. Déterminer, si elle existe, la limite de sin 1x en +∞. Et pour cos
+x
+
+3. En utilisant la définition de la limite (avec des ε), montrer que lim x→2 (3x + 1) = 7.
+4. Montrer que si f admet une limite finie en x 0 alors il existe δ > 0 tel que f soit bornée sur ]x 0 − δ, x 0 + δ[.
+5. Déterminer, si elle existe, lim x→0
+
+p
+p
+2
+1+x− 1+x 2
+−4
+. Et lim x→2 x 2x−3x+2
+?
+x
+
+LIMITES ET FONCTIONS CONTINUES
+
+3. CONTINUITÉ EN UN POINT
+
+11
+
+3. Continuité en un point
+3.1. Définition
+Soit I un intervalle de R et f : I → R une fonction.
+Définition 11.
+• On dit que f est continue en un point x 0 ∈ I si
+∀ε > 0
+
+∃δ > 0 ∀x ∈ I
+
+|x − x 0 | < δ =⇒ | f (x) − f (x 0 )| < ε
+
+c’est-à-dire si f admet une limite en x 0 (cette limite vaut alors nécessairement f (x 0 )).
+• On dit que f est continue sur I si f est continue en tout point de I.
+y
+
+ε
+f (x 0 )
+
+ε
+
+x0
+x
+δ
+
+Intuitivement, une fonction est continue sur un intervalle, si on peut tracer son graphe « sans lever le crayon »,
+c’est-à-dire si sa courbe représentative n’admet pas de saut.
+Voici des fonctions qui ne sont pas continues en x 0 :
+y
+
+y
+
+x0
+
+x
+
+y
+
+x0
+
+x
+
+x0
+
+x
+
+Exemple 10.
+Les fonctions suivantes sont continues :
+• une fonction constante sur un intervalle,
+p
+• la fonction racine carrée x 7→ x sur [0, +∞[,
+• les fonctions sin et cos sur R,
+• la fonction valeur absolue x 7→ |x| sur R,
+• la fonction exp sur R,
+• la fonction ln sur ]0, +∞[.
+Par contre, la fonction partie entière E n’est pas continue aux points x 0 ∈ Z, puisqu’elle n’admet pas de limite en ces
+points. Pour x 0 ∈ R \ Z, elle est continue en x 0 .
+
+3.2. Propriétés
+La continuité assure par exemple que si la fonction n’est pas nulle en un point (qui est une propriété ponctuelle) alors
+elle n’est pas nulle autour de ce point (propriété locale). Voici l’énoncé :
+
+LIMITES ET FONCTIONS CONTINUES
+
+3. CONTINUITÉ EN UN POINT
+
+12
+
+Lemme 1.
+Soit f : I → R une fonction définie sur un intervalle I et x 0 un point de I. Si f est continue en x 0 et si f (x 0 ) 6= 0,
+alors il existe δ > 0 tel que
+∀x ∈]x 0 − δ, x 0 + δ[ f (x) 6= 0
+
+f (x 0 )
+
+x0 − δ
+
+x0
+
+x0 + δ
+
+Démonstration. Supposons par exemple que f (x 0 ) > 0, le cas f (x 0 ) < 0 se montrerait de la même manière. Écrivons
+ainsi la définition de la continuité de f en x 0 :
+∀ε > 0
+
+∃δ > 0
+
+∀x ∈ I
+
+x ∈ ]x 0 − δ, x 0 + δ[ =⇒ f (x 0 ) − ε < f (x) < f (x 0 ) + ε.
+
+Il suffit donc de choisir ε tel que 0 < ε < f (x 0 ). Il existe alors bien un intervalle J = I∩ ]x 0 − δ, x 0 + δ[ tel que pour
+tout x dans J, on a f (x) > 0.
+La continuité se comporte bien avec les opérations élémentaires. Les propositions suivantes sont des conséquences
+immédiates des propositions analogues sur les limites.
+Proposition 5.
+Soient f , g : I → R deux fonctions continues en un point x 0 ∈ I. Alors
+• λ · f est continue en x 0 (pour tout λ ∈ R),
+• f + g est continue en x 0 ,
+• f × g est continue en x 0 ,
+1
+• si f (x 0 ) 6= 0, alors f est continue en x 0 .
+Exemple 11.
+La proposition précédente permet de vérifier que d’autres fonctions usuelles sont continues :
+• les fonctions puissance x 7→ x n sur R (comme produit x × x × · · · ),
+• les polynômes sur R (somme et produit de fonctions puissance et de fonctions constantes),
+P(x)
+• les fractions rationnelles x 7→ Q(x) sur tout intervalle où le polynôme Q(x) ne s’annule pas.
+La composition conserve la continuité (mais il faut faire attention en quels points les hypothèses s’appliquent).
+Proposition 6.
+Soient f : I → R et g : J → R deux fonctions telles que f (I) ⊂ J. Si f est continue en un point x 0 ∈ I et si g est
+continue en f (x 0 ), alors g ◦ f est continue en x 0 .
+
+3.3. Prolongement par continuité
+Définition 12.
+Soit I un intervalle, x 0 un point de I et f : I \ {x 0 } → R une fonction.
+• On dit que f est prolongeable par continuité en x 0 si f admet une limite finie en x 0 . Notons alors ` = lim f .
+x0
+
+• On définit alors la fonction f˜ : I → R en posant pour tout x ∈ I
+¨
+f (x) si x 6= x 0
+˜
+f (x) =
+`
+si x = x 0 .
+Alors f˜ est continue en x 0 et on l’appelle le prolongement par continuité de f en x 0 .
+
+LIMITES ET FONCTIONS CONTINUES
+
+3. CONTINUITÉ EN UN POINT
+
+13
+
+y
+
+`
+
+x0
+
+x
+
+Dans la pratique, on continuera souvent à noter f à la place de f˜.
+Exemple 12.
+
+Considérons la fonction f définie sur R∗ par f (x) = x sin 1x . Voyons si f admet un prolongement par continuité en
+0?
+Comme pour tout x ∈ R∗ on a | f (x)| 6 |x|, on en déduit que f tend vers 0 en 0. Elle est donc prolongeable par
+continuité en 0 et son prolongement est la fonction f˜ définie sur R tout entier par :
+¨
+
+x sin 1x
+si x 6= 0
+˜
+f (x) =
+0
+si x = 0.
+
+3.4. Suites et continuité
+Proposition 7.
+Soit f : I → R une fonction et x 0 un point de I. Alors :
+f est continue en x 0 ⇐⇒
+
+pour toute suite (un ) qui converge vers x 0
+la suite ( f (un )) converge vers f (x 0 )
+
+Démonstration.
+=⇒ On suppose que f est continue en x 0 et que (un ) est une suite qui converge vers x 0 et on veut montrer que ( f (un ))
+converge vers f (x 0 ).
+Soit ε > 0. Comme f est continue en x 0 , il existe un δ > 0 tel que
+∀x ∈ I
+
+|x − x 0 | < δ =⇒ | f (x) − f (x 0 )| < ε.
+
+Pour ce δ, comme (un ) converge vers x 0 , il existe N ∈ N tel que
+∀n ∈ N
+
+n > N =⇒ |un − x 0 | < δ.
+
+On en déduit que, pour tout n > N , comme |un − x 0 | < δ, on a | f (un ) − f (x 0 )| < ε. Comme c’est vrai pour tout
+ε > 0, on peut maintenant conclure que ( f (un )) converge vers f (x 0 ).
+⇐= On va montrer la contraposée : supposons que f n’est pas continue en x 0 et montrons qu’alors il existe une suite
+(un ) qui converge vers x 0 et telle que ( f (un )) ne converge pas vers f (x 0 ).
+Par hypothèse, comme f n’est pas continue en x 0 :
+∃ε0 > 0
+
+∀δ > 0 ∃x δ ∈ I
+
+tel que
+
+|x δ − x 0 | < δ et | f (x δ ) − f (x 0 )| > ε0 .
+
+On construit la suite (un ) de la façon suivante : pour tout n ∈ N∗ , on choisit dans l’assertion précédente δ = 1/n et
+on obtient qu’il existe un (qui est x 1/n ) tel que
+1
+et | f (un ) − f (x 0 )| > ε0 .
+n
+La suite (un ) converge vers x 0 alors que la suite ( f (un )) ne peut pas converger vers f (x 0 ).
+|un − x 0 | <
+
+Remarque.
+On retiendra surtout l’implication : si f est continue sur I et si (un ) est une suite convergente de limite `, alors ( f (un ))
+converge vers f (`). On l’utilisera intensivement pour l’étude des suites récurrentes un+1 = f (un ) : si f est continue et
+un → `, alors f (`) = `.
+
+LIMITES ET FONCTIONS CONTINUES
+
+4. CONTINUITÉ SUR UN INTERVALLE
+
+14
+
+Mini-exercices.
+1. Déterminer le domaine de définition et de continuité des fonctions suivantes : f (x) = 1/ sin x, g(x) = 1/
+h(x) = ln(x 2 + x − 1).
+
+q
+
+x + 12 ,
+
+2. Trouver les couples (a, b) ∈ R2 tels que la fonction f définie sur R par f (x) = ax + b si x < 0 et f (x) = exp(x)
+a
+si x > 0 soit continue sur R. Et si on avait f (x) = x−1
++ b pour x < 0 ?
+3. Soit f une fonction continue telle que f (x 0 ) = 1. Montrer qu’il existe δ > 0 tel que : pour tout x ∈]x 0 − δ, x 0 +
+δ[ f (x) > 12 .
+
+4. Étudier la continuité de f : R → R définie par : f (x) = sin(x) cos 1x si x =
+6 0 et f (0) = 0. Et pour g(x) = x E(x) ?
+x +8
+5. La fonction définie par f (x) = |x+2|
+admet-elle un prolongement par continuité en −2 ?
+p
+6. Soit la suite définie par u0 > 0 et un+1 = un . Montrer que (un ) admet une limite ` ∈ R lorsque n → +∞. À
+p
+l’aide de la fonction f (x) = x calculer cette limite.
+3
+
+4. Continuité sur un intervalle
+4.1. Le théorème des valeurs intermédiaires
+Théorème 1 (Théorème des valeurs intermédiaires).
+Soit f : [a, b] → R une fonction continue sur un segment.
+Pour tout réel y compris entre f (a) et f (b),
+il existe c ∈ [a, b] tel que f (c) = y.
+Une illustration du théorème des valeurs intermédiaires (figure de gauche), le réel c n’est pas nécessairement unique.
+De plus si la fonction n’est pas continue, le théorème n’est plus vrai (figure de droite).
+y
+
+f (b)
+
+y
+f (b)
+
+y
+
+y
+f (a)
+a
+
+c1
+
+c2
+
+c3
+
+b x
+
+f (a)
+a
+
+b
+
+x
+
+Démonstration. Montrons le théorème dans le cas où f (a) < f (b). On considère alors un réel y tel que f (a) 6 y 6 f (b)
+et on veut montrer qu’il a un antécédent par f .
+1. On introduit l’ensemble suivant
+¦
+©
+A = x ∈ [a, b] | f (x) 6 y .
+Tout d’abord l’ensemble A est non vide (car a ∈ A) et il est majoré (car il est contenu dans [a, b]) : il admet donc
+une borne supérieure, que l’on note c = sup A. Montrons que f (c) = y.
+
+LIMITES ET FONCTIONS CONTINUES
+
+4. CONTINUITÉ SUR UN INTERVALLE
+
+15
+
+y
+
+f (b)
+
+y
+
+f (a)
+a
+A
+
+b
+
+c = sup(A)
+
+x
+
+2. Montrons tout d’abord que f (c) 6 y. Comme c = sup A, il existe une suite (un )n∈N contenue dans A telle que (un )
+converge vers c. D’une part, pour tout n ∈ N, comme un ∈ A, on a f (un ) 6 y. D’autre part, comme f est continue
+en c, la suite ( f (un )) converge vers f (c). On en déduit donc, par passage à la limite, que f (c) 6 y.
+3. Montrons à présent que f (c) > y. Remarquons tout d’abord que si c = b, alors on a fini, puisque f (b) > y. Sinon,
+pour tout x ∈]c, b], comme x ∈
+/ A, on a f (x) > y. Or, étant donné que f est continue en c, f admet une limite à
+droite en c, qui vaut f (c) et on obtient f (c) > y.
+
+4.2. Applications du théorème des valeurs intermédiaires
+Voici la version la plus utilisée du théorème des valeurs intermédiaires.
+Corollaire 1.
+Soit f : [a, b] → R une fonction continue sur un segment.
+Si f (a) · f (b) < 0, alors il existe c ∈]a, b[ tel que f (c) = 0.
+y
+
+f (b) > 0
+
+a
+
+c
+b
+
+x
+
+f (a) < 0
+
+Démonstration. Il s’agit d’une application directe du théorème des valeurs intermédiaires avec y = 0. L’hypothèse
+f (a) · f (b) < 0 signifiant que f (a) et f (b) sont de signes contraires.
+Exemple 13.
+Tout polynôme de degré impair possède au moins une racine réelle.
+
+LIMITES ET FONCTIONS CONTINUES
+
+4. CONTINUITÉ SUR UN INTERVALLE
+
+16
+
+y
+x 7→ P(x)
+
+x
+
+En effet, un tel polynôme s’écrit P(x) = an x n + · · · + a1 x + a0 avec n un entier impair. On peut supposer que le
+coefficient an est strictement positif. Alors on a lim P = −∞ et lim P = +∞. En particulier, il existe deux réels a et b
+−∞
+
++∞
+
+tels que f (a) < 0 et f (b) > 0 et on conclut grâce au corollaire précédent.
+Voici une formulation théorique du théorème des valeurs intermédiaires.
+Corollaire 2.
+Soit f : I → R une fonction continue sur un intervalle I.
+Alors f (I) est un intervalle.
+Attention ! Il serait faux de croire que l’image par une fonction f de l’intervalle [a, b] soit l’intervalle [ f (a), f (b)]
+(voir la figure ci-dessous).
+y
+
+f (b)
+f ([a, b])
+f (a)
+
+a
+
+b
+
+x
+
+Démonstration. Soient y1 , y2 ∈ f (I), y1 6 y2 . Montrons que si y ∈ [ y1 , y2 ], alors y ∈ f (I). Par hypothèse, il existe
+x 1 , x 2 ∈ I tels que y1 = f (x 1 ), y2 = f (x 2 ) et donc y est compris entre f (x 1 ) et f (x 2 ). D’après le théorème des valeurs
+intermédiaires, comme f est continue, il existe donc x ∈ I tel que y = f (x), et ainsi y ∈ f (I).
+
+4.3. Fonctions continues sur un segment
+Théorème 2.
+Soit f : [a, b] → R une fonction continue sur un segment. Alors il existe deux réels m et M tels que f ([a, b]) = [m, M ].
+Autrement dit, l’image d’un segment par une fonction continue est un segment.
+
+LIMITES ET FONCTIONS CONTINUES
+
+4. CONTINUITÉ SUR UN INTERVALLE
+
+17
+
+y
+M
+
+m
+a
+
+b
+
+x
+
+Comme on sait déjà par le théorème des valeurs intermédiaires que f ([a, b]) est un intervalle, le théorème précédent
+signifie exactement que
+Si f est continue sur [a, b]
+alors f est bornée sur [a, b], et elle atteint ses bornes.
+Donc m est le minimum de la fonction sur l’intervalle [a, b] alors que M est le maximum.
+Démonstration.
+1. Montrons d’abord que f est bornée.
+• Pour r ∈ R, on note A r = {x ∈ [a, b] | f (x) > r}. Fixons r tel que A r 6= ∅, comme A r ⊂ [a, b], le nombre
+s = sup A r existe. Soit x n → s avec x n ∈ A r . Par définition f (x n ) > r donc, f étant continue, à la limite f (s) > r
+et ainsi s ∈ A r .
+• Supposons par l’absurde que f ne soit pas bornée. Alors pour tout n > 0, An est non vide. Notons sn = sup An .
+Comme f (x) > n + 1 implique f (x) > n alors An+1 ⊂ An , ce qui entraîne sn+1 6 sn . Bilan : (sn ) est une suite
+décroissante, minorée par a donc converge vers ` ∈ [a, b]. Encore une fois f est continue donc sn → `, implique
+f (sn ) → f (`). Mais f (sn ) > n donc lim f (sn ) = +∞. Cela contredit lim f (sn ) = f (`) < +∞. Conclusion : f
+est majorée.
+• Un raisonnement tout à fait similaire prouve que f est aussi minorée, donc bornée. Par ailleurs on sait déjà que
+f (I) est un intervalle (c’est le théorème des valeurs intermédiaires), donc maintenant f (I) est un intervalle
+borné. Il reste à montrer qu’il du type [m, M ] (et pas ]m, M [ par exemple).
+2. Montrons maintenant que f (I) est un intervalle fermé. Sachant déjà que f (I) est un intervalle borné, notons m
+et M ses extrémités : m = inf f (I) et M = sup f (I). Supposons par l’absurde que M ∈
+/ f (I). Alors pour t ∈ [a, b],
+M > f (t). La fonction g : t 7→ M −1f (t) est donc bien définie. La fonction g est continue sur I donc d’après le premier
+point de cette preuve (appliqué à g) elle est bornée, disons par un réel K. Mais il existe yn → M , yn ∈ f (I). Donc il
+existe x n ∈ [a, b] tel que yn = f (x n ) → M et alors g(x n ) = M − f1(x n ) → +∞. Cela contredit que g soit une fonction
+bornée par K. Bilan : M ∈ f (I). De même on a m ∈ f (I). Conclusion finale : f (I) = [m, M ].
+
+Mini-exercices.
+1. Soient P(x) = x 5 − 3x − 2 et f (x) = x2 x − 1 deux fonctions définies sur R. Montrer que l’équation P(x) = 0 a
+au moins une racine dans [1, 2] ; l’équation f (x) = 0 a au moins une racine dans [0, 1] ; l’équation P(x) = f (x)
+a au moins une racine dans ]0, 2[.
+2. Montrer qu’il existe x > 0 tel que 2 x + 3 x = 7 x .
+3. Dessiner le graphe d’une fonction continue f : R → R tel que f (R) = [0, 1]. Puis f (R) =]0, 1[ ; f (R) = [0, 1[ ;
+f (R) =] − ∞, 1], f (R) =] − ∞, 1[.
+4. Soient f , g : [0, 1] → R deux fonctions continues. Quelles sont, parmi les fonctions suivantes, celles dont on
+peut affirmer qu’elles sont bornées : f + g, f × g, f /g ?
+5. Soient f et g deux fonctions continues sur [0, 1] telles que ∀x ∈ [0, 1] f (x) < g(x). Montrer qu’il existe m > 0
+tel que ∀x ∈ [0, 1] f (x) + m < g(x). Ce résultat est-il vrai si on remplace [0, 1] par R ?
+
+LIMITES ET FONCTIONS CONTINUES
+
+5. FONCTIONS MONOTONES ET BIJECTIONS
+
+18
+
+5. Fonctions monotones et bijections
+5.1. Rappels : injection, surjection, bijection
+Dans cette section nous rappelons le matériel nécessaire concernant les applications bijectives.
+Définition 13.
+Soit f : E → F une fonction, où E et F sont des parties de R.
+• f est injective si ∀x, x 0 ∈ E f (x) = f (x 0 ) =⇒ x = x 0 ;
+• f est surjective si ∀ y ∈ F ∃x ∈ E y = f (x) ;
+• f est bijective si f est à la fois injective et surjective, c’est-à-dire si ∀ y ∈ F ∃!x ∈ E y = f (x).
+Proposition 8.
+Si f : E → F est une fonction bijective alors il existe une unique application g : F → E telle que g ◦ f = id E et
+f ◦ g = id F . La fonction g est la bijection réciproque de f et se note f −1 .
+Remarque.
+définie par x 7→ x.
+• On rappelle que l’identité, id E : E → E est simplement
+
+• g ◦ f = id E se reformule ainsi : ∀x ∈ E g f (x)
+ = x.
+• Alors que f ◦ g = id F s’écrit : ∀ y ∈ F f g( y) = y.
+• Dans un repère orthonormé les graphes des fonctions f et f −1 sont symétriques par rapport à la première bissectrice.
+Voici le graphe d’une fonction injective (à gauche), d’une fonction surjective (à droite) et enfin le graphe d’une fonction
+bijective ainsi que le graphe de sa bijection réciproque.
+y
+
+y
+
+y
+
+f
+
+y=x
+f −1
+
+y
+
+y
+x
+
+x
+
+x1
+
+x2
+
+x3
+
+x
+
+x
+
+y
+
+5.2. Fonctions monotones et bijections
+Voici un théorème très utilisé dans la pratique pour montrer qu’une fonction est bijective.
+Théorème 3 (Théorème de la bijection).
+Soit f : I → R une fonction définie sur un intervalle I de R. Si f est continue et strictement monotone sur I, alors
+1. f établit une bijection de l’intervalle I dans l’intervalle image J = f (I),
+2. la fonction réciproque f −1 : J → I est continue et strictement monotone sur J et elle a le même sens de variation
+que f .
+
+LIMITES ET FONCTIONS CONTINUES
+
+5. FONCTIONS MONOTONES ET BIJECTIONS
+
+19
+
+y
+y=x
+
+f −1
+f
+
+J = f (I)
+
+x
+
+I
+
+En pratique, si on veut appliquer ce théorème à une fonction continue f : I → R, on découpe l’intervalle I en
+sous-intervalles sur lesquels la fonction f est strictement monotone.
+Exemple 14.
+Considérons la fonction carrée définie sur R par f (x) = x 2 . La fonction f n’est pas strictement monotone sur R : elle
+n’est pas même pas injective car un nombre et son opposé ont même carré. Cependant, en restreignant son ensemble
+de définition à ] − ∞, 0] d’une part et à [0, +∞[ d’autre part, on définit deux fonctions strictement monotones :
+
+
+] − ∞, 0] −→ [0, +∞[
+[0, +∞[−→ [0, +∞[
+f1 :
+et
+f2 :
+x 7−→ x 2
+x 7−→ x 2
+On remarque que f (] − ∞, 0]) = f ([0, +∞[) = [0, +∞[. D’après le théorème précédent, les fonctions f1 et f2
+sont des bijections. Déterminons leurs fonctions réciproques f1−1 : [0, +∞[→] − ∞, 0] et f2−1 : [0, +∞[→ [0, +∞[.
+Soient deux réels x et y tels que y > 0. Alors
+y = f (x) ⇔ y = x 2
+p
+⇔x= y
+
+ou
+
+p
+x = − y,
+
+p
+c’est-à-dire y admet (au plus) deux antécédents, l’un dans [0, +∞[ et l’autre dans ] − ∞, 0]. Et donc f1−1 ( y) = − y
+p
+et f2−1 ( y) = y. On vérifie bien que chacune des deux fonctions f1 et f2 a le même sens de variation que sa réciproque.
+y
+f1
+
+f2
+
+y=x
+
+y
+f2−1
+
+p
+− y
+
+p
+
+x
+
+y
+
+f1−1
+
+On remarque que la courbe totale en pointillé (à la fois la partie bleue et la verte), qui est l’image du graphe de f par
+la symétrie par rapport à la première bissectrice, ne peut pas être le graphe d’une fonction : c’est une autre manière
+de voir que f n’est pas bijective.
+Généralisons en partie l’exemple précédent.
+Exemple 15.
+Soit n > 1. Soit f : [0, +∞[→ [0, +∞[ définie par f (x) = x n . Alors f est continue et strictement croissante. Comme
+1
+p
+lim+∞ f = +∞ alors f est une bijection. Sa bijection réciproque f −1 est notée : x 7→ x n (ou aussi x 7→ n x) : c’est la
+fonction racine n-ième. Elle est continue et strictement croissante.
+
+LIMITES ET FONCTIONS CONTINUES
+
+5. FONCTIONS MONOTONES ET BIJECTIONS
+
+20
+
+5.3. Démonstration
+On établit d’abord un lemme utile à la démonstration du « théorème de la bijection ».
+Lemme 2.
+Soit f : I → R une fonction définie sur un intervalle I de R. Si f est strictement monotone sur I, alors f est injective
+sur I.
+Démonstration. Soient x, x 0 ∈ I tels que f (x) = f (x 0 ). Montrons que x = x 0 . Si on avait x < x 0 , alors on aurait
+nécessairement f (x) < f (x 0 ) ou f (x) > f (x 0 ), suivant que f est strictement croissante, ou strictement décroissante.
+Comme c’est impossible, on en déduit que x > x 0 . En échangeant les rôles de x et de x 0 , on montre de même que
+x 6 x 0 . On en conclut que x = x 0 et donc que f est injective.
+Démonstration du théorème.
+1. D’après le lemme précédent, f est injective sur I. En restreignant son ensemble d’arrivée à son image J = f (I), on
+obtient que f établit une bijection de I dans J. Comme f est continue, par le théorème des valeurs intermédiaires,
+l’ensemble J est un intervalle.
+2. Supposons pour fixer les idées que f est strictement croissante.
+(a) Montrons que f −1 est strictement croissante sur J. Soient y, y 0 ∈ J tels que y < y 0 . Notons x = f −1 ( y) ∈ I et
+x 0 = f −1 ( y 0 ) ∈ I. Alors y = f (x), y 0 = f (x 0 ) et donc
+y < y 0 =⇒ f (x) < f (x 0 )
+=⇒ x < x 0
+=⇒ f
+
+−1
+
+(car f est strictement croissante)
+
+( y) < f
+
+−1
+
+( y 0 ),
+
+c’est-à-dire f −1 est strictement croissante sur J.
+(b) Montrons que f −1 est continue sur J. On se limite au cas où I est de la forme ]a, b[, les autres cas se montrent
+de la même manière. Soit y0 ∈ J. On note x 0 = f −1 ( y0 ) ∈ I. Soit ε > 0. On peut toujours supposer que
+[x 0 − ε, x 0 + ε] ⊂ I. On cherche un réel δ > 0 tel que pour tout y ∈ J on ait
+y0 − δ < y < y0 + δ =⇒ f −1 ( y0 ) − ε < f −1 ( y) < f −1 ( y0 ) + ε
+c’est-à-dire tel que pour tout x ∈ I on ait
+y0 − δ < f (x) < y0 + δ =⇒ f −1 ( y0 ) − ε < x < f −1 ( y0 ) + ε.
+Or, comme f est strictement croissante, on a pour tout x ∈ I
+f (x 0 − ε) < f (x) < f (x 0 + ε) =⇒ x 0 − ε < x < x 0 + ε
+=⇒ f −1 ( y0 ) − ε < x < f −1 ( y0 ) + ε.
+Comme f (x 0 − ε) < y0 < f (x 0 + ε), on peut choisir le réel δ > 0 tel que
+f (x 0 − ε) < y0 − δ
+
+et
+
+f (x 0 + ε) > y0 + δ
+
+et on a bien alors pour tout x ∈ I
+y0 − δ < f (x) < y0 + δ =⇒ f (x 0 − ε) < f (x) < f (x 0 + ε)
+=⇒ f −1 ( y0 ) − ε < x < f −1 ( y0 ) + ε.
+La fonction f −1 est donc continue sur J.
+
+Mini-exercices.
+1. Montrer que chacune des hypothèses « continue » et « strictement monotone » est nécessaire dans l’énoncé du
+théorème de la bijection.
+2. Soit f : R → R définie par f (x) = x 3 + x. Montrer que f est bijective, tracer le graphe de f et de f −1 .
+3. Soit n > 1. Montrer que f (x) = 1 + x + x 2 + · · · + x n définit une bijection de l’intervalle [0, 1] vers un intervalle
+à préciser.
+4. Existe-t-il une fonction continue : f : [0, 1[→]0, 1[ qui soit bijective ? f : [0, 1[→]0, 1[ qui soit injective ?
+f :]0, 1[→ [0, 1] qui soit surjective ?
+5. Pour y ∈ R on considère l’équation x + exp x = y. Montrer qu’il existe une unique solution y. Comment varie y
+
+LIMITES ET FONCTIONS CONTINUES
+
+en fonction de x ? Comme varie x en fonction de y ?
+
+Auteurs du chapitre
+Auteurs : Arnaud Bodin, Niels Borne, Laura Desideri
+Dessins : Benjamin Boutin
+
+5. FONCTIONS MONOTONES ET BIJECTIONS
+
+21

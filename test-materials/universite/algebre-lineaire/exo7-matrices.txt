@@ -1,0 +1,3186 @@
+Exo7 — Matrices
+Source: https://exo7.emath.fr/cours/ch_matrices.pdf
+Author: Arnaud Bodin, Exo7
+Licence: CC BY-NC-SA 3.0 FR (Exo7)
+Text extracted with pdftotext on 2026-11-10 for Lumi testing (formulas may be garbled).
+
+Matrices
+Vidéo  partie 1. Définition
+Vidéo  partie 2. Multiplication de matrices
+Vidéo  partie 3. Inverse d'une matrice : définition
+Vidéo  partie 4. Inverse d'une matrice : calcul
+Vidéo  partie 5. Inverse d'une matrice : systèmes linéaires et matrices élémentaires
+Vidéo  partie 6. Matrices triangulaires, transposition, trace, matrices symétriques
+Fiche d'exercices  Calculs sur les matrices
+
+Les matrices sont des tableaux de nombres. La résolution d’un certain nombre de problèmes d’algèbre linéaire se
+ramène à des manipulations sur les matrices. Ceci est vrai en particulier pour la résolution des systèmes linéaires.
+Dans ce chapitre, K désigne un corps. On peut penser à Q, R ou C.
+
+1. Définition
+1.1. Définition
+Définition 1.
+• Une matrice A est un tableau rectangulaire d’éléments de K.
+• Elle est dite de taille n × p si le tableau possède n lignes et p colonnes.
+• Les nombres du tableau sont appelés les coefficients de A.
+• Le coefficient situé à la i-ème ligne et à la j-ème colonne est noté ai, j .
+Un tel tableau est représenté de la manière suivante :
+
+
+a1,1 a1,2 . . . a1, j . . . a1,p
+ a2,1 a2,2 . . . a2, j . . . a2,p 
+
+
+ ...
+... ... ... ... ... 
+
+
+A=
+
+ ai,1 ai,2 . . . ai, j . . . ai,p 
+ ...
+... ... ... ... ... 
+an,1
+
+an,2
+
+...
+
+an, j
+
+...
+
+ou
+
+
+A = ai, j 16i 6n
+
+16 j 6 p
+
+ou
+
+
+ai, j .
+
+an,p
+
+Exemple 1.
+
+
+−2
+A=
+3
+est une matrice 2 × 3 avec, par exemple, a1,1 = 1 et a2,3 = 7.
+1
+0
+
+5
+7
+
+
+
+Encore quelques définitions :
+Définition 2.
+• Deux matrices sont égales lorsqu’elles ont la même taille et que les coefficients correspondants sont égaux.
+• L’ensemble des matrices à n lignes et p colonnes à coefficients dans K est noté Mn,p (K). Les éléments de Mn,p (R)
+
+MATRICES
+
+1. DÉFINITION
+
+2
+
+sont appelés matrices réelles.
+
+1.2. Matrices particulières
+Voici quelques types de matrices intéressantes :
+• Si n = p (même nombre de lignes que de colonnes), la matrice est dite matrice carrée. On note Mn (K) au lieu de
+Mn,n (K).
+
+
+
+a1,1 a1,2 . . . a1,n
+ a2,1 a2,2 . . . a2,n 
+
+
+ .
+..
+.. 
+..
+ ..
+.
+. 
+.
+an,1 an,2 . . . an,n
+Les éléments a1,1 , a2,2 , . . . , an,n forment la diagonale principale de la matrice.
+• Une matrice qui n’a qu’une seule ligne (n = 1) est appelée matrice ligne ou vecteur ligne. On la note
+
+A = a1,1 a1,2 . . . a1,p .
+• De même, une matrice qui n’a qu’une seule colonne (p = 1) est appelée matrice colonne ou vecteur colonne. On
+la note
+
+
+a1,1
+ a2,1 
+
+
+A =  . .
+ .. 
+an,1
+• La matrice (de taille n × p) dont tous les coefficients sont des zéros est appelée la matrice nulle et est notée 0n,p
+ou plus simplement 0. Dans le calcul matriciel, la matrice nulle joue le rôle du nombre 0 pour les réels.
+
+1.3. Addition de matrices
+Définition 3 (Somme de deux matrices).
+Soient A et B deux matrices ayant la même taille n × p. Leur somme C = A + B est la matrice de taille n × p définie
+par
+ci j = ai j + bi j .
+En d’autres termes, on somme coefficients par coefficients. Remarque : on note indifféremment ai j où ai, j pour les
+coefficients de la matrice A.
+Exemple 2.
+A=
+
+Si
+
+
+3
+1
+
+−2
+7
+
+
+
+Par contre si
+
+
+
+
+
+0 5
+3 3
+B=
+alors
+A+ B =
+.
+2 −1
+3 6
+ 
+−2
+0
+B =
+alors A + B 0 n’est pas définie.
+8
+et
+
+Définition 4 (Produit d’une matrice
+ par un scalaire).
+
+Le produit d’une matrice A = ai j de Mn,p (K) par un scalaire α ∈ K est la matrice αai j formée en multipliant
+chaque coefficient de A par α. Elle est notée α · A (ou simplement αA).
+Exemple 3.
+Si
+
+
+1
+A=
+0
+
+2
+1
+
+3
+0
+
+
+et
+
+α=2
+
+alors
+
+
+2
+αA =
+0
+
+4
+2
+
+
+6
+.
+0
+
+La matrice (−1)A est l’opposée de A et est notée −A. La différence A − B est définie par A + (−B).
+
+MATRICES
+
+2. MULTIPLICATION DE MATRICES
+
+3
+
+Exemple 4.
+Si
+
+
+2
+A=
+4
+
+
+0
+2
+
+−1
+−5
+
+
+−1
+B=
+7
+
+et
+
+
+2
+3
+
+4
+−5
+
+
+
+3
+alors A − B =
+−3
+
+−5
+0
+
+
+−2
+.
+−1
+
+L’addition et la multiplication par un scalaire se comportent sans surprises :
+Proposition 1.
+Soient A, B et C trois matrices appartenant à Mn,p (K). Soient α ∈ K et β ∈ K deux scalaires.
+1. A + B = B + A : la somme est commutative,
+2. A + (B + C) = (A + B) + C : la somme est associative,
+3. A + 0 = A : la matrice nulle est l’élément neutre de l’addition,
+4. (α + β)A = αA + βA,
+5. α(A + B) = αA + αB.
+Démonstration. Prouvons par exemple le quatrième point. Le terme général de (α + β)A est égal à (α + β)ai j . D’après
+les règles de calcul dans K, (α + β)ai j est égal à αai j + β ai j qui est le terme général de la matrice αA + βA.
+Mini-exercices.
+ −7 2 
+1 2 3
+ 21 −6 
+1 0 1
+ 1 2
+1. Soient A = 0 −1 , B = 2 3 1 , C = 0 3 , D = 12 0 1 0 , E = −3 0 . Calculer toutes les sommes possibles
+321
+111
+1 −4
+−8 6
+−3 12
+de deux de ces matrices. Calculer 3A + 2C et 5B − 4D. Trouver α tel que A − αC soit la matrice nulle.
+2. Montrer que si A + B = A, alors B est la matrice nulle.
+3. Que vaut 0 · A ? et 1 · A ? Justifier l’affirmation : α(βA) = (αβ)A. Idem avec nA = A + A + · · · + A (n occurrences
+de A).
+
+2. Multiplication de matrices
+2.1. Définition du produit
+Le produit AB de deux matrices A et B est défini si et seulement si le nombre de colonnes de A est égal au nombre de
+lignes de B.
+Définition 5 (Produit de deux matrices).
+Soient A = (ai j ) une matrice n × p et B = (bi j ) une matrice p × q. Alors le produit C = AB est une matrice n × q
+dont les coefficients ci j sont définis par :
+ci j =
+
+p
+X
+
+aik bk j
+
+k=1
+
+On peut écrire le coefficient de façon plus développée, à savoir :
+ci j = ai1 b1 j + ai2 b2 j + · · · + aik bk j + · · · + aip b p j .
+Il est commode de disposer les calculs de la façon suivante.
+
+
+
+
+
+
+
+
+
+
+
+A→
+
+
+
+
+×
+
+
+
+−
+
+×
+
+×
+
+×
+
+−
+
+−
+
+×
+×
+×
+×
+|
+|
+ci j
+
+
+
+
+
+
+←B
+
+
+
+
+
+
+← AB
+
+MATRICES
+
+2. MULTIPLICATION DE MATRICES
+
+4
+
+Avec cette disposition, on considère d’abord la ligne de la matrice A située à gauche du coefficient que l’on veut
+calculer (ligne représentée par des × dans A) et aussi la colonne de la matrice B située au-dessus du coefficient que
+l’on veut calculer (colonne représentée par des × dans B). On calcule le produit du premier coefficient de la ligne par
+le premier coefficient de la colonne (ai1 × b1 j ), que l’on ajoute au produit du deuxième coefficient de la ligne par le
+deuxième coefficient de la colonne (ai2 × b2 j ), que l’on ajoute au produit du troisième. . .
+
+2.2. Exemples
+Exemple 5.
+
+1 2
+2 3
+B = −1 1
+3 4
+1 1
+On dispose d’abord le produit correctement (à gauche) : la matrice obtenue est de taille 2 × 2. Puis on calcule chacun
+des coefficients, en commençant par le premier coefficient c11 = 1 × 1 + 2 × (−1) + 3 × 1 = 2 (au milieu), puis les
+autres (à droite).
+
+1
+A=
+2
+
+
+
+
+1
+2
+
+2
+3
+
+
+1 2
+−1 1
+  1 1
+3
+c11 c12
+4
+c21 c22
+
+
+
+
+
+
+
+
+1
+2
+
+2
+3
+
+
+1 2
+−1 1
+  1 1
+3
+2 c12
+4
+c21 c22
+
+
+
+
+1
+2
+
+2
+3
+
+3
+4
+
+
+
+
+1 2
+−1 1
+ 1 1
+2 7
+3 11
+
+Un exemple intéressant est le produit d’un vecteur ligne par un vecteur colonne :
+ 
+b1
+ b2 
+
+ 
+u = a1 a2 · · · an
+v= . 
+ .. 
+bn
+Alors u × v est une matrice de taille 1 × 1 dont l’unique coefficient est a1 b1 + a2 b2 + · · · + an bn . Ce nombre s’appelle le
+produit scalaire des vecteurs u et v.
+Calculer le coefficient ci j dans le produit A × B revient donc à calculer le produit scalaire des vecteurs formés par la
+i-ème ligne de A et la j-ème colonne de B.
+
+2.3. Pièges à éviter
+Premier piège. Le produit de matrices n’est pas commutatif en général.
+En effet, il se peut que AB soit défini mais pas BA, ou que AB et BA soient tous deux définis mais pas de la même taille.
+Mais même dans le cas où AB et BA sont définis et de la même taille, on a en général AB 6= BA.
+Exemple 6.
+
+5
+3
+
+
+1
+2
+−2 4
+
+ 
+0
+14
+=
+3
+−2
+
+3
+−6
+
+
+mais
+
+
+2
+4
+
+
+0 5
+3 3
+
+ 
+1
+10
+=
+−2
+29
+
+
+2
+.
+−2
+
+Deuxième piège. AB = 0 n’implique pas A = 0 ou B = 0.
+Il peut arriver que le produit de deux matrices non nulles soit nul. En d’autres termes, on peut avoir A 6= 0 et B 6= 0
+mais AB = 0.
+Exemple 7.
+
+0
+A=
+0
+
+−1
+5
+
+
+
+
+2
+B=
+0
+
+
+−3
+0
+
+et
+
+
+0
+AB =
+0
+
+
+0
+.
+0
+
+Troisième piège. AB = AC n’implique pas B = C. On peut avoir AB = AC et B 6= C.
+
+MATRICES
+
+2. MULTIPLICATION DE MATRICES
+
+5
+
+Exemple 8.
+
+0
+A=
+0
+
+−1
+3
+
+
+
+
+4
+B=
+5
+
+−1
+4
+
+
+
+
+2
+C=
+5
+
+
+5
+4
+
+
+−5
+et AB = AC =
+15
+
+
+−4
+.
+12
+
+2.4. Propriétés du produit de matrices
+Malgré les difficultés soulevées au-dessus, le produit vérifie les propriétés suivantes :
+Proposition 2.
+1. A(BC) = (AB)C : associativité du produit,
+2. A(B + C) = AB + AC
+3. A · 0 = 0
+
+et
+
+et
+
+(B + C)A = BA + CA : distributivité du produit par rapport à la somme,
+
+0 · A = 0.
+
+Démonstration. Posons A = (ai j ) ∈ Mn,p (K), B = (bi j ) ∈ M p,q (K) et C = (ci j ) ∈ Mq,r (K). Prouvons que A(BC) = (AB)C
+en montrant que les matrices A(BC) et (AB)C ont les mêmes coefficients.
+p
+X
+Le terme d’indice (i, k) de la matrice AB est x ik =
+ai` b`k . Le terme d’indice (i, j) de la matrice (AB)C est donc
+`=1
+q
+X
+
+ p
+q
+X
+X
+
+x ik ck j =
+
+k=1
+
+Le terme d’indice (`, j) de la matrice BC est y` j =
+
+ai` b`k ck j .
+
+`=1
+
+k=1
+q
+X
+
+
+
+b`k ck j . Le terme d’indice (i, j) de la matrice A(BC) est donc
+
+k=1
+p
+X
+
+ai`
+
+`=1
+
+ q
+X
+
+
+b`k ck j .
+
+k=1
+
+Comme dans K la multiplication est distributive et associative, les coefficients de (AB)C et A(BC) coïncident. Les
+autres démonstrations se font comme celle de l’associativité.
+
+2.5. La matrice identité
+La matrice carrée suivante s’appelle la matrice identité :
+
+1 0
+ 0 1
+
+In =  . .
+ .. ..
+0 0
+
+...
+...
+..
+.
+...
+
+
+0
+0 
+
+.. 
+. 
+1
+
+Ses éléments diagonaux sont égaux à 1 et tous ses autres éléments sont égaux à 0. Elle se note I n ou simplement I.
+Dans le calcul matriciel, la matrice identité joue un rôle analogue à celui du nombre 1 pour les réels. C’est l’élément
+neutre pour la multiplication. En d’autres termes :
+Proposition 3.
+Si A est une matrice n × p, alors
+In · A = A
+
+et
+
+A · I p = A.
+
+Démonstration. Nous allons détailler la preuve. Soit A ∈ Mn,p (K) de terme général ai j . La matrice unité d’ordre p est
+telle que tous les éléments de la diagonale principale sont égaux à 1, les autres étant tous nuls.
+On peut formaliser cela en introduisant le symbole de Kronecker. Si i et j sont deux entiers, on appelle symbole de
+Kronecker, et on note δi, j , le réel qui vaut 0 si i est différent de j, et 1 si i est égal à j. Donc
+¨
+0 si i 6= j
+δi, j =
+1 si i = j.
+Alors le terme général de la matrice identité I p est δi, j avec i et j entiers, compris entre 1 et p.
+
+MATRICES
+
+2. MULTIPLICATION DE MATRICES
+
+6
+
+La matrice produit AI p est une matrice appartenant à Mn,p (K) dont le terme général ci j est donné par la formule
+p
+X
+ci j =
+aik δk j . Dans cette somme, i et j sont fixés et k prend toutes les valeurs comprises entre 1 et p. Si k 6= j alors
+k=1
+
+δk j = 0, et si k = j alors δk j = 1. Donc dans la somme qui définit ci j , tous les termes correspondant à des valeurs de
+k différentes de j sont nuls et il reste donc ci j = ai j δ j j = ai j 1 = ai j . Donc les matrices AI p et A ont le même terme
+général et sont donc égales. L’égalité I n A = A se démontre de la même façon.
+
+2.6. Puissance d’une matrice
+Dans l’ensemble Mn (K) des matrices carrées de taille n × n à coefficients dans K, la multiplication des matrices est
+une opération interne : si A, B ∈ Mn (K) alors AB ∈ Mn (K).
+En particulier, on peut multiplier une matrice carrée par elle-même : on note A2 = A × A, A3 = A × A × A.
+On peut ainsi définir les puissances successives d’une matrice :
+Définition 6.
+Pour tout A ∈ Mn (K), on définit les puissances successives de A par A0 = I n et Ap+1 = Ap × A pour tout p ∈ N.
+Autrement dit, Ap = A × A × · · · × A.
+{z
+}
+|
+p facteurs
+
+Exemple 9.
+
+
+
+1 0 1
+On cherche à calculer Ap avec A = 0 −1 0. On calcule A2 , A3 et A4 et on obtient :
+0 0 2
+
+
+
+
+
+
+1 0 3
+1 0 7
+1 0 15
+A2 = 0 1 0
+A3 = A2 × A = 0 −1 0
+A4 = A3 × A = 0 1 0  .
+0 0 4
+0 0 8
+0 0 16
+
+
+1
+0
+2p − 1
+0 . DémonL’observation de ces premières puissances permet de penser que la formule est : Ap = 0 (−1) p
+0
+0
+2p
+trons ce résultat par récurrence.
+Il est vrai pour p = 0 (on trouve l’identité). On le suppose vrai pour un entier p et on va le démontrer pour p + 1. On
+a, d’après la définition,
+
+ 
+ 
+
+1
+0
+2p − 1
+1 0 1
+1
+0
+2 p+1 − 1
+.
+0  × 0 −1 0 = 0 (−1) p+1
+0
+Ap+1 = Ap × A = 0 (−1) p
+p
+p+1
+0
+0
+2
+0 0 2
+0
+0
+2
+Donc la propriété est démontrée.
+
+2.7. Formule du binôme
+Comme la multiplication n’est pas commutative, les identités binomiales usuelles sont fausses. En particulier, (A + B)2
+ne vaut en général pas A2 + 2AB + B 2 , mais on sait seulement que
+(A + B)2 = A2 + AB + BA + B 2 .
+Proposition 4 (Calcul de (A + B) p lorsque AB = BA).
+Soient A et B deux éléments de Mn (K) qui commutent, c’est-à-dire tels que AB = BA. Alors, pour tout entier p > 0,
+on a la formule
+p  
+X
+p p−k k
+(A + B) p =
+A B
+k
+k=0
+
+p
+où k désigne le coefficient du binôme.
+La démonstration est similaire à celle de la formule du binôme pour (a + b) p , avec a, b ∈ R.
+
+MATRICES
+
+3. INVERSE D’UNE MATRICE : DÉFINITION
+
+7
+
+Exemple 
+10.
+
+
+
+1 1 1 1
+0 1 1 1
+0 1 2 1
+ 0 0 2 1
+
+
+
+Soit A = 
+0 0 1 3. On pose N = A − I = 0 0 0 3. La matrice N est nilpotente (c’est-à-dire il existe
+0 0 0 1
+0 0 0 0
+k ∈ N tel que N k = 0) comme le montrent les calculs suivants :
+
+
+
+
+0 0 2 4
+0 0 0 6
+ 0 0 0 0
+ 0 0 0 6
+3
+
+
+
+N2 = 
+N
+=
+et
+N 4 = 0.
+ 0 0 0 0
+ 0 0 0 0
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+Comme on a A = I + N et les matrices N et I commutent (la matrice identité commute avec toutes les matrices), on
+peut appliquer la formule du binôme de Newton. On utilise que I k = I pour tout k et surtout que N k = 0 si k > 4. On
+obtient
+p  
+3  
+X
+p k p−k X p k
+p(p−1)
+p(p−1)(p−2) 3
+Ap =
+N I
+=
+N = I + pN + 2! N 2 +
+N .
+3!
+k
+k
+k=0
+k=0
+D’où
+p
+1
+0
+0
+
+p2
+2p
+1
+0
+
+
+p(p2 − p + 1)
+p(3p − 2) 
+.
+
+3p
+1
+
+ 8 2
+
+,D=
+
+5
+
+
+
+1
+0
+Ap = 
+0
+0
+Mini-exercices.
+1. Soient A =
+calculer !
+
+
+
+,B=
+
+2 1
+
+0
+0 1 0
+2 −2 −3
+
+
+
+,C=
+
+−3 2
+−5 5
+
+2
+−1
+
+,E= x
+
+y
+
+
+z . Quels produits sont possibles ? Les
+
+1 0 0
+0 1 0 et B = 0 0 2 . Calculer A2 , B 2 , AB et BA.
+1 −1 0
+112
+2 0 0
+0 0 0
+Soient A = 0 2 0 et B = 2 0 0 . Calculer Ap et B p pour tout p > 0. Montrer que AB = BA. Calculer (A + B) p .
+002
+310
+
+2. Soient A =
+3.
+
+0 2 −2
+6 −4 0
+
+0 0 1
+
+
+
+
+
+3. Inverse d’une matrice : définition
+3.1. Définition
+Définition 7 (Matrice inverse).
+Soit A une matrice carrée de taille n × n. S’il existe une matrice carrée B de taille n × n telle que
+AB = I
+
+et
+
+BA = I,
+
+on dit que A est inversible. On appelle B l’inverse de A et on la note A−1 .
+On verra plus tard qu’il suffit en fait de vérifier une seule des conditions AB = I ou bien BA = I.
+• Plus généralement, quand A est inversible, pour tout p ∈ N, on note :
+A−p = (A−1 ) p = A−1 A−1 · · · A−1 .
+|
+{z
+}
+p facteurs
+
+• L’ensemble des matrices inversibles de Mn (K) est noté G L n (K).
+
+3.2. Exemples
+Exemple 11.
+
+Soit A = 10 23 . Étudier si A est inversible, c’est étudier l’existence d’une matrice B = ac db à coefficients dans K, telle
+que AB = I et BA = I. Or AB = I équivaut à :
+
+
+ 
+
+
+ 
+
+1 2 a b
+1 0
+a + 2c b + 2d
+1 0
+AB = I ⇐⇒
+=
+⇐⇒
+=
+0 3
+c d
+0 1
+3c
+3d
+0 1
+
+MATRICES
+
+3. INVERSE D’UNE MATRICE : DÉFINITION
+
+8
+
+Cette égalité équivaut au système :
+
+
+ a + 2c = 1
+
+b + 2d = 0
+3c
+=0
+
+
+
+3d = 1
+Sa résolution est immédiate : a = 1, b = − 32 , c = 0, d = 13 . Il n’y a donc qu’une seule matrice possible, à savoir
+ 2
+1−
+B = 0 13 . Pour prouver qu’elle convient, il faut aussi montrer l’égalité BA = I, dont la vérification est laissée au
+3
+
+
+1 − 32
+−1
+.
+lecteur. La matrice A est donc inversible et A =
+1
+0
+3
+Exemple 12.
+La matrice A =
+
+30
+50
+
+
+
+
+
+
+a b
+n’est pas inversible. En effet, soit B =
+une matrice quelconque. Alors le produit
+c d
+
+
+ 
+
+a b 3 0
+3a + 5b 0
+BA =
+=
+c d
+5 0
+3c + 5d 0
+
+ne peut jamais être égal à la matrice identité.
+Exemple 13.
+• Soit I n la matrice carrée identité de taille n × n. C’est une matrice inversible, et son inverse est elle-même par
+l’égalité I n I n = I n .
+• La matrice nulle 0n de taille n × n n’est pas inversible. En effet on sait que, pour toute matrice B de Mn (K), on a
+B0n = 0n , qui ne peut jamais être la matrice identité.
+
+3.3. Propriétés
+Unicité
+Proposition 5.
+Si A est inversible, alors son inverse est unique.
+Démonstration. La méthode classique pour mener à bien une telle démonstration est de supposer l’existence de deux
+matrices B1 et B2 satisfaisant aux conditions imposées et de démontrer que B1 = B2 .
+Soient donc B1 telle que AB1 = B1 A = I n et B2 telle que AB2 = B2 A = I n . Calculons B2 (AB1 ). D’une part, comme AB1 = I n ,
+on a B2 (AB1 ) = B2 . D’autre part, comme le produit des matrices est associatif, on a B2 (AB1 ) = (B2 A)B1 = I n B1 = B1 .
+Donc B1 = B2 .
+Inverse de l’inverse
+Proposition 6.
+Soit A une matrice inversible. Alors A−1 est aussi inversible et on a :
+(A−1 )−1 = A
+
+Inverse d’un produit
+Proposition 7.
+Soient A et B deux matrices inversibles de même taille. Alors AB est inversible et
+(AB)−1 = B −1 A−1
+Il faut bien faire attention à l’inversion de l’ordre !
+
+MATRICES
+
+4. INVERSE D’UNE MATRICE : CALCUL
+
+9
+
+Démonstration. Il suffit de montrer (B −1 A−1 )(AB) = I et (AB)(B −1 A−1 ) = I. Cela suit de
+(B −1 A−1 )(AB) = B −1 (AA−1 )B = B −1 I B = B −1 B = I,
+et
+
+(AB)(B −1 A−1 ) = A(BB −1 )A−1 = AIA−1 = AA−1 = I.
+
+De façon analogue, on montre que si A1 , . . . , Am sont inversibles, alors
+−1
+−1
+(A1 A2 · · · Am )−1 = A−1
+m Am−1 · · · A1 .
+
+Simplification par une matrice inversible
+Si C est une matrice quelconque de Mn (K), nous avons vu que la relation AC = BC où A et B sont des éléments de
+Mn (K) n’entraîne pas forcément l’égalité A = B. En revanche, si C est une matrice inversible, on a la proposition
+suivante :
+Proposition 8.
+Soient A et B deux matrices de Mn (K) et C une matrice inversible de Mn (K). Alors l’égalité AC = BC implique l’égalité
+A = B.
+Démonstration. Ce résultat est immédiat : si on multiplie à droite l’égalité AC = BC par C −1 , on obtient l’égalité :
+(AC)C −1 = (BC)C −1 . En utilisant l’associativité du produit des matrices on a A(C C −1 ) = B(C C −1 ), ce qui donne
+d’après la définition de l’inverse AI = BI, d’où A = B.
+Mini-exercices.
+
+et B = 25 13 . Calculer A−1 , B −1 , (AB)−1 , (BA)−1 , A−2 .
+1 0 0
+2. Calculer l’inverse de 0 2 0 .
+103
+ −1 −2 0 
+3. Soit A = 2 3 0 . Calculer 2A − A2 . Sans calculs, en déduire A−1 .
+1. Soient A =
+
+−1 −2
+3 4
+
+0
+
+
+
+0 1
+
+4. Inverse d’une matrice : calcul
+Nous allons voir une méthode pour calculer l’inverse d’une matrice quelconque de manière efficace. Cette méthode
+est une reformulation de la méthode du pivot de Gauss pour les systèmes linéaires. Auparavant, nous commençons
+par une formule directe dans le cas simple des matrices 2 × 2.
+
+4.1. Matrices 2 × 2
+Considérons la matrice 2 × 2 : A =
+
+
+
+a
+c
+
+
+b
+.
+d
+
+Proposition 9.
+Si ad − bc 6= 0, alors A est inversible et
+d
+−c
+
+1
+= ad−bc
+
+
+
+alors AB =
+
+A
+
+1
+Démonstration. On vérifie que si B = ad−bc
+
+
+
+−1
+
+d −b
+−c a
+
+10
+01
+
+−b
+a
+
+
+
+
+
+. Idem pour BA.
+
+MATRICES
+
+4. INVERSE D’UNE MATRICE : CALCUL
+
+10
+
+4.2. Méthode de Gauss pour inverser les matrices
+La méthode pour inverser une matrice A consiste à faire des opérations élémentaires sur les lignes de la matrice A
+jusqu’à la transformer en la matrice identité I. On fait simultanément les mêmes opérations élémentaires en partant
+de la matrice I. On aboutit alors à une matrice qui est A−1 . La preuve sera vue dans la section suivante.
+En pratique, on fait les deux opérations en même temps en adoptant la disposition suivante : à côté de la matrice A
+que l’on veut inverser, on rajoute la matrice identité pour former un tableau (A | I). Sur les lignes de cette matrice
+augmentée, on effectue des opérations élémentaires jusqu’à obtenir le tableau (I | B). Et alors B = A−1 .
+Ces opérations élémentaires sur les lignes sont :
+1. L i ← λL i avec λ 6= 0 : on peut multiplier une ligne par un réel non nul (ou un élément de K \ {0}).
+2. L i ← L i + λL j avec λ ∈ K (et j 6= i) : on peut ajouter à la ligne L i un multiple d’une autre ligne L j .
+3. L i ↔ L j : on peut échanger deux lignes.
+N’oubliez pas : tout ce que vous faites sur la partie gauche de la matrice augmentée, vous devez aussi le faire sur la
+partie droite.
+
+4.3. Un exemple
+
+
+
+1 2 1
+Calculons l’inverse de A =  4 0 −1 .
+−1 2 2
+Voici la matrice augmentée, avec les lignes numérotées :
+
+1 2 1
+(A | I) =  4 0 −1
+−1 2 2
+
+1
+0
+0
+
+0
+1
+0
+
+
+0
+0 
+1
+
+L1
+L2
+L3
+
+On applique la méthode de Gauss pour faire apparaître des 0 sur la première colonne, d’abord sur la deuxième ligne
+par l’opération élémentaire L2 ← L2 − 4L1 qui conduit à la matrice augmentée :
+
+
+1
+2
+1
+1 0 0
+ 0 −8 −5 −4 1 0  L2 ←L2 −4L1
+−1
+
+2
+
+2
+
+0
+
+0
+
+1
+
+Puis un 0 sur la première colonne, à la troisième ligne, avec L3 ← L3 + L1 :
+
+
+
+1 2
+1
+1 0 0
+ 0 −8 −5 −4 1 0 
+0 4
+3
+1 0 1
+L3 ←L3 +L1
+On multiplie la ligne L2 afin qu’elle commence par 1 :
+
+
+1 2 1 1 0 0
+ 0 1 5 1 − 1 0  L2 ←− 18 L2
+8
+2
+8
+0 4 3 1 0 1
+On continue afin de faire apparaître des 0 partout sous la diagonale, et on multiplie la ligne L3 . Ce qui termine la
+première partie de la méthode de Gauss :
+
+
+1 2 1
+1
+0 0
+1
+ 0 1 5
+− 81 0 
+8
+2
+1
+1
+0 0 2 −1
+1
+L3 ←L3 −4L2
+2
+puis
+
+
+
+1 2 1
+1
+0 0
+1
+ 0 1 5
+− 18 0 
+8
+2
+L3 ←2L3
+0 0 1 −2 1 2
+Il ne reste plus qu’à « remonter » pour faire apparaître des zéros au-dessus de la diagonale :
+
+MATRICES
+
+5. INVERSE D’UNE MATRICE : SYSTÈMES LINÉAIRES ET MATRICES ÉLÉMENTAIRES
+
+
+
+1
+ 0
+0
+
+2
+1
+0
+
+1
+0
+1
+
+1
+
+
+0
+− 54 
+2
+
+0
+− 34
+1
+
+7
+4
+
+−2
+
+11
+
+L2 ←L2 − 58 L3
+
+puis
+
+
+1
+ 0
+0
+
+0
+1
+0
+
+0
+0
+1
+
+− 12
+7
+4
+
+1
+2
+− 34
+
+1
+2
+− 54
+
+−2
+
+1
+
+2
+
+
+
+L1 ←L1 −2L2 −L3
+
+
+
+Ainsi l’inverse de A est la matrice obtenue à droite et après avoir factorisé tous les coefficients par 14 , on a obtenu :
+
+
+−2 2
+2
+1
+A−1 =  7 −3 −5
+4
+−8 4
+8
+Pour se rassurer sur ses calculs, on n’oublie pas de vérifier rapidement que A × A−1 = I.
+Mini-exercices.
+1. Si possible calculer l’inverse des matrices :
+
+−1
+θ − sin θ
+2. Soit A(θ ) = cos
+sin θ cos θ . Calculer A(θ ) .
+
+31
+72
+
+
+
+,
+
+2 −3
+−5 4
+
+
+
+,
+
+02
+30
+
+
+
+,
+
+α+1 1
+2 α
+
+
+
+.
+
+ 1 3 0   2 −2 1   1 0 1 0   2 1 1 1 
+0 2 −2 0
+10 0 1
+3. Calculer l’inverse des matrices : 2 1 −1 , 3 0 5 , −1
+2 0 1 , 0 1 −1 2 ,
+−2 1 1
+
+1 1 2
+
+0 2 1 3
+
+ 1 1 1 0 0
+
+01 1 0
+
+0 1200
+−1 1 2 0 0
+0 0021
+0 0053
+
+.
+
+5. Inverse d’une matrice : systèmes linéaires et matrices élémentaires
+5.1. Matrices et systèmes linéaires
+Le système linéaire
+
+a11 x 1 + a12 x 2 + · · · + a1p x p = b1
+
+
+
+a21 x 1 + a22 x 2 + · · · + a2p x p = b2
+...
+
+
+
+an1 x 1 + an2 x 2 + · · · + anp x p = bn
+peut s’écrire sous forme matricielle :
+
+ 
+
+
+
+a11 . . . a1p
+x1
+b1
+ b2 
+ a21 . . . a2p   x 2 
+
+ 
+
+
+
+ .
+  .  =  . .
+.
+..   .. 
+ .. 
+ ..
+bn
+xp
+an1 . . . anp
+{z
+} | {z }
+| {z }
+|
+A
+X
+B
+On appelle A ∈ Mn,p (K) la matrice des coefficients du système. B ∈ Mn,1 (K) est le vecteur du second membre. Le
+vecteur X ∈ M p,1 (K) est une solution du système si et seulement si
+AX = B.
+Nous savons que :
+Théorème 1.
+Un système d’équations linéaires n’a soit aucune solution, soit une seule solution, soit une infinité de solutions.
+
+5.2. Matrices inversibles et systèmes linéaires
+Considérons le cas où le nombre d’équations égale le nombre d’inconnues :
+
+MATRICES
+
+5. INVERSE D’UNE MATRICE : SYSTÈMES LINÉAIRES ET MATRICES ÉLÉMENTAIRES
+
+
+
+
+x1
+b1
+ x2 
+ b2 
+
+
+
+
+ .  =  . .
+ .. 
+ .. 
+...
+xn
+bn
+| {z }
+| {z }
+{z
+A
+X
+B
+Alors A ∈ Mn (K) est une matrice carrée et B un vecteur de Mn,1 (K). Pour tout second membre, nous pouvons utiliser
+les matrices pour trouver la solution du système linéaire.
+
+
+a11
+ a21
+
+ .
+ ..
+an1
+|
+
+...
+...
+
+
+a1n
+a2n 
+
+.. 
+. 
+ann
+}
+
+12
+
+
+
+Proposition 10.
+Si la matrice A est inversible, alors la solution du système AX = B est unique et est :
+X = A−1 B.
+
+
+La preuve est juste de vérifier que si X = A−1 B, alors AX = A A−1 B = AA−1 B = I · B = B. Réciproquement si AX = B,
+alors nécessairement X = A−1 B. Nous verrons bientôt que si la matrice n’est pas inversible, alors soit il n’y a pas de
+solution, soit une infinité.
+
+5.3. Les matrices élémentaires
+Pour calculer l’inverse d’une matrice A, et aussi pour résoudre des systèmes linéaires, nous avons utilisé trois opérations
+élémentaires sur les lignes qui sont :
+1. L i ← λL i avec λ 6= 0 : on peut multiplier une ligne par un réel non nul (ou un élément de K \ {0}).
+2. L i ← L i + λL j avec λ ∈ K (et j 6= i) : on peut ajouter à la ligne L i un multiple d’une autre ligne L j .
+3. L i ↔ L j : on peut échanger deux lignes.
+Nous allons définir trois matrices élémentaires E L i ←λL i , E L i ←L i +λL j , E L i ↔L j correspondant à ces opérations. Plus
+précisément, le produit E × A correspondra à l’opération élémentaire sur A. Voici les définitions accompagnées
+d’exemples.
+1. La matrice E L i ←λL i est la matrice obtenue en multipliant par λ la i-ème ligne de la matrice identité I n , où λ est un
+nombre réel non nul.
+
+
+
+1 0 0 0
+ 0 5 0 0
+
+E L2 ←5L2 = 
+ 0 0 1 0
+0 0 0 1
+2. La matrice E L i ←L i +λL j est la matrice obtenue en ajoutant λ fois la j-ème ligne de I n à la i-ème ligne de I n .
+
+
+
+1 0 0 0
+−3 1 0 0
+
+E L2 ←L2 −3L1 = 
+ 0 0 1 0
+0 0 0 1
+3. La matrice E L i ↔L j est la matrice obtenue en permutant les i-ème et j-ème lignes de I n .
+
+
+1
+0
+E L2 ↔L4 = E L4 ↔L2 = 
+0
+0
+
+0
+0
+0
+1
+
+0
+0
+1
+0
+
+
+0
+1
+
+0
+0
+
+Les opérations élémentaires sur les lignes sont réversibles, ce qui entraîne l’inversibilité des matrices élémentaires.
+Le résultat de la multiplication d’un matrice élémentaire E par A est la matrice obtenue en effectuant l’opération
+élémentaire correspondante sur A. Ainsi :
+1. La matrice E L i ←λL i × A est la matrice obtenue en multipliant par λ la i-ème ligne de A.
+2. La matrice E L i ←L i +λL j × A est la matrice obtenue en ajoutant λ fois la j-ème ligne de A à la i-ème ligne de A.
+3. La matrice E L i ↔L j × A est la matrice obtenue en permutant les i-ème et j-ème lignes de A.
+
+MATRICES
+
+5. INVERSE D’UNE MATRICE : SYSTÈMES LINÉAIRES ET MATRICES ÉLÉMENTAIRES
+
+13
+
+Exemple 14.
+1.
+
+
+1
+
+1
+E L2 ← L2 × A = 0
+3
+0
+
+1
+3
+
+ 
+0
+x1
+0  ×  y1
+
+0
+
+1
+
+0
+
+ 
+x1
+x3
+y3  =  31 y1
+z3
+z1
+
+z1
+
+x2
+y2
+z2
+
+x2
+y2
+z2
+
+ 
+x3
+x 1 − 7z1
+
+
+y3 =
+y1
+z3
+z1
+
+
+x3
+1
+
+3 y3
+z3
+
+x2
+1
+3 y2
+z2
+
+2.
+
+
+1
+
+E L1 ←L1 −7L3 × A = 0
+0
+
+0
+1
+0
+
+ 
+x1
+−7
+
+
+0 × y1
+1
+z1
+
+x 2 − 7z2
+y2
+z2
+
+
+x 3 − 7z3
+y3 
+z3
+
+3.
+
+1
+E L2 ↔L3 × A = 0
+0
+
+0
+0
+1
+
+ 
+x1
+0
+1  ×  y1
+0
+z1
+
+x2
+y2
+z2
+
+ 
+x3
+x1
+y3  =  z1
+z3
+y1
+
+x2
+z2
+y2
+
+
+x3
+z3 
+y3
+
+5.4. Équivalence à une matrice échelonnée
+Définition 8.
+Deux matrices A et B sont dites équivalentes par lignes si l’une peut être obtenue à partir de l’autre par une suite
+d’opérations élémentaires sur les lignes. On note A ∼ B.
+Définition 9.
+Une matrice est échelonnée si :
+• le nombre de zéros commençant une ligne croît strictement ligne par ligne jusqu’à ce qu’il ne reste plus que
+des zéros.
+Elle est échelonnée réduite si en plus :
+• le premier coefficient non nul d’une ligne (non nulle) vaut 1 ;
+• et c’est le seul élément non nul de sa colonne.
+Exemple d’une matrice échelonnée (à gauche) et échelonnée réduite (à droite) ; les ∗ désignent des coefficients
+quelconques, les + des coefficients non nuls :
+
+
+
+
++ ∗ ∗ ∗ ∗ ∗ ∗
+1 ∗ 0 0 ∗ ∗ 0
+0 0 1 0 ∗ ∗ 0
+0 0 + ∗ ∗ ∗ ∗
+
+
+
+
+0 0 0 + ∗ ∗ ∗
+0 0 0 1 ∗ ∗ 0
+
+
+
+
+ 0 0 0 0 0 0 +
+0 0 0 0 0 0 1
+
+
+
+
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+Théorème 2.
+Étant donnée une matrice A ∈ Mn,p (K), il existe une unique matrice échelonnée réduite U obtenue à partir de A par
+des opérations élémentaires sur les lignes.
+Ce théorème permet donc de se ramener par des opérations élémentaires à des matrices dont la structure est beaucoup
+plus simple : les matrices échelonnées réduites.
+Démonstration. Nous admettons l’unicité.
+L’existence se démontre grâce à l’algorithme de Gauss. L’idée générale consiste à utiliser des substitutions de lignes
+pour placer des zéros là où il faut de façon à créer d’abord une forme échelonnée, puis une forme échelonnée réduite.
+Soit A une matrice n × p quelconque.
+Partie A. Passage à une forme échelonnée.
+Étape A.1. Choix du pivot.
+On commence par inspecter la première colonne. Soit elle ne contient que des zéros, auquel cas on passe directement
+à l’étape A.3, soit elle contient au moins un terme non nul. On choisit alors un tel terme, que l’on appelle le pivot. Si
+c’est le terme a11 , on passe directement à l’étape A.2 ; si c’est un terme ai1 avec i 6= 1, on échange les lignes 1 et i
+(L1 ↔ L i ) et on passe à l’étape A.2.
+
+MATRICES
+
+5. INVERSE D’UNE MATRICE : SYSTÈMES LINÉAIRES ET MATRICES ÉLÉMENTAIRES
+
+14
+
+Au terme de l’étape A.1, soit la matrice A a sa première colonne nulle (à gauche) ou bien on obtient une matrice
+0
+équivalente dont le premier coefficient a11
+est non nul (à droite) :
+
+
+ 0
+0
+0 
+a11 a12
+· · · a10 j · · · a1p
+0 a12 · · · a1 j · · · a1p
+0
+0
+0 
+0 a22 · · · a2 j · · · a2p 
+ a21
+a22
+· · · a20 j · · · a2p
+
+
+
+
+ ..
+ ..
+..
+..
+.. 
+..
+..
+.. 
+.
+
+ .
+
+.
+.
+.
+.
+.
+.
+
+ = A ou 
+
+0
+0
+0
+0  ∼ A.
+0 a
+
+
+· · · ai j · · · aip 
+i2
+
+ ai1 ai2 · · · ai j · · · aip 
+.
+ .
+..
+..
+.. 
+..
+..
+.. 
+ ..
+ ..
+.
+.
+. 
+.
+.
+. 
+0
+
+an2
+
+···
+
+an j
+
+···
+
+0
+an1
+
+anp
+
+0
+an2
+
+an0 j
+
+···
+
+···
+
+0
+anp
+
+Étape A.2. Élimination.
+0
+0
+On ne touche plus à la ligne 1, et on se sert du pivot a11
+pour éliminer tous les termes ai1
+(avec i > 2) situés sous
+a0
+
+le pivot. Pour cela, il suffit de remplacer la ligne i par elle-même moins a0i1 × la ligne 1, ceci pour i = 2, . . . , n :
+a0
+
+11
+
+a0
+
+31
+L2 ← L2 − a21
+0 L 1 , L 3 ← L 3 − 0 L 1 ,. . .
+a11
+11
+Au terme de l’étape A.2, on a obtenu une matrice de la forme
+ 0
+0
+a11 a12
+· · · a10 j · · ·
+00
+ 0 a22
+· · · a200j · · ·
+
+ ..
+..
+..
+ .
+.
+.
+
+00
+00
+ 0
+a
+·
+·
+·
+a
+···
+
+i2
+ij
+ .
+.
+.
+..
+..
+ ..
+
+0
+
+00
+an2
+
+···
+
+an00j
+
+···
+
+0 
+a1p
+00 
+a2p
+
+.. 
+. 
+
+00  ∼ A.
+aip
+
+.. 
+. 
+00
+anp
+
+Étape A.3. Boucle.
+Au début de l’étape A.3, on a obtenu dans tous les cas de figure une matrice de la forme
+ 1
+1
+1 
+a11 a12
+· · · a11 j · · · a1p
+1
+1 
+ 0 a22
+· · · a21 j · · · a2p
+
+
+ ..
+..
+..
+.. 
+ .
+.
+.
+. 
+
+
+1
+1
+1 ∼A
+ 0
+a
+·
+·
+·
+a
+·
+·
+·
+a
+
+i2
+ij
+ip 
+ .
+..
+..
+.. 
+ ..
+.
+.
+. 
+0
+
+1
+an2
+
+···
+
+an1 j
+
+···
+
+1
+anp
+
+dont la première colonne est bien celle d’une matrice échelonnée. On va donc conserver cette première colonne. Si
+1
+a11
+=
+6 0, on conserve aussi la première ligne, et l’on repart avec l’étape A.1 en l’appliquant cette fois à la sous-matrice
+1
+(n − 1) × (p − 1) (ci-dessous à gauche : on « oublie » la première ligne et la première colonne de A) ; si a11
+= 0, on
+repart avec l’étape A.1 en l’appliquant à la sous-matrice n × (p − 1) (à droite, on « oublie » la première colonne) :
+ 1
+1 
+ 1
+a12 · · · a11 j · · · a1p
+1
+1 
+a22 · · · a2 j · · · a2p
+1
+1 
+ a22
+· · · a21 j · · · a2p
+..
+.. 
+ ..
+
+
+ .
+ ..
+..
+.. 
+.
+. 
+ 1
+
+
+
+.
+.
+.
+1
+1 
+a
+
+
+ i2 · · · ai j · · · aip 
+ a1 · · · a1 · · · a1 
+ .
+
+
+
+i2
+i
+j
+ip
+..
+..
+ .
+
+ ..
+.
+.
+.
+. 
+..
+.. 
+ ..
+1
+1
+1
+an2 · · · an j · · · anp
+1
+1
+an2
+· · · an1 j · · · anp
+Au terme de cette deuxième itération de la boucle, on aura obtenu une matrice de la forme
+ 1
+1
+1 
+a11 a12
+· · · a11 j · · · a1p
+2
+2 
+ 0 a22
+· · · a22 j · · · a2p
+
+
+ ..
+..
+..
+.. 
+ .
+
+.
+.
+.
+
+
+2
+2  ∼ A,
+ 0
+0
+·
+·
+·
+a
+·
+·
+·
+a
+
+ij
+ip 
+ .
+..
+..
+.. 
+ ..
+.
+.
+. 
+0
+et ainsi de suite.
+
+0
+
+···
+
+an2 j
+
+···
+
+2
+anp
+
+MATRICES
+
+5. INVERSE D’UNE MATRICE : SYSTÈMES LINÉAIRES ET MATRICES ÉLÉMENTAIRES
+
+15
+
+Comme chaque itération de la boucle travaille sur une matrice qui a une colonne de moins que la précédente, alors au
+bout d’au plus p − 1 itérations de la boucle, on aura obtenu une matrice échelonnée.
+Partie B. Passage à une forme échelonnée réduite.
+Étape B.1. Homothéties.
+On repère le premier élément non nul de chaque ligne non nulle, et on multiplie cette ligne par l’inverse de cet élément.
+Exemple : si le premier élément non nul de la ligne i est α 6= 0, alors on effectue L i ← α1 L i . Ceci crée une matrice
+échelonnée avec des 1 en position de pivots.
+Étape B.2. Élimination.
+On élimine les termes situés au-dessus des positions de pivot comme précédemment, en procédant à partir du bas à
+droite de la matrice. Ceci ne modifie pas la structure échelonnée de la matrice en raison de la disposition des zéros
+dont on part.
+
+Exemple 15.
+Soit
+
+
+1
+A= 0
+−1
+
+2
+2
+0
+
+3
+4
+1
+
+
+4
+6 .
+0
+
+A. Passage à une forme échelonnée.
+1
+Première itération de la boucle, étape A.1. Le choix du pivot est tout fait, on garde a11
+= 1.
+Première itération de la boucle, étape A.2. On ne fait rien sur la ligne 2 qui contient déjà un zéro en bonne position et
+on remplace la ligne 3 par L3 ← L3 + L1 . On obtient
+
+
+1 2 3 4
+A ∼  0 2 4 6 .
+0 2 4 4
+2
+= 2.
+Deuxième itération de la boucle, étape A.1. Le choix du pivot est tout fait, on garde a22
+Deuxième itération de la boucle, étape A.2. On remplace la ligne 3 avec l’opération L3 ← L3 − L2 . On obtient
+
+
+1 2 3 4
+A ∼ 0 2 4 6  .
+0 0 0 −2
+
+Cette matrice est échelonnée.
+B. Passage à une forme échelonnée réduite.
+Étape B.1, homothéties. On multiplie la ligne 2 par 21 et la ligne 3 par − 12 et l’on obtient
+
+
+1 2 3 4
+A ∼  0 1 2 3 .
+0 0 0 1
+Étape B.2, première itération. On ne touche plus à la ligne 3 et on remplace la ligne 2 par L2 ← L2 −3L3 et L1 ← L1 −4L3 .
+On obtient
+
+
+1 2 3 0
+A ∼  0 1 2 0 .
+0 0 0 1
+Étape B.2, deuxième itération. On ne touche plus à la ligne 2 et on remplace la ligne 1 par L1 ← L1 − 2L2 . On obtient
+
+
+1 0 −1 0
+A ∼ 0 1 2 0
+0 0 0 1
+qui est bien échelonnée et réduite.
+
+MATRICES
+
+5. INVERSE D’UNE MATRICE : SYSTÈMES LINÉAIRES ET MATRICES ÉLÉMENTAIRES
+
+16
+
+5.5. Matrices élémentaires et inverse d’une matrice
+Théorème 3.
+Soit A ∈ Mn (K). La matrice A est inversible si et seulement si sa forme échelonnée réduite est la matrice identité I n .
+Démonstration. Notons U la forme échelonnée réduite de A. Et notons E le produit de matrices élémentaires tel que
+EA = U.
+⇐= Si U = I n alors EA = I n . Ainsi par définition, A est inversible et A−1 = E.
+=⇒ Nous allons montrer que si U 6= I n , alors A n’est pas inversible.
+— Supposons U 6= I n . Alors la dernière ligne de U est nulle (sinon il y aurait un pivot sur chaque ligne donc ce
+serait I n ).
+— Cela entraîne que U n’est pas inversible : en effet, pour tout matrice carrée V , la dernière ligne de U V est
+nulle ; on n’aura donc jamais U V = I n .
+— Alors, A n’est pas inversible non plus : en effet, si A était inversible, on aurait U = EA et U serait inversible
+comme produit de matrices inversibles (E est inversible car c’est un produit de matrices élémentaires qui sont
+inversibles).
+
+Remarque.
+Justifions maintenant notre méthode pour calculer A−1 .
+Nous partons de (A|I) pour arriver par des opérations élémentaires sur les lignes à (I|B). Montrons que B = A−1 . Faire
+une opération élémentaire signifie multiplier à gauche par une des matrices élémentaires. Notons E le produit de ces
+matrices élémentaires. Dire que l’on arrive à la fin du processus à I signifie EA = I. Donc A−1 = E. Comme on fait les
+mêmes opérations sur la partie droite du tableau, alors on obtient E I = B. Donc B = E. Conséquence : B = A−1 .
+Corollaire 1.
+Les assertions suivantes sont équivalentes :
+(i) La matrice A est inversible. 
+0
+
+0
+.. a une unique solution X = .. .
+.
+.
+0
+0
+(iii) Pour tout second membre B, le système linéaire AX = B a une unique solution X .
+(ii) Le système linéaire AX =
+
+Démonstration. Nous avons déjà vu (i) =⇒ (ii) et (i) =⇒ (iii).
+Nous allons seulement montrer (ii) =⇒ (i). Nous raisonnons par contraposée : nous allons montrer la proposition
+équivalente non(i) =⇒ non(ii). Si A n’est pas inversible, alors sa forme échelonnée réduite U contient un premier
+zéro sur sa diagonale, disons à la place `. Alors U à la forme suivante
+
+
+
+
+1 0 · · · c1
+∗ ··· ∗
+−c1
+..
+
+
+ .. 
+.
+ 0 .. 0
+ . 
+.
+··· ∗ 
+
+
+
+
+ 0 0
+
+−c`−1 
+1 c`−1
+··· ∗ 
+
+
+
+ 0 ··· 0
+
+0
+∗ ··· ∗ 
+On note
+X =
+
+.
+ 1 .
+ 0 ··· 0
+
+
+
+0
+∗ ··· ∗ 
+
+ 0 
+ .
+
+
+..
+..
+.
+. 
+..
+ .. 
+ ..
+. .. 
+.
+.
+···
+0
+0
+
+···
+
+···
+
+0
+
+∗
+
+0
+
+Alors X n’est pas le vecteur nul, mais U X est le vecteur nul. Comme A = E −1 U, alors AX est le vecteur nul. Nous avons
+donc trouvé un vecteur non nul X tel que AX = 0.
+Mini-exercices.
+1. Exprimer les systèmes linéaires suivants sous
+ forme matricielle et les résoudre en inversant la matrice :
+
+x+t =α
+
+
+
+ x +z =1
+
+2x + 4 y = 7
+x − 2y = β
+−2 y + 3z = 1 ,
+,
+.
+−2x + 3 y = −14
+x+ y+t =2
+
+
+
+x +z =1
+
+y+t =4
+2. Écrire les matrices 4 × 4 correspondant aux opérations élémentaires : L2 ← 13 L2 , L3 ← L3 − 41 L2 , L1 ↔ L4 . Sans
+
+MATRICES
+
+6. MATRICES TRIANGULAIRES, TRANSPOSITION, TRACE, MATRICES SYMÉTRIQUES
+
+17
+
+calculs, écrire leurs inverses. Écrire la matrice 4 × 4 de l’opération L1 ← L1 − 2L3 + 3L4 .
+ 1 2 3   1 0 2   2 0 −2 0 
+1 0
+3. Écrire les matrices suivantes sous forme échelonnée, puis échelonnée réduite : 1 4 0 , 1 −1 1 , 01 −1
+−2 1 4 .
+−2 −2 −3
+
+2 −2 3
+
+−1 2 −1 −2
+
+6. Matrices triangulaires, transposition, trace, matrices symétriques
+6.1. Matrices triangulaires, matrices diagonales
+Soit A une matrice de taille n × n. On dit que A est triangulaire inférieure si ses éléments au-dessus de la diagonale
+sont nuls, autrement dit :
+i < j =⇒ ai j = 0.
+Une matrice triangulaire inférieure a la forme suivante :
+
+
+a11
+0 ··· ··· 0
+
+.. 
+..
+ a21 a22
+.
+. 
+
+
+ ..
+..
+.. 
+..
+..
+ .
+
+.
+.
+.
+.
+
+
+ .
+
+.
+.
+.
+.
+.
+ .
+.
+.
+0 
+an1
+
+an2
+
+···
+
+···
+
+ann
+
+On dit que A est triangulaire supérieure si ses éléments en-dessous de la diagonale sont nuls, autrement dit :
+i > j =⇒ ai j = 0.
+Une matrice triangulaire supérieure a la forme suivante :
+
+a11 a12 . . .
+ 0 a22 . . .
+
+ ..
+..
+..
+ .
+.
+.
+
+ .
+.
+..
+ ..
+
+ .
+ ..
+0
+... ...
+
+...
+...
+..
+
+...
+...
+
+.
+
+..
+
+.
+...
+
+..
+
+.
+0
+
+
+a1n
+a2n 
+
+.. 
+. 
+
+.. 
+. 
+
+.. 
+. 
+ann
+
+Exemple 16.
+Deux matrices triangulaires inférieures (à gauche), une matrice triangulaire supérieure (à droite) :
+
+
+
+
+
+
+1 1 −1
+4 0 0
+5 0
+0 −1 −1
+0 −1 0
+1 −2
+3 −2 3
+0 0 −1
+Une matrice qui est triangulaire inférieure et triangulaire supérieure est dite diagonale. Autrement dit : i 6= j =⇒
+ai j = 0.
+Exemple 17.
+Exemples de matrices diagonales :
+
+−1
+0
+0
+
+0
+6
+0
+
+
+0
+0
+0
+
+et
+
+
+2
+0
+
+
+0
+3
+
+Exemple 18 (Puissances d’une matrice diagonale).
+Si D est une matrice diagonale, il est très facile de calculer ses puissances D p (par récurrence sur p) :
+
+
+ p
+
+α1 0 . . . . . .
+0
+α1 0 . . . . . .
+0
+ 0 α2 0
+ 0 αp 0
+...
+0
+...
+0
+2
+
+
+
+
+ .. . .
+
+
+.
+.
+.. 
+.
+.
+.
+.
+.
+p
+.
+.
+.
+.
+.
+.
+.
+=⇒
+D = .
+D= .
+.
+.
+.
+.
+.
+.
+. 
+. 
+
+
+
+
+ 0 . . . 0 αn−1 0 
+ 0 . . . 0 αp
+0
+0
+
+...
+
+...
+
+0
+
+αn
+
+n−1
+
+0
+
+...
+
+...
+
+0
+
+αnp
+
+MATRICES
+
+6. MATRICES TRIANGULAIRES, TRANSPOSITION, TRACE, MATRICES SYMÉTRIQUES
+
+18
+
+Théorème 4.
+Une matrice A de taille n × n, triangulaire, est inversible si et seulement si ses éléments diagonaux sont tous non nuls.
+Démonstration. Supposons que A soit triangulaire supérieure.
+• Si les éléments de la diagonale sont tous non nuls, alors la matrice A est déjà sous la forme échelonnée. En
+multipliant chaque ligne i par l’inverse de l’élément diagonal aii , on obtient des 1 sur la diagonale. De ce fait, la
+forme échelonnée réduite de A sera la matrice identité. Le théorème 3 permet de conclure que A est inversible.
+• Inversement, supposons qu’au moins l’un des éléments diagonaux soit nul et notons a`` le premier élément nul de
+la diagonale. En multipliant les lignes 1 à ` − 1 par l’inverse de leur élément diagonal, on obtient une matrice de la
+forme
+
+
+1 ∗ ···
+··· ∗
+
+
+.
+ 0 .. ∗ · · ·
+··· ∗ 
+
+
+ 0 0
+1
+∗
+··· ∗ 
+
+
+ 0 ··· 0
+0
+∗ ··· ∗ 
+
+.
+ 0 ··· 0
+
+0
+∗
+·
+·
+·
+∗
+
+
+ .
+..
+..
+.. 
+..
+ ..
+.
+.
+. ··· 0
+. 
+0 ···
+··· 0 ∗
+Il est alors clair que la colonne numéro ` de la forme échelonnée réduite ne contiendra pas de 1 comme pivot. La
+forme échelonnée réduite de A ne peut donc pas être I n et par le théorème 3, A n’est pas inversible.
+Dans le cas d’une matrice triangulaire inférieure, on utilise la transposition (qui fait l’objet de la section suivante) et
+on obtient une matrice triangulaire supérieure. On applique alors la démonstration ci-dessus.
+
+6.2. La transposition
+Soit A la matrice de taille n × p
+
+
+a11
+ a21
+
+A= .
+ ..
+an1
+
+a12
+a22
+..
+.
+an2
+
+
+a1p
+a2p 
+
+..  .
+. 
+anp
+
+...
+...
+...
+
+Définition 10.
+On appelle matrice transposée de A la matrice AT de taille p × n définie par :
+
+
+a11 a21 . . . an1
+ a12 a22 . . . an2 
+
+
+AT =  .
+..
+..  .
+ ..
+.
+. 
+a1p a2p . . . anp
+Autrement dit : le coefficient à la place (i, j) de AT est a ji . Ou encore la i-ème ligne de A devient la i-ème colonne de
+AT (et réciproquement la j-ème colonne de AT est la j-ème ligne de A).
+Notation : La transposée de la matrice A se note aussi souvent tA.
+Exemple 19.
+
+
+1
+4
+−7
+
+
+0
+1
+−1
+
+2
+5
+8
+
+T 
+3
+1
+−6 = 2
+
+1
+−5
+
+
+
+9
+
+T
+
+
+3
+0
+
+−5
+=
+3
+2
+
+−1
+2
+
+3
+
+L’opération de transposition obéit aux règles suivantes :
+Théorème 5.
+1. (A + B) T = AT + B T
+
+4
+5
+−6
+
+
+−7
+8
+9
+
+
+(1
+
+−2
+
+
+1
+5) T = −2
+5
+
+MATRICES
+
+6. MATRICES TRIANGULAIRES, TRANSPOSITION, TRACE, MATRICES SYMÉTRIQUES
+
+19
+
+2. (αA) T = αAT
+3. (AT ) T = A
+4. (AB) T = B T AT
+5. Si A est inversible, alors AT l’est aussi et on a (AT )−1 = (A−1 ) T .
+Notez bien l’inversion : (AB) T = B T AT , comme pour (AB)−1 = B −1 A−1 .
+
+6.3. La trace
+Dans le cas d’une matrice carrée de taille n × n, les éléments a11 , a22 , . . . , ann sont appelés les éléments diagonaux.
+Sa diagonale principale est la diagonale (a11 , a22 , . . . , ann ).
+
+
+a11 a12 . . . a1n
+ a21 a22 . . . a2n 
+
+
+ .
+..
+.. 
+..
+.
+ .
+.
+.
+. 
+an1
+
+an2
+
+...
+
+ann
+
+Définition 11.
+La trace de la matrice A est le nombre obtenu en additionnant les éléments diagonaux de A. Autrement dit,
+tr A = a11 + a22 + · · · + ann .
+Exemple 20. 
+• Si A = 20 15 , alors tr A = 2 + 5 = 7.
+1 1 2
+• Pour B = 5 2 8 , tr B = 1 + 2 − 10 = −7.
+11 0 −10
+
+Théorème 6.
+Soient A et B deux matrices n × n. Alors :
+1. tr(A + B) = tr A + tr B,
+2. tr(αA) = α tr A pour tout α ∈ K,
+3. tr(AT ) = tr A,
+4. tr(AB) = tr(BA).
+Démonstration.
+1. Pour tout 1 6 i 6 n, le coefficient (i, i) de A + B est aii + bii . Ainsi, on a bien tr(A + B) = tr(A) + tr(B).
+2. On a tr(αA) = αa11 + · · · + αann = α(a11 + · · · + ann ) = α tr A.
+3. Étant donné que la transposition ne change pas les éléments diagonaux, la trace de A est égale à la trace de AT .
+4. Notons ci j les coefficients de AB. Alors par définition
+cii = ai1 b1i + ai2 b2i + · · · + ain bni .
+Ainsi,
+tr(AB)
+
+=
+
+a11 b11
++a21 b12
+..
+.
++an1 b1n
+
++a12 b21
++a22 b22
+
++···
++···
+
++a1n bn1
++a2n bn2
+
++an2 b2n
+
++···
+
++ann bnn .
+
++a21 b12
++a22 b22
+
++···
++···
+
++an1 b1n
++an2 b2n
+
++a2n bn2
+
++···
+
++ann bnn .
+
+On peut réarranger les termes pour obtenir
+tr(AB)
+
+=
+
+a11 b11
++a12 b21
+..
+.
++a1n bn1
+
+MATRICES
+
+6. MATRICES TRIANGULAIRES, TRANSPOSITION, TRACE, MATRICES SYMÉTRIQUES
+
+20
+
+En utilisant la commutativité de la multiplication dans K, la première ligne devient
+b11 a11 + b12 a21 + · · · + b1n an1
+qui vaut le coefficient (1, 1) de BA. On note di j les coefficients de BA. En faisant de même avec les autres lignes,
+on voit finalement que
+tr(AB) = d11 + · · · + dnn = tr(BA).
+
+6.4. Matrices symétriques
+Définition 12.
+Une matrice A de taille n × n est symétrique si elle est égale à sa transposée, c’est-à-dire si
+A = AT ,
+ou encore si ai j = a ji pour tout i, j = 1, . . . , n. Les coefficients sont donc symétriques par rapport à la diagonale.
+Exemple 21.
+Les matrices suivantes sont symétriques :
+
+0
+2
+
+
+
+−1
+0
+5
+
+
+2
+4
+
+0
+2
+−1
+
+
+5
+−1
+0
+
+Exemple 22.
+Pour une matrice B quelconque, les matrices B · B T et B T · B sont symétriques.
+Preuve : (BB T ) T = (B T ) T B T = BB T . Idem pour B T B.
+
+6.5. Matrices antisymétriques
+Définition 13.
+Une matrice A de taille n × n est antisymétrique si
+AT = −A,
+c’est-à-dire si ai j = −a ji pour tout i, j = 1, . . . , n.
+Exemple 23.
+
+0
+1
+
+−1
+0
+
+
+
+
+
+0
+−4
+−2
+
+4
+0
+5
+
+
+2
+−5
+0
+
+Remarquons que les éléments diagonaux d’une matrice antisymétrique sont toujours tous nuls.
+Exemple 24.
+Toute matrice est la somme d’une matrice symétrique et d’une matrice antisymétrique.
+Preuve : Soit A une matrice. Définissons B = 12 (A+ AT ) et C = 12 (A− AT ). Alors d’une part A = B + C ; d’autre part B est
+symétrique, car B T = 12 (AT + (AT ) T ) = 12 (AT + A) = B ; et enfin C est antisymétrique, car C T = 12 (AT − (AT ) T ) = −C.
+Exemple :
+
+
+
+
+
+
+2 10
+2 9
+0 1
+Pour A =
+alors
+A =
++
+.
+8 −3
+9 −3
+−1 0
+| {z }
+| {z }
+symétrique
+
+antisymétrique
+
+Mini-exercices.
+1. Montrer que la somme de deux matrices triangulaires supérieures reste triangulaire supérieure. Montrer que
+c’est aussi valable pour le produit.
+2. Montrer que si A est triangulaire supérieure, alors AT est triangulaire inférieure. Et si A est diagonale ?
+
+MATRICES
+
+3. Soit A =
+
+6. MATRICES TRIANGULAIRES, TRANSPOSITION, TRACE, MATRICES SYMÉTRIQUES
+
+x1 !
+x2
+
+..
+.
+
+21
+
+. Calculer AT · A, puis A · AT .
+
+xn
+
+4. Soit A =
+
+a b
+c d
+
+
+
+. Calculer tr(A · AT ).
+
+5. Soit A une matrice de taille 2 × 2 inversible. Montrer que si A est symétrique, alors A−1 aussi. Et si A est
+antisymétrique ?
+6. Montrer que la décomposition d’une matrice sous la forme « symétrique + antisymétrique » est unique.
+
+Auteurs du chapitre
+• D’après un cours de Eva Bayer-Fluckiger, Philippe Chabloz, Lara Thomas de l’École Polytechnique Fédérale de
+Lausanne,
+• et un cours de Sophie Chemla de l’université Pierre et Marie Curie, reprenant des parties de cours de H. Ledret et
+d’une équipe de l’université de Bordeaux animée par J. Queyrut,
+• mixés et révisés par Arnaud Bodin, relu par Vianney Combet.
