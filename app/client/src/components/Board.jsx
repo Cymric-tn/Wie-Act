@@ -6,6 +6,7 @@ import ContextDock from "./ContextDock";
 import TopBar from "./TopBar";
 import SidePanel from "./SidePanel";
 import BoardAI from "./BoardAI";
+import VoicePanel from "./VoicePanel";
 import PageBar from "./PageBar";
 import Minimap from "./Minimap";
 import { TextEditor, NoteEditor, EquationEditor } from "./Editors";
@@ -89,8 +90,10 @@ export default function Board({ session, status, onLeave }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [tool, setToolState] = useState("pen");
   const [shapeKind, setShapeKind] = useState("rect");
-  const [background, setBackground] = useState(() => readStored("lumi-board-surface", "grid"));
-  const [color, setColor] = useState(() => inkFor(readStored("lumi-board-surface", "grid")));
+  // No surface chosen yet: Paper in the light theme, the dark grid otherwise.
+  const defaultSurface = document.documentElement.dataset.theme === "light" ? "paper" : "grid";
+  const [background, setBackground] = useState(() => readStored("lumi-board-surface", defaultSurface));
+  const [color, setColor] = useState(() => inkFor(readStored("lumi-board-surface", defaultSurface)));
   const [width, setWidth] = useState(4);
   const [fill, setFill] = useState(false);
   const [noteColor, setNoteColor] = useState(NOTE_COLORS[0].value);
@@ -1741,6 +1744,7 @@ export default function Board({ session, status, onLeave }) {
               {size.w > 700 && (
                 <Minimap items={shownItems} view={view} size={size} light={light} onNavigate={(x, y) => centerOn(x, y)} />
               )}
+              <VoicePanel room={room} me={me} />
             </div>
 
             <ContextDock

@@ -7,6 +7,7 @@ import { ai, ENGINE_COURSE, engineLanguage, replyLanguage } from "../../lib/engi
 import { courseMastery, masteryLevel, MASTERY } from "../../lib/demoData";
 import { refreshCourseMap, useCourses } from "../../lib/courseMap";
 import { readStored, store } from "../../lib/identity";
+import { planOf } from "../../lib/plans";
 import { addExam, daysLeft, getExam, inDays, listExams, removeExam, updateExam } from "../../lib/exams";
 import { AnswerText, Degraded, ExerciseCard, Progress, errorText, useProgress } from "../ai/AIBits";
 import "./prep.css";
@@ -119,7 +120,9 @@ function PrepHome({ readiness, onOpen }) {
           ))}
         </ul>
       ) : <p className="pn-empty">{t("prep.noExam")}</p>}
-      <NewExam onAdd={add} />
+      {planOf().exams != null && exams.length >= planOf().exams
+        ? <p className="pn-limit">{t("plan.examLimit")} <a href="/app/settings">{t("plan.see")}</a></p>
+        : <NewExam onAdd={add} />}
     </div>
   );
 }
@@ -400,7 +403,11 @@ export default function Prep() {
   const courses = useCourses();
   const readiness = courseMastery(courses[0]);
   const [course, setCourse] = useState(null);
-  const [view, setView] = useState({ name: "home" });
+  // ?study=<concept> (from the progress map) opens that concept's study page straight away.
+  const [view, setView] = useState(() => {
+    const concept = new URLSearchParams(window.location.search).get("study");
+    return concept && courses[0].units.some((u) => u.id === concept) ? { name: "study", concept, id: null } : { name: "home" };
+  });
   const [levelDone, setLevelDone] = useState(() => readStored(LEVEL_DONE_KEY, "") === "1");
 
   useEffect(() => {
@@ -416,11 +423,14 @@ export default function Prep() {
   };
   const masteryOf = (id) => courses[0].units.find((u) => u.id === id)?.mastery ?? 0;
   const toExam = (id) => setView({ name: "exam", id });
-  const toHome = () => setView({ name: "home" });
+  const toHome = () => {
+    if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
+    setView({ name: "home" });
+  };
   const graded = () => refreshCourseMap();
 
   if (view.name === "study")
-    return <StudyPage key={view.concept} concept={view.concept} title={conceptName(view.concept)} context={context} onBack={() => toExam(view.id)} onGraded={graded} />;
+    return <StudyPage key={view.concept} concept={view.concept} title={conceptName(view.concept)} context={context} onBack={() => (view.id ? toExam(view.id) : toHome())} onGraded={graded} />;
 
   if (view.name === "test")
     return (

@@ -12,9 +12,9 @@ export function LumiSpark({ size = 32, state = 'rest', label, halo }) {
       role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true}
     >
       {state === 'thinking' && !halo && <circle cx="46" cy="51" r="44" fill="var(--lumi-glow)" fillOpacity="0.18" />}
-      <path d={SPARK} fill={state === 'mastered' ? 'var(--lumi-spark)' : '#fff'} />
+      <path d={SPARK} fill={state === 'mastered' ? 'var(--lumi-spark)' : 'var(--logo-star, #fff)'} />
       {state === 'mastered'
-        ? <path d="M38 51l6 6 11-12" stroke="var(--lumi-void)" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        ? <path d="M38 51l6 6 11-12" stroke="var(--on-accent, #05061A)" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         : <circle cx="46" cy="51" r="7" fill="var(--lumi-glow)" />}
     </svg>
   );

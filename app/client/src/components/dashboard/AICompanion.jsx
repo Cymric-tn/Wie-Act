@@ -1,3 +1,4 @@
+import { QUESTIONS, getStyle, saveStyle, scoreStyle } from "../../lib/learningStyle";
 import { useEffect, useRef, useState } from "react";
 import Icon from "../Icons";
 import { useI18n } from "../../lib/i18n";
@@ -65,6 +66,41 @@ function Reply({ msg, onRetry, onFull, onGraded }) {
  * engine: classify → follow-up task (explain, hint, quiz, or grade when it
  * answers the open exercise).
  */
+/**
+ * The diagnostic step: four questions the first time the companion opens (never again once answered or skipped).
+ * The result is sent with every later request as the engine's `style`.
+ */
+export function StyleDiagnostic({ force = false, onDone }) {
+  const { t } = useI18n();
+  const [state, setState] = useState(() => (force || getStyle() === null ? { step: 0, answers: {} } : null));
+  const [result, setResult] = useState(null);
+  if (result) return <div className="ai-msg ai">{t("style.result", { style: t(`style.${result}`) })}</div>;
+  if (!state) return null;
+  const q = QUESTIONS[state.step];
+  const finish = (style) => {
+    saveStyle(style);
+    setState(null);
+    if (style) setResult(style);
+    onDone?.(style);
+  };
+  const answer = (option) => {
+    const answers = { ...state.answers, [q.id]: option };
+    if (state.step + 1 < QUESTIONS.length) setState({ step: state.step + 1, answers });
+    else finish(scoreStyle(answers));
+  };
+  return (
+    <div className="ai-msg ai wide ai-style">
+      {state.step === 0 && <p>{t("style.intro")}</p>}
+      <small>{t("style.step", { n: state.step + 1, total: QUESTIONS.length })}</small>
+      <b>{t(`style.${q.id}`)}</b>
+      <div className="ai-style-options">
+        {Object.keys(q.options).map((o) => <button key={o} className="chip d-chip" onClick={() => answer(o)}>{t(`style.${q.id}.${o}`)}</button>)}
+      </div>
+      <button className="link-btn" onClick={() => finish(null)}>{t("style.skip")}</button>
+    </div>
+  );
+}
+
 export default function AICompanion({ open, onClose, user, seed }) {
   const { t, lang } = useI18n();
   const status = useAiStatus();
@@ -179,6 +215,7 @@ export default function AICompanion({ open, onClose, user, seed }) {
     return () => clearTimeout(id);
   }, [justMastered]);
 
+  const [styleAsked, setStyleAsked] = useState(() => getStyle() !== null); // the suggestions wait for the diagnostic
   const langLabel = (id) => (id === "auto" ? t("lang.auto") : t(`lang.${id}`));
 
   return (
@@ -207,6 +244,7 @@ export default function AICompanion({ open, onClose, user, seed }) {
 
         <div className="ai-messages" ref={listRef} aria-live="polite">
           <div className="ai-msg ai">{t("ai.hello", { name: user.name.split(" ")[0] })}</div>
+          {messages.length === 0 && <StyleDiagnostic onDone={() => setStyleAsked(true)} />}
           {messages.map((m) => (
             m.from === "me"
               ? <div key={m.id} className="ai-msg me" dir="auto">{m.text}</div>
@@ -236,7 +274,7 @@ export default function AICompanion({ open, onClose, user, seed }) {
           {busy && <div className="ai-msg pending"><Progress state={progress} /></div>}
         </div>
 
-        {messages.length === 0 && (
+        {messages.length === 0 && styleAsked && (
           <div className="ai-suggest">
             {["ai.s1", "ai.s2", "ai.s3", "ai.s4"].map((k) => (
               <button key={k} className="chip d-chip" onClick={() => send(t(k))} dir="auto">{t(k)}</button>

@@ -14,7 +14,7 @@ export function getUser() {
 }
 
 export function saveUser(user) {
-  store(KEY, JSON.stringify({ name: user.name, email: user.email, role: user.role }));
+  store(KEY, JSON.stringify({ name: user.name, email: user.email, role: user.role, plan: user.plan }));
   store("ednova-board-name", user.name);
 }
 

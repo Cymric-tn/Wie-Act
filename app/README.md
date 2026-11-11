@@ -35,8 +35,16 @@ restarts. The AI features need the engine's bridge (see **AI engine** below); wi
 | `ENGINE_SERVICE_TOKEN` | server **and** bridge: the shared secret (header `X-Engine-Token`) | none: the bridge refuses to start without it |
 | `ENGINE_ALLOW_FORCE` | server: let requests force a degraded state (`context.fake_outcome`) for demos | on only when the bridge runs `--fake` |
 | `AI_COURSE` | server: the default course id | `analyse` |
+| `ICE_SERVERS` | server: WebRTC ICE servers as JSON, sent to the browser when it joins voice (add TURN here) | `[{"urls":"stun:stun.l.google.com:19302"}]` |
+| `VOICE_MAX_PEERS` | server: people per voice channel (full mesh) | `6` |
+| `LUMI_AUDIO_MAX_BYTES` | server **and** bridge: the largest "Ask Lumi" recording | `2097152` |
+| `LUMI_VOICE_TIMEOUT_MS` | server: deadline for one spoken question (STT + classify + answer) | `60000` |
+| `WHISPER_MODEL` | bridge: faster-whisper model (`tiny`, `base`, `small`, `medium`, a path) or `off` | `small` |
+| `WHISPER_DEVICE` / `WHISPER_COMPUTE` | bridge | `auto` / `int8` |
+| `WHISPER_LANGUAGES` | bridge: languages Whisper may pick from (empty = any) | `fr,en,ar` |
 
-Node 22.5 or newer is required (the server uses the built-in `node:sqlite`); the team's machines run Node 24.
+Node 22.5 or newer is required (the server uses the built-in `node:sqlite`); the team's machines run Node 24
+(`app/.nvmrc`; under Node 20 `npm test` stops with "Could not find 'test/**/*.test.js'").
 
 To run the three parts by hand (what `dev.sh` does):
 
@@ -47,9 +55,11 @@ cd app/server && npm run dev                          # http://localhost:3000
 cd app/client && npm run dev                          # http://localhost:5173
 ```
 
-Tests: `npm test` in `server/` (sockets, permissions, persistence, limits, and the AI API against `bridge.py --fake`;
-set `ENGINE_PYTHON` to a python that has the engine's requirements) and in `client/` (geometry, undo, history replay,
-templates, translations). The bridge itself is tested against the real `Engine` in the repo's `tests/test_bridge.py`.
+Tests: `npm test` in `server/` (sockets, permissions, persistence, limits, and the AI API against `bridge.py --fake`,
+run with `ENGINE_PYTHON`, else the repo's `myenv`, else `python3`; with none that can import the engine that suite is
+listed as skipped, so check the count: 61 with it, 43 without) and in `client/` (geometry, undo, history replay,
+templates, translations; `test/voice.test.js` covers voice signaling and "Ask Lumi" against a stub engine). The bridge
+itself is tested against the real `Engine` in the repo's `tests/test_bridge.py`.
 
 ## Pages
 
@@ -111,6 +121,47 @@ browser ──/api/ai/*──▶ Node server (feature layer) ──HTTP/NDJSON, 
   (same Result / Event shapes, forced outcomes with `context.fake_outcome`), which is what the AI tests use.
 - The course is `analyse` (derivation), the engine's only course: the progress map draws its concepts as planets,
   generated from `data/courses/analyse.yaml` by `python app/scripts/gen_course.py` (a repo test fails if it drifts).
+
+## Voice chat and "Ask Lumi"
+
+Members of a board room can join its **voice channel** (button at the top right of the board) and talk to each other.
+Any member can **hold "Ask Lumi"**, speak a question and release it. Everyone in the call sees the question and Lumi's
+answer in the transcript strip, and each browser reads the answer aloud.
+
+```
+browser ──getUserMedia──▶ RTCPeerConnection × N ◀──audio, peer to peer──▶ other members (≤ 6, full mesh)
+        ──Socket.IO voice:* (signaling only)──▶ server/src/voice/signaling.js
+        ──Socket.IO lumi:ask (webm/opus)──▶ server/src/voice/lumi.js ──/voice/transcribe──▶ bridge (faster-whisper)
+                                                                   ──engine.run classify → explain | hint | quiz──▶ bridge (engine)
+        ◀──lumi:thinking / lumi:reply / lumi:error── to the whole voice channel; speechSynthesis reads the answer
+```
+
+- **Speech to text** runs in the bridge with [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (`small`, int8,
+  CPU: about 3 s for a short question on a 12-core laptop). It is not an LLM call and spends no FelCloud quota. Install it in the
+  engine's python with `pip install faster-whisper`. It decodes webm/opus through PyAV, which ships its own ffmpeg
+  libraries, so no system `ffmpeg` is needed. The model (~480 MB) downloads on first use and is loaded when the bridge
+  starts. Without faster-whisper, voice chat still works and "Ask Lumi" says speech recognition is unavailable.
+- **The answer goes through `engine.run`,** the same path as the tutor: classify, then the engine's follow-up (explain,
+  hint or quiz), with the room's whiteboard text (text items, notes, equations; 2,000 characters) as explain's
+  `board_text` and the last four voice turns as its `history`. Chit-chat and off-topic questions get a fixed line.
+  Degraded states (quota, busy room, bridge down) become a short spoken message with the wait time.
+- **Text to speech** is the browser's `speechSynthesis` (FelCloud has no TTS). The voice depends on the device. When
+  there is no voice for the language, the panel says so and the answer stays as text. "Read aloud" can be turned off
+  per browser. While an answer is read, the reader's microphone is muted to the group so Lumi is not heard twice.
+- **Guards (server):** voice requires joining the board room first (its access code applies). Signals are relayed only
+  between members of one voice channel. Each recording is capped at 2 MB and 20 s, each room handles one Lumi question
+  at a time, and each user can ask once every 5 s. Recordings are never stored. Lumi in voice is premium:
+  `canUseLumiVoice(user)` in `server/src/voice/lumi.js` enforces it on the server. The app has no tiers yet, so it
+  currently allows everyone (TODO).
+- **HTTPS:** browsers allow the microphone only on `https://` or `localhost`. For a demo across a LAN, serve the
+  client over HTTPS (a tunnel, or Vite with a certificate) and set `VITE_SERVER_URL` / `CLIENT_ORIGINS` to match.
+  Users behind strict NATs (some university networks) need a TURN server in `ICE_SERVERS`.
+
+Manual test: two browsers (one private window) with headphones join the same room. Both appear in the call, and the
+ring lights when the other speaks. Mute shows on the other side. Hold "Ask Lumi" and ask "what is the derivative of x
+squared?": both see the question and the answer, and both hear it. A tap shorter than 0.4 s is ignored with a hint. A
+second question while Lumi answers is refused. Stop the bridge and ask again: a clean error, and the next question
+works once the bridge is back. Deny the microphone: a clear message, and the board keeps working.
 
 ## Whiteboard features
 

@@ -56,6 +56,11 @@
 }
 .low-power .aurora-blob { animation: none; filter: none; will-change: auto; }
 
+/* Light theme: a pale wash of the same three colours, and no stars. */
+html[data-theme="light"] .aurora { --aurora-k: .32; }
+html[data-theme="light"] .aurora[data-intensity="full"] { --aurora-k: .5; }
+html[data-theme="light"] .aurora-stars { display: none; }
+
 /* On a phone three full-size blobs would pile up behind the text. */
 @media (max-width: 760px) {
   .aurora-blob { filter: blur(30px); }

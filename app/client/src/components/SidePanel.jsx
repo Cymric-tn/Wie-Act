@@ -287,7 +287,7 @@ function HistoryTab({ history, onLoad, onScrub, onPlay, onExit }) {
             <b>{entry ? formatTime(entry.ts) : "Start"}</b>
             <span>{entry ? entry.label : "Before the first change"}</span>
           </div>
-          <input className="input"
+          <input
             type="range"
             min="0"
             max={count}

@@ -9,6 +9,7 @@ const crypto = require("crypto");
 
 const RUN_TIMEOUT_MS = 120_000; // explain is bounded at 25 s; OCR at 40 s; background prep can queue longer
 const TOKEN_HEADER = "x-engine-token";
+const TRANSCRIBE_TIMEOUT_MS = 30_000; // a 20 s question takes a few seconds on CPU with the small model
 const DIAGRAM_TIMEOUT_MS = 30_000; // the bridge stops the maths at 10 s; this also covers waiting behind another diagram
 
 function createHttpEngine({ url, token = "", fetchImpl = fetch, timeoutMs = RUN_TIMEOUT_MS } = {}) {
@@ -96,7 +97,7 @@ function createHttpEngine({ url, token = "", fetchImpl = fetch, timeoutMs = RUN_
     run: (task, inputs = {}, context = {}, priority = "INTERACTIVE", onEvent) => stream("/run", { task, inputs, context, priority }, task, onEvent),
     /** Engine.generate_page: one prep page (explanation, worked example, quiz items). Resolves to the page, or a degraded Result. */
     generatePage: (focusPoint, context = {}, onEvent) => stream("/generate_page", { focus_point: focusPoint, context }, "generate_page", onEvent),
-    followUp: (classification, hasOpenExercise = false) => call("/follow_up", { method: "POST", body: { classification, has_open_exercise: Boolean(hasOpenExercise) } }),
+    followUp: (classification, hasOpenExercise = false, message) => call("/follow_up", { method: "POST", body: { classification, has_open_exercise: Boolean(hasOpenExercise), message: message || undefined } }),
     getExercise: (id) => call(`/exercises/${encodeURIComponent(id)}`).then((r) => r.exercise || null).catch((e) => (e.status === 404 ? null : Promise.reject(e))),
     course: (id) => call(`/courses/${encodeURIComponent(id)}`).then((r) => r.course || null).catch((e) => (e.status === 404 ? null : Promise.reject(e))),
     addMaterial: (material) => call("/materials", { method: "POST", body: material, timeout: 180_000 }),
@@ -107,6 +108,8 @@ function createHttpEngine({ url, token = "", fetchImpl = fetch, timeoutMs = RUN_
     /** Diagrams: exact maths, no LLM. A refusal is a RangeError whose message is written for the learner. */
     diagram: (request) => call("/diagrams", { method: "POST", body: request, timeout: DIAGRAM_TIMEOUT_MS }).then((r) => r.spec),
     checkDiagram: (spec, answer, lang) => call("/diagrams/check", { method: "POST", body: { spec, answer, lang }, timeout: DIAGRAM_TIMEOUT_MS }),
+    /** Lumi voice: speech to text in the bridge (faster-whisper, no LLM). RangeError = nothing usable was heard. */
+    transcribe: (audioBase64, mime, timeout = TRANSCRIBE_TIMEOUT_MS) => call("/voice/transcribe", { method: "POST", body: { audio: audioBase64, mime }, timeout }),
     health: () => call("/health", { timeout: 2500 }),
     async close() {}
   };

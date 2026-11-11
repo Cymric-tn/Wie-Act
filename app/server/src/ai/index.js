@@ -3,7 +3,7 @@
 // fallback: when the bridge is down, results are degraded ("service_unavailable") and the UI says so.
 //
 // The surface: run, generatePage, followUp, getExercise, course, addMaterial, removeMaterial, confirmChunk, invalidate,
-// metrics, health. status() tells the UI which backend answers (engine | fake) and whether it is connected.
+// metrics, transcribe (Lumi voice), health. status() tells the UI which backend answers (engine | fake) and whether it is connected.
 
 const { createHttpEngine } = require("./http-engine");
 

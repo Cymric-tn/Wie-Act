@@ -49,12 +49,17 @@ The screens read these fields of the engine's result (`/api/ai/run`, `/api/ai/tu
 and the CSS. Need another field or a new state? Ask the engine side; do not patch the feature layer.
 
 ## Design system
-Colours, type and base components come from `client/src/styles/lumi-tokens.css`; app-level additions are in `styles/lumi-app.css`. Use `var(--lumi-*)`, never a hex. Glow is for AI activity, Spark for mastery. For the canvas use `lib/lumiColors.js`. Browser storage keys keep their `ednova-` prefix on purpose: renaming them signs people out.
+Colours, type and base components come from `client/src/styles/lumi-tokens.css`; app-level additions are in `styles/lumi-app.css`. Use `var(--lumi-*)`, never a hex. The app has a light theme (`html[data-theme="light"]`): write overlays as `rgb(var(--tint) / a)`, scrims as `rgb(var(--base) / a)`, the strongest fill as `var(--contrast)` with `var(--on-contrast)`, text on a bright accent as `var(--on-accent)`, and an accent used as text as `var(--glow-ink)` / `--spark-ink` / `--rose-ink`. Never write literal white or #05061A, or the screen breaks in one of the two themes. Glow is for AI activity, Spark for mastery. For the canvas use `lib/lumiColors.js`. Browser storage keys keep their `ednova-` prefix on purpose: renaming them signs people out.
 
 ## Diagram generator (`/app/diagrams`, no LLM, no quota, works with the fake engine too)
 Screen: `client/src/components/dashboard/Diagrams.jsx`, styles under `.dg-*` in `dashboard.css`; colours of the drawing are the `--dg-*`
 variables on `.dg-page`. The JSON contract is `docs/diagram.schema.json`. Trigger words (Darija, Arabizi...) are in
 `app/diagrams/triggers/*.yaml`, no code change needed. "Send to whiteboard" opens the board and the items arrive selected, as ordinary items.
+
+## Voice chat
+`components/VoicePanel.jsx` and `styles/voice.css` (`.vc-*`) are design-owned. The hooks in `lib/voice/` (WebRTC, recording,
+speechSynthesis) and `server/src/voice/*` are logic: ask before changing them. Event names `voice:*` / `lumi:*` and the
+`lumi:reply` fields (`transcript`, `reply`, `spoken`, `lang`, `askedBy`, `degraded`) are a contract.
 
 ## Design priorities
 1. **Degraded and waiting states** (the engine is slow and quota-limited by design): fast-mode extracts + "get the full explanation", busy / quota

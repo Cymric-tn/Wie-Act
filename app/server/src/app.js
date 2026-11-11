@@ -9,7 +9,11 @@ const { openDatabase } = require("./db");
 const { createEngine } = require("./ai");
 const { openAiStore } = require("./ai/store");
 const { createAiRouter } = require("./ai/routes");
+const { createVoiceRooms } = require("./voice/signaling");
+const { createLumiVoice } = require("./voice/lumi");
 const V = require("./validate");
+const { securityHeaders } = require("./security");
+const { planOf } = require("./plans");
 
 const USER_COLORS = [
   "#a279ff", "#75e8ff", "#40d9be", "#ffc45c",
@@ -60,6 +64,9 @@ function codeMatches(meta, code) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+/** The listed keys of obj that are set. */
+const drop = (obj, keys) => Object.fromEntries(keys.filter((k) => obj[k] !== undefined).map((k) => [k, obj[k]]));
+
 const imageBytes = (item) => (item && item.type === "image" ? item.src.length : 0);
 
 function createServer(options = {}) {
@@ -69,7 +76,8 @@ function createServer(options = {}) {
     log = console.log,
     unloadAfterMs = 10 * 60 * 1000,
     rate = { capacity: 400, perSecond: 200 },
-    ai = {}
+    ai = {},
+    voice: voiceOptions = {} // { maxPeers, iceServers, canUseLumi(user), timeoutMs, minGapMs, audioMax } (tests, deployments)
   } = options;
 
   const db = openDatabase(dbPath);
@@ -82,14 +90,24 @@ function createServer(options = {}) {
   const rooms = new Map();
 
   const app = express();
+  app.use(securityHeaders(app));
   app.use(cors({ origin: origins }));
   app.get("/health", (_req, res) => res.json({ status: "ok", rooms: rooms.size, ai: engine.status() }));
-  app.use("/api", createAiRouter({ engine, store: aiStore, uploadsDir, allowForce: ai.allowForce ?? (() => engine.status().backend === "fake"), log }));
+  const aiRouter = createAiRouter({ engine, store: aiStore, uploadsDir, allowForce: ai.allowForce ?? (() => engine.status().backend === "fake"), log, planCaps: ai.planCaps, uploadsPerMinute: ai.uploadsPerMinute });
+  app.use("/api", aiRouter);
 
   const httpServer = http.createServer(app);
   const io = new Server(httpServer, {
     cors: { origin: origins, methods: ["GET", "POST"] },
     maxHttpBufferSize: 6e6
+  });
+
+  // ---------- group voice (WebRTC signaling) and "Ask Lumi" in voice ----------
+  const voice = createVoiceRooms({ io, ...drop(voiceOptions, ["maxPeers", "iceServers"]) });
+  const lumiVoice = createLumiVoice({
+    io, voice, rooms, engine, run: aiRouter.run, log,
+    ...drop(voiceOptions, ["timeoutMs", "minGapMs", "audioMax"]),
+    ...(voiceOptions.canUseLumi ? { canUse: voiceOptions.canUseLumi } : {})
   });
 
   // ---------- room state ----------
@@ -272,6 +290,7 @@ function createServer(options = {}) {
     const canEdit = (room) => !room.meta.locked || isHost(room);
 
     function leave() {
+      voice.leave(socket); // leaving the board (or switching rooms, or disconnecting) leaves its voice channel
       const ctx = current();
       if (!ctx) return;
       const { room, user } = ctx;
@@ -339,7 +358,7 @@ function createServer(options = {}) {
       const users = usersOf(room);
       const used = new Set(users.map((u) => u.color));
       const color = USER_COLORS.find((c) => !used.has(c)) || USER_COLORS[users.length % USER_COLORS.length];
-      const user = { id: socket.id, clientId, name, color, joinedAt: Date.now() };
+      const user = { id: socket.id, clientId, name, color, joinedAt: Date.now(), tier: planOf(payload?.plan) }; // tier: what Lumi in voice checks
 
       // The room's creator always gets host back; otherwise an empty seat is filled.
       const hostOnline = users.some((u) => u.clientId === room.meta.host);
@@ -592,6 +611,9 @@ function createServer(options = {}) {
       ack({ items: [...ctx.room.items.values()], entries: db.history(ctx.room.name) });
     }, 20);
 
+    voice.register(socket, on, lumiVoice);
+    lumiVoice.register(socket, on);
+
     socket.on("disconnect", () => {
       try {
         leave();
@@ -607,6 +629,8 @@ function createServer(options = {}) {
     io,
     rooms,
     engine,
+    voice,
+    lumiVoice,
     listen(port = 3000, host = "0.0.0.0") {
       return new Promise((resolve) => httpServer.listen(port, host, () => resolve(httpServer.address().port)));
     },

@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import Icon from "../Icons";
 import ProgressMap from "./ProgressMap";
-import AICompanion from "./AICompanion";
+import { ThemeToggle, ThemeChoice } from "../ThemeToggle";
+import AICompanion, { StyleDiagnostic } from "./AICompanion";
 import Prep from "./Prep";
 import Materials from "./Materials";
 import Review, { EngineStatusCard } from "./Review";
 import {
   Card, Meter, RoomsCard, BoardCard, PrepCard, MaterialsCard, CompanionCard, JoinRoom, RoomList,
-  BoardPreview, AiBoardChips, ClassKpis, GroupProgress, Roster, WeakPoints, ProfActions, openBoard
+  BoardPreview, AiBoardChips, ClassKpis, GroupProgress, Roster, WeakPoints, ProfActions, openBoard, openVoice
 } from "./Widgets";
 import { useI18n, LanguageSwitcher, LANGUAGES } from "../../lib/i18n";
 import { Link, navigate } from "../../lib/router";
 import { getUser, saveUser, signOut } from "../../lib/session";
+import { STYLE_IDS, getStyle, saveStyle } from "../../lib/learningStyle";
+import { PLAN_IDS, planId } from "../../lib/plans";
 import { ROOMS, CLASS, courseMastery, weakTopics } from "../../lib/demoData";
 import { daysLeft, listExams } from "../../lib/exams";
 import { refreshCourseMap, useCourseDataState, useCourses } from "../../lib/courseMap";
@@ -33,6 +36,7 @@ const NAV = {
     ] },
     { group: "nav.together", items: [
       { id: "rooms", icon: "users", key: "nav.rooms" },
+      { id: "voice", icon: "mic", key: "nav.voice" },
       { id: "board", icon: "board", key: "nav.board", badge: "live" }
     ] }
   ],
@@ -44,6 +48,7 @@ const NAV = {
     ] },
     { group: "nav.together", items: [
       { id: "rooms", icon: "door", key: "nav.rooms" },
+      { id: "voice", icon: "mic", key: "nav.voice" },
       { id: "board", icon: "board", key: "nav.board", badge: "live" }
     ] }
   ]
@@ -143,6 +148,7 @@ function TopBar({ user, section, onMenu, onRole, onCompanion }) {
             </button>
           ))}
         </div>
+        <ThemeToggle />
         <LanguageSwitcher />
         <button className="btn btn-ai small d-top-ai" onClick={onCompanion}><Icon name="sparkle" size={16} /> <span>{t("nav.companion")}</span></button>
       </div>
@@ -224,7 +230,7 @@ function StudentHome({ user, onSoon, onCompanion }) {
       <Greeting user={user} onCompanion={() => onCompanion()} />
       <ContinueCard />
       <Card icon="planet" title={t("map.title")} example={mapData === "failed"} className="span-8 map-card">
-        <ProgressMap compact onOpenFull={() => navigate("/app/map")} />
+        <ProgressMap compact onOpenFull={() => navigate("/app/map")} onConcept={(id) => navigate(`/app/map?concept=${encodeURIComponent(id)}`)} />
       </Card>
       <PrepCard onSoon={onSoon} />
       <RoomsCard onSoon={onSoon} />
@@ -248,6 +254,54 @@ function ProfessorHome({ user, onSoon, onCompanion }) {
   );
 }
 
+/** The plan of this browser's profile (a preview: there are no paid accounts yet). The server enforces the same rules. */
+function PlanCard({ user, onPlan }) {
+  const { t } = useI18n();
+  const current = planId(user);
+  const rows = ["companion", "board", "voice", "prep", "class"];
+  return (
+    <Card icon="shield" title={t("plan.title")} sub={t("plan.hint")} className="span-12">
+      <div className="d-plans" role="radiogroup" aria-label={t("plan.title")}>
+        {PLAN_IDS.map((id) => (
+          <button key={id} role="radio" aria-checked={current === id} className={"d-plan glass-hover" + (current === id ? " active" : "")} onClick={() => onPlan(id)}>
+            <b>{t(`plan.${id}`)}</b>
+            <small>{t(`plan.${id}.for`)}</small>
+            <ul>
+              {rows.map((row) => <li key={row} className={id === "free" && row !== "companion" && row !== "prep" ? "off" : ""}>{t(`plan.${row}.${id === "free" ? "free" : "paid"}`)}</li>)}
+            </ul>
+          </button>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+/** The learner's explanation style: the diagnostic's result, changeable by hand, or the four questions again. */
+function LearningStyleCard() {
+  const { t } = useI18n();
+  const [value, setValue] = useState(getStyle);
+  const [asking, setAsking] = useState(false);
+  const pick = (id) => { saveStyle(id); setValue(getStyle()); };
+  return (
+    <Card icon="sparkle" title={t("style.title")} sub={t("style.hint")} className="span-7">
+      {asking
+        ? <div className="lumi-dark d-style-ask"><StyleDiagnostic force onDone={() => { setAsking(false); setValue(getStyle()); }} /></div>
+        : (
+          <>
+            <div className="d-lang-cards ai-langs" role="radiogroup" aria-label={t("style.title")}>
+              {[...STYLE_IDS, "skipped"].map((id) => (
+                <button key={id} role="radio" aria-checked={(value || "skipped") === id} className={"d-lang-card glass-hover" + ((value || "skipped") === id ? " active" : "")} onClick={() => pick(id)}>
+                  <b>{t(id === "skipped" ? "style.none" : `style.${id}`)}</b>
+                </button>
+              ))}
+            </div>
+            <button className="btn btn-secondary small" onClick={() => setAsking(true)}>{t("style.retake")}</button>
+          </>
+        )}
+    </Card>
+  );
+}
+
 function AiLanguageCard() {
   const { t } = useI18n();
   const [value, setValue] = useState(replyLanguage);
@@ -266,11 +320,44 @@ function AiLanguageCard() {
   );
 }
 
+/** Voice chat: pick a room, join its call. The call itself lives on the room's board (components/VoicePanel.jsx). */
+function VoiceHub() {
+  const { t } = useI18n();
+  const [room, setRoom] = useState("");
+  return (
+    <div className="d-grid">
+      <Card icon="mic" title={t("voice.title")} sub={t("voice.sub")} className="span-7">
+        <form className="d-voice-start" onSubmit={(e) => { e.preventDefault(); if (room.trim()) openVoice(room.trim()); }}>
+          <div className="d-join-field">
+            <Icon name="key" size={16} />
+            <input value={room} onChange={(e) => setRoom(e.target.value)} placeholder={t("rooms.enterCode")} maxLength={80} aria-label={t("rooms.enterCode")} />
+          </div>
+          <button className="btn btn-primary" disabled={!room.trim()}><Icon name="mic" size={17} /> {t("voice.start")}</button>
+        </form>
+        <h3 className="d-subhead">{t("rooms.active")}</h3>
+        <RoomList />
+      </Card>
+      <Card icon="sparkle" title={t("voice.how")} className="span-5">
+        <ol className="d-voice-steps">
+          <li><Icon name="mic" size={17} /><span>{t("voice.tip1")}</span></li>
+          <li><LumiSpark size={17} /><span>{t("voice.tip2")}</span></li>
+          <li><Icon name="globe" size={17} /><span>{t("voice.tip3")}</span></li>
+          <li><Icon name="shield" size={17} /><span>{t("voice.tip4")}</span></li>
+        </ol>
+      </Card>
+    </div>
+  );
+}
+
 function LowPowerCard() {
   const { t } = useI18n();
   const [on, setOn] = useState(isLowPower);
   return (
     <Card icon="bolt" title={t("settings.display")} className="span-7">
+      <div className="theme-row">
+        <span><b>{t("theme.label")}</b><small>{t("theme.hint")}</small></span>
+        <ThemeChoice />
+      </div>
       <button
         className={"toggle-row" + (on ? " on" : "")}
         role="switch"
@@ -285,13 +372,15 @@ function LowPowerCard() {
   );
 }
 
-function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
+function Section({ user, section, onSoon, onToast, onCompanion, onRole, onPlan }) {
   const { t, lang, setLang } = useI18n();
   const mapData = useCourseDataState();
   const isProf = user.role === "professor";
 
   switch (section) {
-    case "voice": // not built: hidden from the menu, old links land on the home page
+    case "voice":
+      return <VoiceHub />;
+
     case "groups":
     case "insights":
     case "home":
@@ -303,7 +392,7 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
       return (
         <div className="d-page">
           <Card icon="planet" title={t("map.title")} sub={t("map.sub")} example={mapData === "failed"} className="map-full">
-            <ProgressMap />
+            <ProgressMap onAsk={(text) => onCompanion(text)} />
           </Card>
         </div>
       );
@@ -377,7 +466,9 @@ function Section({ user, section, onSoon, onToast, onCompanion, onRole }) {
               </div>
             </dl>
           </Card>
+          <LearningStyleCard />
           <LowPowerCard />
+          <PlanCard user={user} onPlan={onPlan} />
         </div>
       );
 
@@ -407,6 +498,11 @@ export default function Dashboard({ section }) {
     setAiOpen(true);
     setMenuOpen(false);
   };
+  const changePlan = (plan) => {
+    const next = { ...user, plan };
+    saveUser(next);
+    setUser(next);
+  };
   const changeRole = (role) => {
     const next = { ...user, role };
     saveUser(next);
@@ -429,7 +525,7 @@ export default function Dashboard({ section }) {
       <div className={"d-main" + (section === "rooms" || section === "board" ? " d-room" : "")}>
         <TopBar user={user} section={section} onMenu={() => setMenuOpen(true)} onRole={changeRole} onCompanion={() => openCompanion()} onSoon={onSoon} />
         <main className="d-content" key={`${section}-${user.role}`}>
-          <Section user={user} section={section} onSoon={onSoon} onToast={onToast} onCompanion={openCompanion} onRole={changeRole} />
+          <Section user={user} section={section} onSoon={onSoon} onToast={onToast} onCompanion={openCompanion} onRole={changeRole} onPlan={changePlan} />
         </main>
       </div>
       {!aiOpen && (

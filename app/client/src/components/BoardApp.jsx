@@ -4,6 +4,7 @@ import Lobby from "./Lobby";
 import Board from "./Board";
 import { clientId, readStored, store } from "../lib/identity";
 import { getUser } from "../lib/session";
+import { planId } from "../lib/plans";
 
 function roomFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -79,7 +80,7 @@ export default function BoardApp() {
 
   function join({ name, room, code }) {
     store("ednova-board-name", name);
-    wantedRef.current = { name, room, code, clientId: clientId() };
+    wantedRef.current = { name, room, code, clientId: clientId(), plan: planId() };
     setError(null);
     socket.emit("board:join", wantedRef.current);
   }

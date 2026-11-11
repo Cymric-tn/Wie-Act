@@ -36,7 +36,7 @@ export function buildCourse(mastery = {}, lang = "fr") {
     const lessons = needs.length
       ? needs.map((r) => ({ id: r, name: title(byId[r].titles, lang), mastery: level(r) }))
       : [{ id: c.id, name: lang === "fr" ? "Exercices" : lang === "ar" ? "تمارين" : "Practice", mastery: level(c.id) }];
-    return { id: c.id, name: title(c.titles, lang), lessons, mastery: level(c.id) };
+    return { id: c.id, name: title(c.titles, lang), requires: needs, lessons, mastery: level(c.id) };
   });
   return {
     id: COURSE_ID, name: title(ANALYSE.titles, lang), color: COURSE_COLOR, professor: "", units,

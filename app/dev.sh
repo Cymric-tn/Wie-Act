@@ -3,7 +3,9 @@
 #
 #   app/dev.sh            # the engine's FakeEngine: no key, no model, no quota (the default)
 #   app/dev.sh --real     # the real engine, ENV_FILE=.env.real (spends the team's FelCloud quota)
-#   app/dev.sh --stop     # nothing to do: Ctrl-C stops all three
+#   app/dev.sh --ollama   # the real engine on LOCAL models (ENV_FILE=.env.ollama; Ollama must be running; needs ~8 GB free RAM
+#                         # for the 8B; the constraint simulator is on; own cache and metrics files)
+#   Ctrl-C stops all three.
 #
 # Ports (one place; the README lists the same): override with BRIDGE_PORT, SERVER_PORT, CLIENT_PORT.
 # Needs Node >= 22.5 (the server uses node:sqlite) and a python with the engine's requirements (ENGINE_PYTHON, else
@@ -20,6 +22,7 @@ for a in "$@"; do
   case "$a" in
     --real) MODE=real ;;
     --fake) MODE=fake ;;
+    --ollama) MODE=ollama ;;
     -h|--help) sed -n 2,12p "$0"; exit 0 ;;
     *) echo "unknown option $a (try --help)"; exit 2 ;;
   esac
@@ -74,6 +77,12 @@ if [ "$MODE" = real ]; then
   [ -f "$ROOT/.env.real" ] || { echo "no .env.real at the repo root: the real engine needs its key profile."; exit 1; }
   echo "REAL engine: every AI request spends the team's FelCloud quota (20 / min)."
   ENV_FILE="$ROOT/.env.real" "$PY" bridge/bridge.py --port "$BRIDGE_PORT" >.dev-logs/bridge.log 2>&1 &
+elif [ "$MODE" = ollama ]; then
+  [ -f "$ROOT/.env.ollama" ] || { echo "no .env.ollama at the repo root."; exit 1; }
+  curl -s -m 3 localhost:11434/api/tags >/dev/null || { echo "Ollama does not answer on :11434: start it first."; exit 1; }
+  echo "LOCAL models through Ollama (loaded on first use; the 8B needs ~5 GB of free RAM)."
+  ENV_FILE="$ROOT/.env.ollama" CACHE_PATH="$ROOT/data/cache.ollama.sqlite" METRICS_PATH="$ROOT/metrics/ollama.jsonl" \
+    "$PY" bridge/bridge.py --port "$BRIDGE_PORT" >.dev-logs/bridge.log 2>&1 &
 else
   "$PY" bridge/bridge.py --fake --fake-speed "${FAKE_SPEED:-0.2}" --port "$BRIDGE_PORT" >.dev-logs/bridge.log 2>&1 &
 fi

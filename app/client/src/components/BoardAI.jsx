@@ -6,6 +6,7 @@ import Icon from "./Icons";
 import { ai, engineLanguage, replyLanguage } from "../lib/engine";
 import { renderToCanvas } from "../lib/exporters";
 import { useI18n } from "../lib/i18n";
+import { planOf } from "../lib/plans";
 import { AnswerText, Degraded, Progress, ReportButton, Sources, errorText, useAiStatus, useProgress } from "./ai/AIBits";
 import "./dashboard/dashboard.css";
 import { LumiSpark } from "./LumiSpark";
@@ -149,6 +150,18 @@ export default function BoardAI({ room, courseId, pageItems, selected, backgroun
     : out?.kind === "claim" ? `${VERDICTS[data.verdict]?.label || data.verdict}: ${out.inputs.claim}${data.correction ? `\n→ ${data.correction}` : ""}`
       : out?.kind === "work" ? (data.feedback || (data.final_verdict === "CORRECT" ? "✓ Every line checks out" : null))
         : out?.kind === "ocr" ? data.text || data.latex : null;
+
+  if (!planOf().boardAi) {
+    return (
+      <div className="bai lumi-dark">
+        <div className="card panel-card glass">
+          <div className="bai-head"><div className="eyebrow bai-name"><LumiSpark size={20} state="rest" /> LUMI</div></div>
+          <p className="panel-copy">{t("plan.boardLocked")}</p>
+          <a className="btn btn-secondary small" href="/app/settings">{t("plan.see")}</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bai lumi-dark">

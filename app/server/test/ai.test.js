@@ -15,9 +15,9 @@ async function ndjson(res) {
   return text.split("\n").filter(Boolean).map((l) => JSON.parse(l));
 }
 
-// The python that can import the engine (ENGINE_PYTHON, else python3 / python). The AI tests run the web app against
+// The python that can import the engine (ENGINE_PYTHON, else the repo's myenv, else python3 / python; as app/dev.sh). The AI tests run the web app against
 // the ENGINE'S OWN FakeEngine through bridge.py --fake: the same Result / Event shapes and degrade reasons as the real one.
-const python = [process.env.ENGINE_PYTHON, "python3", "python"].filter(Boolean).find((cmd) =>
+const python = [process.env.ENGINE_PYTHON, path.join(ROOT, "myenv/bin/python"), "python3", "python"].filter(Boolean).find((cmd) =>
   spawnSync(cmd, ["-c", `import sys; sys.path.insert(0, ${JSON.stringify(ROOT)}); import engine.fake`], { cwd: ROOT }).status === 0);
 const skip = python ? false : "no python with the engine's requirements (set ENGINE_PYTHON)";
 
@@ -38,7 +38,7 @@ async function waitUp(engine) {
 function harness(ai) {
   const ctx = {};
   before(async () => {
-    ctx.server = createServer({ log: quiet, ai: { ...ai } });
+    ctx.server = createServer({ log: quiet, ai: { ...ai, planCaps: { free: 2 }, uploadsPerMinute: 100 } });
     const port = await ctx.server.listen(0, "127.0.0.1");
     ctx.base = `http://127.0.0.1:${port}`;
     ctx.post = (url, body) => fetch(ctx.base + url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -333,6 +333,68 @@ describe("AI API through the bridge (the engine's FakeEngine)", { skip }, () => 
     const theirs = (await (await fetch(`${ctx.base}/api/materials?learner_id=stu-b`)).json()).materials;
     assert.ok(!theirs.some((m) => m.id === stored.id));
     assert.equal((await ctx.post("/api/materials", { mime: "application/x-sh", data: "eA==", owner_id: "a", course_id: "analyse" })).status, 400);
+  });
+
+  test("class material needs a class; it is visible to that class and to its uploader only", async () => {
+    const note = { title: "TD 3", filename: "td3.txt", mime: "text/plain", data: Buffer.from("TD 3 : dérivée d'un quotient, exercices corrigés pour le groupe.").toString("base64"), course_id: "analyse", owner_id: "stu-c", owner_name: "Chaima", visibility: "class" };
+    const refused = await ctx.post("/api/materials", note);
+    assert.equal(refused.status, 400);
+    const stored = await upload({ ...note, class_id: "g1" });
+    assert.equal(stored.visibility, "class");
+    assert.equal(stored.status, "indexed", stored.detail);
+    const seenBy = async (query) => (await (await fetch(`${ctx.base}/api/materials?course_id=analyse&${query}`)).json()).materials.some((m) => m.id === stored.id);
+    assert.equal(await seenBy("learner_id=stu-c"), true, "the uploader, even without a class in the request");
+    assert.equal(await seenBy("learner_id=stu-d&class_id=g1"), true);
+    assert.equal(await seenBy("learner_id=stu-d&class_id=g2"), false);
+    assert.equal(await seenBy("learner_id=stu-d"), false);
+    assert.equal((await fetch(`${ctx.base}${stored.url}?learner_id=stu-d&class_id=g2`)).status, 404);
+    assert.equal((await fetch(`${ctx.base}${stored.url}?learner_id=stu-d&class_id=g1`)).status, 200);
+  });
+
+  test("security: strict headers, uploads must be what they claim, files come back inert", async () => {
+    const health = await fetch(ctx.base + "/health");
+    assert.equal(health.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(health.headers.get("x-frame-options"), "DENY");
+    assert.equal(health.headers.get("x-powered-by"), null);
+    assert.match(health.headers.get("content-security-policy"), /default-src 'none'/);
+    assert.equal((await fetch(ctx.base + "/api/ai/status")).headers.get("cache-control"), "no-store");
+    const base = { title: "x", course_id: "analyse", owner_id: "stu-sec", owner_name: "S" };
+    const html = Buffer.from("<script>alert(1)</script>").toString("base64");
+    assert.equal((await ctx.post("/api/materials", { ...base, filename: "a.pdf", mime: "application/pdf", data: html })).status, 400, "not a PDF");
+    assert.equal((await ctx.post("/api/materials", { ...base, filename: "a.docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", data: html })).status, 400, "not a zip");
+    assert.equal((await ctx.post("/api/materials", { ...base, filename: "a.txt", mime: "text/plain", data: Buffer.from([0x4d, 0x5a, 0x00, 0x01, 0xff, 0xfe]).toString("base64") })).status, 400, "binary as text");
+    const stored = await upload({ ...base, filename: "note.md", mime: "text/markdown", data: Buffer.from("# Note\n\n<script>alert(1)</script> la dérivée de x² est 2x.").toString("base64") });
+    const file = await fetch(`${ctx.base}${stored.url}?learner_id=stu-sec`);
+    assert.equal(file.status, 200);
+    assert.match(file.headers.get("content-type"), /^text\/plain/);
+    assert.match(file.headers.get("content-security-policy"), /^sandbox; default-src 'none'/);
+    assert.equal(file.headers.get("x-content-type-options"), "nosniff");
+  });
+
+  test("plans: Free has no AI on the whiteboard, a daily cap and no class tools; paid plans and the default are not limited", async () => {
+    const plans = await (await fetch(ctx.base + "/api/plans?plan=free&learner_id=free-1")).json();
+    assert.deepEqual(Object.keys(plans.plans), ["free", "educator", "campus", "enterprise"]);
+    assert.equal(plans.default, "campus");
+    assert.equal(plans.remaining, 2); // this harness caps Free at 2 a day
+    const ask = (extra) => ctx.post("/api/ai/run", { task: "explain", inputs: { question: "la tangente" }, learner_id: "free-1", ...extra });
+    const board = await ask({ plan: "free", context: { room_id: "room-1" } });
+    assert.equal(board.status, 403);
+    assert.equal((await board.json()).code, "plan_feature");
+    assert.equal((await ask({ plan: "educator", context: { room_id: "room-1" } })).status, 200);
+    const first = await ask({ plan: "free" });
+    assert.equal(first.status, 200);
+    assert.equal(first.headers.get("x-plan-remaining"), "1");
+    assert.equal((await ask({ plan: "free" })).status, 200);
+    const third = await ask({ plan: "free" });
+    assert.equal(third.status, 429);
+    assert.equal((await third.json()).code, "plan_cap");
+    assert.equal((await ctx.post("/api/ai/run", { task: "prep_plan", inputs: { course_id: "analyse", days_left: 5, minutes_per_day: 60 }, learner_id: "free-1", plan: "free" })).status, 200, "rules tasks are not capped");
+    assert.equal((await ask({ plan: "free", learner_id: "free-2" })).status, 200, "the cap is per learner");
+    assert.equal((await ask({})).status, 200, "no plan = the default plan");
+    const note = { title: "n", filename: "n.txt", mime: "text/plain", data: Buffer.from("Notes sur la dérivée d'un produit.").toString("base64"), course_id: "analyse", owner_id: "free-1", owner_name: "F", plan: "free" };
+    assert.equal((await ctx.post("/api/materials", { ...note, visibility: "class", class_id: "g1" })).status, 403);
+    assert.equal((await ctx.post("/api/materials", { ...note, role: "professor" })).status, 403);
+    assert.equal((await ctx.post("/api/materials", note)).status, 201, "a private note is allowed on Free");
   });
 
   test("a bridge that does not know our token is unreachable, not trusted", async () => {

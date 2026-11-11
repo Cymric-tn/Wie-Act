@@ -12,6 +12,16 @@ import { LumiSpark } from "../LumiSpark";
 const courseById = (id) => (id === COURSE_ID ? { id: COURSE_ID, name: "Analyse", color: COURSE_COLOR } : null);
 const pct = (v) => Math.round(v * 100);
 export const openBoard = (room) => navigate(room ? `/board?room=${encodeURIComponent(room)}` : "/board");
+/** Opens a room's board and joins its voice channel on arrival (VoicePanel reads the flag). The click that got here
+ * counts as the user gesture the microphone and audio playback need: the app never reloads the page. */
+export const openVoice = (room) => {
+  try {
+    window.sessionStorage.setItem("lumi-voice-autojoin", room);
+  } catch {
+    // storage blocked: the room opens and the learner presses "Join voice" themselves
+  }
+  openBoard(room);
+};
 /** Opens the board with its AI tab showing. */
 export const openBoardAi = () => {
   store("ednova-board-tab", "ai");
@@ -122,6 +132,7 @@ export function RoomList() {
               {room.online.length > 0 ? <Avatars ids={room.online} max={3} /> : null}
               <small>{t("rooms.online", { n: room.online.length })}</small>
             </div>
+            <button className="btn btn-secondary small d-voice-btn" onClick={() => openVoice(room.code)} aria-label={`${t("voice.join")}: ${room.name}`}><Icon name="mic" size={15} /> <span>{t("voice.short")}</span></button>
             <button className="btn btn-secondary small" onClick={() => openBoard(room.code)}>{t("common.open")}</button>
           </li>
         );

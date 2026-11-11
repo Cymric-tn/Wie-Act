@@ -7,7 +7,8 @@ export function lumiColors() {
   if (cached) return cached;
   if (typeof document === "undefined") return FALLBACK;
   const style = getComputedStyle(document.documentElement);
-  const read = (name) => style.getPropertyValue(`--lumi-${name}`).trim() || FALLBACK[name];
+  // The canvas keeps its own dark whatever the app theme: void is read from --night, which never changes.
+  const read = (name) => style.getPropertyValue(name === "void" ? "--night" : `--lumi-${name}`).trim() || FALLBACK[name];
   cached = Object.fromEntries(Object.keys(FALLBACK).map((name) => [name, read(name)]));
   return cached;
 }

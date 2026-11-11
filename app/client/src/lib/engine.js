@@ -3,8 +3,13 @@
 // and streams the engine's progress events back as NDJSON.
 import { SERVER_URL } from "./api.js";
 import { clientId, readStored, store } from "./identity.js";
+import { planId } from "./plans.js";
+import { styleHint } from "./learningStyle.js";
 
 export const ENGINE_COURSE = "analyse"; // the one course the engine has content for
+// The demo has one class and no enrolment yet: everyone signed in belongs to it. Class-only material is stored and
+// retrieved under this id (the engine refuses a "class" upload without one).
+export const ENGINE_CLASS = "l1-mi-g1";
 export const AI_LANGUAGES = ["auto", "FRENCH", "ENGLISH", "ARABIC", "DARIJA", "ARABIZI"];
 
 /** UI language → engine language (used for templates and quiz statements). */
@@ -84,8 +89,9 @@ function body(extra = {}, context = {}) {
   const lang = context.language ?? replyLanguage();
   return {
     learner_id: clientId(),
+    plan: planId(),
     ...extra,
-    context: { course_id: ENGINE_COURSE, ...context, language: lang === "auto" ? undefined : lang }
+    context: { course_id: ENGINE_COURSE, class_id: ENGINE_CLASS, style: styleHint(), ...context, language: lang === "auto" ? undefined : lang }
   };
 }
 
@@ -107,7 +113,7 @@ export const ai = {
   course: (course = ENGINE_COURSE) => json(`/api/ai/courses/${course}`).then((r) => r.course),
   report: (requestId, note) => json("/api/ai/flags", { method: "POST", body: { request_id: requestId, learner_id: clientId(), note } }),
   flags: (status = "open") => json(`/api/ai/flags?status=${status}`).then((r) => r.flags),
-  resolve: (requestId, action) => json(`/api/ai/flags/${encodeURIComponent(requestId)}/resolve`, { method: "POST", body: { action, role: "professor" } })
+  resolve: (requestId, action) => json(`/api/ai/flags/${encodeURIComponent(requestId)}/resolve`, { method: "POST", body: { action, role: "professor", plan: planId() } })
 };
 
 const MIME = { pdf: "application/pdf", md: "text/markdown", markdown: "text/markdown", txt: "text/plain", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
@@ -122,16 +128,16 @@ function toBase64(buffer) {
 }
 
 export const materials = {
-  list: (user) => json(`/api/materials?course_id=${ENGINE_COURSE}&learner_id=${encodeURIComponent(clientId())}&role=${user.role}`).then((r) => r.materials),
+  list: (user) => json(`/api/materials?course_id=${ENGINE_COURSE}&class_id=${ENGINE_CLASS}&learner_id=${encodeURIComponent(clientId())}&role=${user.role}`).then((r) => r.materials),
   async upload(file, { title, visibility, user }) {
     const mime = mimeFor(file);
     const buffer = await file.arrayBuffer();
     return json("/api/materials", {
       method: "POST",
-      body: { title, filename: file.name, mime, data: toBase64(buffer), course_id: ENGINE_COURSE, visibility, owner_id: clientId(), owner_name: user.name, role: user.role }
+      body: { title, filename: file.name, mime, data: toBase64(buffer), course_id: ENGINE_COURSE, class_id: ENGINE_CLASS, visibility, owner_id: clientId(), owner_name: user.name, role: user.role, plan: planId(user) }
     }).then((r) => r.material);
   },
   remove: (id, user) => json(`/api/materials/${id}`, { method: "DELETE", body: { learner_id: clientId(), role: user.role } }),
   confirmTag: (id, chunkId, concept) => json(`/api/materials/${id}/chunks/${encodeURIComponent(chunkId)}`, { method: "PATCH", body: { concept, role: "professor" } }),
-  fileUrl: (m, user) => `${SERVER_URL}${m.url}?learner_id=${encodeURIComponent(clientId())}&role=${user.role}`
+  fileUrl: (m, user) => `${SERVER_URL}${m.url}?class_id=${ENGINE_CLASS}&learner_id=${encodeURIComponent(clientId())}&role=${user.role}`
 };

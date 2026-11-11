@@ -99,7 +99,7 @@ function MaterialRow({ m, user, concepts, onChange }) {
             {m.chunks.slice(0, 12).map((c) => (
               professor && concepts
                 ? (
-                  <select className="input"
+                  <select
                     key={c.id}
                     className={"m-tag" + (c.confirmed ? " ok" : c.confidence < 0.7 ? " low" : "")}
                     value={c.concept || ""}

@@ -2,6 +2,7 @@ import Icon from "../Icons";
 import ProgressMap from "../dashboard/ProgressMap";
 import { Link } from "../../lib/router";
 import { useI18n, LanguageSwitcher } from "../../lib/i18n";
+import { ThemeToggle } from "../ThemeToggle";
 import { getUser } from "../../lib/session";
 import "../dashboard/dashboard.css";
 import "./landing.css";
@@ -30,6 +31,7 @@ function Nav() {
         <a href="#roles">{t("nav.roles")}</a>
       </nav>
       <div className="lp-nav-right">
+        <ThemeToggle />
         <LanguageSwitcher />
         {user ? (
           <Link to="/app" className="btn btn-primary small">{t("nav.home")} <Icon name="right" size={15} /></Link>
@@ -191,6 +193,7 @@ export default function Landing() {
         <span className="d-brand small"><LumiLogo height={20} /></span>
         <span>© 2026 · {t("footer.made")}</span>
         <span className="d-badge soon">{t("footer.preview")}</span>
+        <ThemeToggle />
         <LanguageSwitcher />
       </footer>
     </div>

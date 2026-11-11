@@ -14,6 +14,8 @@ const express = require("express");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { matchesType, fileHeaders } = require("../security");
+const { PLANS, DEFAULT_PLAN, planOf, createUsage } = require("../plans");
 
 const LANGUAGES = new Set(["FRENCH", "ENGLISH", "ARABIC", "DARIJA", "ARABIZI"]);
 const CONFUSION = new Set(["LOW", "MEDIUM", "HIGH"]);
@@ -95,8 +97,11 @@ async function planInputs(engine, inputs, courseId) {
   const course = await engine.course(courseId).catch(() => null);
   const unitIds = inputs.unit_ids?.length ? inputs.unit_ids : (course?.units || []).map((u) => u.id);
   const days = inputs.days_left || 7;
-  const deadline = new Date(Date.now() + days * 86_400_000);
-  return drop({ scope: { unit_ids: unitIds }, deadline: isoDay(deadline), pace_min_per_day: inputs.minutes_per_day || 45, mastery: inputs.mastery });
+  // start and deadline from one clock: the engine's own "today" is the server's local date, and isoDay is UTC, so
+  // between midnight and the UTC offset a 5-day plan was built over 4 days
+  const now = Date.now();
+  const deadline = new Date(now + days * 86_400_000);
+  return drop({ scope: { unit_ids: unitIds }, start: isoDay(new Date(now)), deadline: isoDay(deadline), pace_min_per_day: inputs.minutes_per_day || 45, mastery: inputs.mastery });
 }
 
 /** The engine's focus_points grouped by day: the session list the planner screen renders (plus the raw plan). */
@@ -178,14 +183,46 @@ function rateLimiter({ perMinute }) {
   };
 }
 
-function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = console.log }) {
+function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = console.log, planCaps, uploadsPerMinute = 10 }) {
   const variants = new Map(); // generated practice items (id -> exercise with its solution), never sent to the browser
   const getExercise = async (id) => variants.get(id) || engine.getExercise(id);
   const forceAllowed = () => (typeof allowForce === "function" ? allowForce() : Boolean(allowForce));
   const router = express.Router();
   const json = express.json({ limit: "25mb" });
+
+  // ---------- plans (business model canvas): feature access and the free tier's daily AI cap ----------
+  const usage = createUsage({ caps: planCaps || {} });
+  /** Sends the refusal and returns true when this plan may not make the request. `counted`: it uses the daily cap. */
+  function refusedByPlan(req, res, { counted = true } = {}) {
+    const body = req.body || {};
+    const plan = planOf(body.plan);
+    const p = PLANS[plan];
+    if (!p.boardAi && isId(body.context?.room_id)) {
+      res.status(403).json({ error: "AI on the whiteboard is part of the Educator and Campus plans.", code: "plan_feature", plan });
+      return true;
+    }
+    if (counted) {
+      const u = usage.take(plan, isId(body.learner_id) ? body.learner_id : req.ip);
+      if (!u.ok) {
+        res.status(429).json({ error: `You have used today's ${u.cap} free AI requests. They come back tomorrow.`, code: "plan_cap", plan, cap: u.cap, remaining: 0 });
+        return true;
+      }
+      if (u.cap != null) res.set("X-Plan-Remaining", String(u.remaining));
+    }
+    return false;
+  }
+  const noClassTools = (req, res) => {
+    const plan = planOf((req.body || {}).plan);
+    if (PLANS[plan].classTools) return false;
+    res.status(403).json({ error: "Class material and answer review are part of the Educator and Campus plans.", code: "plan_feature", plan });
+    return true;
+  };
+  router.get("/plans", (req, res) => {
+    const plan = planOf(req.query.plan);
+    res.json({ plans: PLANS, default: DEFAULT_PLAN, plan, remaining: usage.remaining(plan, isId(req.query.learner_id) ? req.query.learner_id : req.ip) });
+  });
   const aiLimit = rateLimiter({ perMinute: 40 });
-  const uploadLimit = rateLimiter({ perMinute: 10 });
+  const uploadLimit = rateLimiter({ perMinute: uploadsPerMinute });
   const diagramJson = express.json({ limit: "200kb" }); // the largest thing sent here is a practice table's spec
   const diagramLimit = rateLimiter({ perMinute: 60 }); // no AI quota involved, but each build is CPU work on one worker
   fs.mkdirSync(uploadsDir, { recursive: true });
@@ -270,6 +307,8 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
 
   // ---------- one engine task ----------
   router.post("/ai/run", json, aiLimit, async (req, res) => {
+    // the plan and the page generator are rules, not model calls: they do not use the free tier's daily requests
+    if (refusedByPlan(req, res, { counted: !["prep_plan", "generate_page"].includes(req.body?.task) })) return;
     const out = streamer(res);
     try {
       const task = req.body?.task;
@@ -311,6 +350,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
 
   // ---------- one tutor turn: classify → follow-up task ----------
   router.post("/ai/turn", json, aiLimit, async (req, res) => {
+    if (refusedByPlan(req, res)) return;
     const out = streamer(res);
     try {
       const message = str(req.body?.message, 2000);
@@ -325,7 +365,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
       if (classification.degraded && classification.degrade_reason === "superseded") return out.end({ type: "result", superseded: true });
       const c = classification.data || {};
       const openExercise = isId(req.body.exercise_id) ? await getExercise(req.body.exercise_id) : null;
-      const follow = await engine.followUp(c, Boolean(openExercise)); // a hint with no open exercise is a question: the engine routes it to explain
+      const follow = await engine.followUp(c, Boolean(openExercise), message); // a hint with no open exercise is a question: the engine routes it to explain
       const language = ctx.language || c.language;
       const turnCtx = drop({ ...base, language, confusion: c.confusion, complexity: c.complexity });
 
@@ -372,6 +412,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
   }
 
   router.post("/ai/exercises/:id/:action", json, aiLimit, async (req, res) => {
+    if (refusedByPlan(req, res, { counted: false })) return; // practice on a bank exercise is graded by rules: not capped
     const out = streamer(res);
     try {
       const { id, action } = req.params;
@@ -482,6 +523,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
     const action = req.body?.action;
     if (!isId(requestId) || !["reject", "approve"].includes(action)) return res.status(400).json({ error: "bad request" });
     if (req.body.role !== "professor") return res.status(403).json({ error: "Only professors can review answers." });
+    if (noClassTools(req, res)) return;
     let removed = 0;
     if (action === "reject") {
       try {
@@ -497,6 +539,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
   // ---------- course materials ----------
   const canSee = (m, q) => {
     if (m.visibility === "public") return true;
+    if (m.owner_id && m.owner_id === q.learner_id) return true; // an upload is always visible to its uploader
     if (q.role === "professor") return m.visibility === "class" || m.owner_id === q.learner_id;
     if (m.visibility === "class") return Boolean(q.class_id) && m.class_id === q.class_id;
     return m.owner_id === q.learner_id;
@@ -520,8 +563,12 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
     if (!isId(b.owner_id) || !isId(b.course_id)) return res.status(400).json({ error: "missing owner or course" });
     const bytes = Buffer.from(String(b.data || ""), "base64");
     if (!bytes.length || bytes.length > MAX_MATERIAL_BYTES) return res.status(400).json({ error: "Files must be between 1 byte and 15 MB." });
+    if (!matchesType(b.mime, bytes)) return res.status(400).json({ error: "This file is not what its type says. Upload a real PDF, Word (.docx), Markdown or text file." });
     const professor = b.role === "professor";
+    if ((professor || b.visibility === "class") && noClassTools(req, res)) return; // Free keeps private notes only
     const visibility = professor ? (b.visibility === "class" ? "class" : "public") : (b.visibility === "class" ? "class" : "private");
+    // The engine refuses class material without a class: say so before anything is stored.
+    if (visibility === "class" && !isId(b.class_id)) return res.status(400).json({ error: "Sharing with a class needs the class." });
     const id = `mat-${crypto.randomUUID().slice(0, 12)}`;
     const file = path.join(uploadsDir, id + ext);
     fs.writeFileSync(file, bytes);
@@ -552,8 +599,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
   router.get("/materials/:id/file", (req, res) => {
     const m = isId(req.params.id) && store.getMaterial(req.params.id);
     if (!m || !canSee(m, req.query)) return res.status(404).end();
-    res.type(m.mime).set("content-disposition", `inline; filename="${m.filename.replace(/["\\\r\n]/g, "_")}"`)
-      .sendFile(path.join(uploadsDir, m.id + MATERIAL_TYPES[m.mime]));
+    res.set(fileHeaders(m.mime, m.filename)).sendFile(path.join(uploadsDir, m.id + MATERIAL_TYPES[m.mime]));
   });
 
   router.patch("/materials/:id/chunks/:chunkId", json, async (req, res) => {
@@ -588,6 +634,7 @@ function createAiRouter({ engine, store, uploadsDir, allowForce = false, log = c
     res.json({ ok: true });
   });
 
+  router.run = run; // the run log and review flags, reused by Lumi voice (src/voice/lumi.js)
   return router;
 }
 

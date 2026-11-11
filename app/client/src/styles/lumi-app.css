@@ -6,10 +6,15 @@
   /* --lumi-warn is orange, not amber: gold means mastery and nothing else. */
   --lumi-ok: #4FD6A8; --lumi-warn: #FFB07C; --lumi-bad: var(--rose);
   --lumi-shadow: rgb(0 0 0 / .35);
-  --lumi-scrim: rgb(5 6 26 / .62);
+  --lumi-scrim: rgb(var(--base) / .62);
   --lumi-ok-soft: color-mix(in srgb, var(--lumi-ok) 13%, transparent);
   --lumi-warn-soft: color-mix(in srgb, var(--lumi-warn) 13%, transparent);
   --lumi-bad-soft: color-mix(in srgb, var(--lumi-bad) 12%, transparent);
+}
+/* Light theme: status colours are mostly read as text, so they get darker. */
+html[data-theme="light"] {
+  --lumi-ok: #0C7F5A; --lumi-warn: #A9500C; --lumi-bad: #B8234A;
+  --lumi-shadow: rgb(22 24 70 / .14);
 }
 
 /* Size variants of the design system's components. */

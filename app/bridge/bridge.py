@@ -8,7 +8,8 @@ for one engine process per API key) and serves it to the Node server over HTTP o
     python bridge.py --fake --fake-speed 0                          # instant, for tests
     python bridge.py --engine-dir /path/to/wie --port 8765
 
-Standard library only; the engine brings its own requirements.txt. The bridge binds to 127.0.0.1, only answers a Host of
+Standard library only (speech input lazily imports faster-whisper, see lumi_stt.py); the engine brings its own
+requirements.txt. The bridge binds to 127.0.0.1, only answers a Host of
 127.0.0.1 / localhost, and every route needs the header X-Engine-Token (= ENGINE_SERVICE_TOKEN, the same value the Node
 server reads). A second bridge, or the engine's own services/engine_server.py, for the same API key refuses to start
 (exit status 3): they share one lock file per key. Never run both.
@@ -18,7 +19,7 @@ Endpoints (JSON; /run and /generate_page stream NDJSON):
     POST   /run                    {task, inputs, context, priority}
                                    -> {"type":"event","event":{...}}\\n ... {"type":"result","result":{...}}\\n
     POST   /generate_page          {focus_point, plan?, context} -> events, then {"type":"result","result":{page}}
-    POST   /follow_up              {classification, has_open_exercise?} -> {task, reason, overridden}
+    POST   /follow_up              {classification, has_open_exercise?, message?} -> {task, reason, overridden}
     GET    /exercises/<id>         {exercise}   (full: solution, hints, common_mistakes)
     GET    /courses/<id>           {course}
     POST   /materials              {id, course_id, path, visibility, class_id, learner_id, source, ...}
@@ -29,10 +30,14 @@ Endpoints (JSON; /run and /generate_page stream NDJSON):
     GET    /metrics/summary?since=&request_ids=a,b   the engine's own numbers (runs, cache, degraded, latency, 429s)
     POST   /diagrams               {text, lang?, course_id?, mastery?, type?, practice?} -> {spec}   (no LLM; 400 = refusal to show)
     POST   /diagrams/check         {spec, answer, lang?} -> {correct, mistakes}   (no LLM; 503 = the maths ran out of time)
+    POST   /voice/transcribe       {audio: base64, mime} -> {text, lang, detected, probability, duration_s}
+                                   (faster-whisper, no LLM; 400 = nothing heard; 503 = speech input unavailable)
 """
 
 import argparse
 import asyncio
+import base64
+import binascii
 import dataclasses
 import enum
 import hmac
@@ -42,6 +47,7 @@ import os
 import queue
 import subprocess
 import sys
+import tempfile
 import threading
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -54,6 +60,12 @@ SOURCES = {"professor": "professor", "learner": "learner", "course": "course"}  
 APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIAGRAM_TIMEOUT_S = float(os.environ.get("DIAGRAM_TIMEOUT_S", "10"))             # the slowest legitimate build measured: 5.8 s
 DIAGRAM_START_TIMEOUT_S = 60
+MAX_AUDIO_BYTES = int(os.environ.get("LUMI_AUDIO_MAX_BYTES", "2097152"))
+AUDIO_SUFFIX = {"audio/webm": ".webm", "audio/ogg": ".ogg", "audio/mp4": ".m4a", "audio/mpeg": ".mp3", "audio/wav": ".wav",
+                "audio/x-wav": ".wav", "audio/aac": ".aac"}
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lumi_stt import SpeechToText, SttUnavailable  # noqa: E402
 
 
 class DiagramTimeout(Exception):
@@ -165,7 +177,7 @@ class EngineHost:
     is created from engine_dir (the repo root: the engine reads .env, data/ and prompts/ relative to it)."""
 
     def __init__(self, engine_dir=None, fake=False, fake_mode="normal", engine=None, lock=True, engine_factory=None,
-                 fake_speed=0.2):
+                 fake_speed=0.2, stt=None):
         self.loop = asyncio.new_event_loop()
         threading.Thread(target=self.loop.run_forever, name="engine-loop", daemon=True).start()
         self._lock = None
@@ -188,6 +200,7 @@ class EngineHost:
         from engine import Priority  # noqa: E402
         self.Priority = Priority
         self.diagrams = DiagramWorker(os.path.join(self.engine_dir or os.path.dirname(APP_DIR), "data", "courses"))
+        self.stt = stt if stt is not None else SpeechToText()
 
     def _take_lock(self) -> None:
         from config import load_settings
@@ -269,8 +282,9 @@ class EngineHost:
                                                                on_event=on_event), write_line)
 
     # ----- helpers around the feature-layer calls -----
-    def follow_up(self, classification, has_open_exercise=False):
-        return jsonable(self.call(self.engine.router.follow_up, classification or {}, None, bool(has_open_exercise)))
+    def follow_up(self, classification, has_open_exercise=False, message=None):
+        return jsonable(self.call(self.engine.router.follow_up, classification or {}, None, bool(has_open_exercise),
+                                  str(message)[:2000] if message else None))
 
     def exercise(self, exercise_id):
         """The full exercise for the feature layer (which keeps the solution from the browser): the statement in each
@@ -339,10 +353,43 @@ class EngineHost:
         from metrics.summary import summarize
         return summarize(self.engine.metrics_records(), parse_since(since), request_ids=request_ids)
 
+    def transcribe(self, body):
+        """Lumi voice: one push-to-talk question -> its text and language. The audio is written to a temp file for the
+        decoder and deleted straight after; it is never kept. ValueError = nothing usable was heard (HTTP 400)."""
+        mime = str(body.get("mime") or "audio/webm").split(";")[0].strip().lower()
+        if not mime.startswith("audio/"):
+            raise ValueError("mime must be an audio/* type")
+        try:
+            audio = base64.b64decode(str(body.get("audio") or ""), validate=True)
+        except (binascii.Error, ValueError):
+            raise ValueError("audio must be base64") from None
+        if not audio:
+            raise ValueError("no audio")
+        if len(audio) > MAX_AUDIO_BYTES:
+            raise ValueError("audio too large")
+        fd, path = tempfile.mkstemp(prefix="lumi-voice-", suffix=AUDIO_SUFFIX.get(mime, ".webm"))
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(audio)
+            try:
+                out = self.stt.transcribe(path)
+            except SttUnavailable:
+                raise
+            except Exception as error:      # undecodable container, truncated recording
+                raise ValueError(f"could not decode the audio ({type(error).__name__})") from error
+        finally:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        if len(out.get("text") or "") < 2:
+            raise ValueError("nothing heard")
+        return out
+
     def health(self):
         status = self.engine.status() if hasattr(self.engine, "status") else {}
         return {"ok": True, "engine": "engine-fake" if self.fake else "engine", "fake": self.fake, "version": self.version,
-                "tasks": self.tasks(), "status": jsonable(status)}
+                "tasks": self.tasks(), "status": jsonable(status), "stt": self.stt.status()}
 
 
 def make_handler(host, token, port):
@@ -390,6 +437,8 @@ def make_handler(host, token, port):
                 self._json(400, {"error": str(error)})
             except DiagramTimeout:
                 self._json(503, {"error": "diagram_timeout"})
+            except SttUnavailable as error:
+                self._json(503, {"error": "stt_unavailable", "detail": str(error)})
             except Exception as error:  # the Node side turns this into a degraded result
                 traceback.print_exc()
                 try:
@@ -446,7 +495,8 @@ def make_handler(host, token, port):
                 if path == "/generate_page":
                     return self._stream(lambda w: host.generate_page(body, w))
                 if path == "/follow_up":
-                    return self._json(200, host.follow_up(body.get("classification") or {}, body.get("has_open_exercise")))
+                    return self._json(200, host.follow_up(body.get("classification") or {}, body.get("has_open_exercise"),
+                                                               body.get("message")))
                 if path == "/materials":
                     return self._json(200, host.add_material(body))
                 if path == "/cache/invalidate":
@@ -455,6 +505,8 @@ def make_handler(host, token, port):
                     return self._json(200, host.diagrams.call({**body, "op": "build"}))
                 if path == "/diagrams/check":
                     return self._json(200, host.diagrams.call({**body, "op": "check"})["result"])
+                if path == "/voice/transcribe":
+                    return self._json(200, host.transcribe(body))
                 self._json(404, {"error": "not found"})
             self._guard(go)
 
@@ -510,6 +562,7 @@ def main():
         print(e, file=sys.stderr)
         return 3
     host.diagrams.warm()
+    host.stt.warm()
     server = serve(host, token, args.port)
     print(f"Lumi engine bridge on http://127.0.0.1:{args.port} "
           f"({'FakeEngine' if args.fake else 'engine'} from {host.engine_dir})", flush=True)

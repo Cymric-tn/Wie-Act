@@ -17,6 +17,21 @@
 
   --font-wordmark: 'Outfit', sans-serif; /* the logo is Latin in every language */
 
+  /* Theme roles (light values under html[data-theme="light"] below). Write overlays as rgb(var(--tint) / a) and scrims as
+     rgb(var(--base) / a), never as white or #05061A, so they turn the right way in both themes. */
+  --base: 5 6 26;             /* the page colour as an RGB triplet */
+  --tint: 255 255 255;        /* the ink of overlays, hovers, tracks and borders */
+  --contrast-rgb: 255 255 255;/* the strongest fill: primary buttons, selected pills, "next up" */
+  --contrast: rgb(var(--contrast-rgb));
+  --on-contrast: #05061A;
+  --on-accent: #05061A;       /* text and marks on a bright fill (glow, spark, rose, a user colour) in both themes */
+  --on-danger: #05061A;
+  --panel-solid: 20 22 52;    /* glass without blur (low-power) */
+  --glow-ink: var(--glow); --spark-ink: var(--spark); --rose-ink: var(--rose);   /* an accent used as text */
+  --logo-star: #ffffff;
+  --focus: #ffffff;
+  --night: #05061A;           /* the dark of the canvas and of exports: never follows the theme */
+
   --board: #0E1030;           /* the dark canvas: solid, nothing shows through a drawing */
   --surface-solid: #14163A;   /* menus, dialogs, toasts: whatever sits on top of other content */
 
@@ -51,7 +66,31 @@
   color-scheme: dark;
 }
 
-/* The app is dark everywhere now. The class stays on the AI panel and the map as a hook. */
+/* Light theme (lib/themeMode.js sets data-theme on <html>). Accents keep their hue; where one is read as text it uses
+   its -ink variant, darkened to stay above 4.5:1 on the light page. The board surface is the learner's own choice. */
+html[data-theme="light"] {
+  --void: #F3F4FC;
+  --text: #15173D; --text-2: #3A3D72; --text-3: #575B8E;   /* >= 4.5:1 on #F3F4FC and on white glass */
+  --glass: rgba(255,255,255,0.62);
+  --glass-strong: rgba(255,255,255,0.80);
+  --glass-border: rgba(22,24,70,0.13);
+  --ai-border: rgba(8,128,160,0.40);
+  --ai-shadow: 0 0 40px rgba(34,195,230,0.20);
+  --surface-solid: #FFFFFF;
+  --base: 243 244 252;
+  --tint: 22 24 70;
+  --contrast-rgb: 27 29 74;
+  --on-contrast: #FFFFFF;
+  --on-danger: #FFFFFF;
+  --panel-solid: 255 255 255;
+  --glow-ink: #076F8A; --spark-ink: #855C00; --rose-ink: #B8234A;
+  --logo-star: #1B1D4A;
+  --focus: #1B1D4A;
+  --lumi-iris-strong: #4646B8;
+  color-scheme: light;
+}
+
+/* The class stays on the AI panel and the map as a hook. */
 .lumi-dark { color: var(--lumi-ink); }
 
 html { font-family: var(--lumi-font-body); color: var(--lumi-ink); background: var(--void); }
@@ -59,7 +98,7 @@ h1, h2, h3, .lumi-display { font-family: var(--lumi-font-display); font-weight: 
 :lang(ar), [dir="rtl"] { font-family: var(--lumi-font-arabic); line-height: 1.75; }
 
 /* Focus — never remove */
-:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
 .card { animation: lumi-rise var(--t-card) var(--ease-out) backwards; }
 

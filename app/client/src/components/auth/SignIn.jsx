@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "../Icons";
 import { Link, navigate, useLocation } from "../../lib/router";
 import { useI18n, LanguageSwitcher } from "../../lib/i18n";
+import { ThemeToggle } from "../ThemeToggle";
 import { getUser, saveUser } from "../../lib/session";
 import "../dashboard/dashboard.css";
 import "../landing/landing.css";
@@ -40,6 +41,7 @@ export default function SignIn() {
       <main className="auth-main">
         <div className="auth-top">
           <Link to="/" className="auth-back"><Icon name="left" size={16} /> {t("auth.back")}</Link>
+          <ThemeToggle />
           <LanguageSwitcher />
         </div>
 
