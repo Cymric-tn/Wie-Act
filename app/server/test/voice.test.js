@@ -212,7 +212,8 @@ describe("ask Lumi in voice", () => {
     // The second question carries the first turn as history; a latecomer gets the strip in its join ack.
     await emit(a, "lumi:ask", { roomId: room, audio: AUDIO, mimeType: "audio/webm" });
     const second = h.engine.calls.filter((c) => c.task === "explain").at(-1);
-    assert.equal(second.inputs.history[0].content, "Ana: c'est quoi le nombre dérivé ?");
+    assert.equal(second.inputs.history[0].content, "Student 1: c'est quoi le nombre dérivé ?"); // never the display name
+    assert.ok(!JSON.stringify(second.inputs).includes("Ana"));
     const late = await h.member(room, "Cy");
     assert.equal(late.voice.history.length, 2);
   });

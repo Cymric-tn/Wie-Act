@@ -138,8 +138,12 @@ function createLumiVoice({
         inputs = INPUTS.hint({ problem: transcript, attempt: transcript });
       } else {
         task = "explain";
+        // No name leaves the server: the model only needs to tell the speakers apart, so each one is "Student n"
+        // in the order they first spoke in the turns sent.
+        const speakers = new Map();
+        const label = (id) => speakers.get(id) || speakers.set(id, `Student ${speakers.size + 1}`).get(id);
         const prior = history(roomId).slice(-HISTORY_SENT).flatMap((h) => [
-          { role: "user", content: `${h.askedBy.name}: ${h.transcript}` },
+          { role: "user", content: `${label(h.askedBy.userId)}: ${h.transcript}` },
           { role: "assistant", content: h.reply }
         ]);
         const board = getWhiteboardSummary(rooms.get(roomId));

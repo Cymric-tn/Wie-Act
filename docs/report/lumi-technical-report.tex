@@ -291,9 +291,13 @@ photos. The class figures on the professor's overview are partly example data an
 \section{Privacy and ethical safeguards}
 
 \begin{itemize}
-\item \textbf{No personal data.} There are no real accounts: a display name and a role stay in the browser, and the
-ids sent to the server are random. Tests, fixtures and course text are synthetic or public. Only course text, the
-question and the board's text reach the inference service.
+\item \textbf{Little personal data.} There are no real accounts: a learner picks a display name and a role, and the
+browser gets a random id. The display name is shown to the other members of a room and stored with a file the learner
+uploads; the email typed at sign-in stays in the browser and no password is stored. Tests, fixtures and course text
+are synthetic or public.
+\item \textbf{What reaches the inference service.} Course text, the question with the recent turns of the conversation,
+the text on the board, the text of an uploaded file when an answer uses it, and a photo or scanned page when it is
+read. Never a name, an email or an id: in voice, speakers are sent as ``Student 1'', ``Student 2''.
 \item \textbf{Voice.} Group audio is peer to peer and is not recorded. A spoken question is transcribed on our own
 server by a local speech model, used once and discarded.
 \item \textbf{Credentials.} Keys exist only in git-ignored environment files; the repository ships a template with

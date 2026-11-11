@@ -671,3 +671,12 @@ the end of that report.
   6 pages (`pdflatex` twice), with the business-model note.
 - **Verified:** `pytest -q` 1153; server 61/61; client 108/108; build clean; in headless Chromium on the preview engine:
   the plan picker, the Free lock in the board's AI tab, the diagnostic and the style in the request body.
+
+## No name to the model, and the privacy text corrected (2026-11-11)
+
+- **Voice history is sent to the model as "Student n", not as the display name** (`app/server/src/voice/lumi.js`): the
+  earlier turns were `Name: transcript`, the one place a name reached FelCloud. The room still sees who asked.
+- **The report and the README said the display name stays in the browser and that only course text, the question and
+  the board reach the service.** Both were wrong: the name is shown to room members and stored with uploads
+  (`owner_name`), and the service also receives conversation history, uploaded text an answer uses, and images that are
+  read. Both texts now say so.

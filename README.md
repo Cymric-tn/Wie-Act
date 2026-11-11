@@ -122,11 +122,14 @@ Measured results on the real service are in [`reports/`](reports/); the scenario
 
 ## Privacy and safeguards
 
-- No real accounts and no personal data: the profile (a display name and a role) stays in the browser; ids sent to the
-  server are random. Tests, fixtures and course text are synthetic or public.
+- No real accounts: a learner picks a display name and a role, and the browser gets a random id. The display name is
+  shown to the other members of a room and stored with a file the learner uploads; the email typed at sign-in stays in
+  the browser and no password is stored. Tests, fixtures and course text are synthetic or public.
 - Voice is peer to peer and is not recorded. A spoken question to Lumi is transcribed on our own server by a local
   Whisper model, used once and discarded.
-- Only course text, the learner's question and what is on the board are sent to the inference service.
+- The inference service receives course text, the question with the recent turns of the conversation, the text on the
+  board, the text of an uploaded file when an answer uses it, and a photo or scanned page when it is read. It never
+  receives a name, an email or an id: in voice, speakers are sent as "Student 1", "Student 2".
 - The AI supports the teacher: professor material ranks first, uncertain answers are flagged for review, and a professor
   can remove an answer from the cache.
 - Uploads are checked against their declared type and served back inert; the API sends strict security headers.
