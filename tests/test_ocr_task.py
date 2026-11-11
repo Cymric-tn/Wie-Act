@@ -48,7 +48,8 @@ async def test_transcription_goes_to_the_vision_class_and_comes_back_structured(
     assert [p["type"] for p in parts] == ["image_url", "text"] and "x_est_tokens" not in json.dumps(body)
     sent = Image.open(io.BytesIO(base64.b64decode(parts[0]["image_url"]["url"].split(",", 1)[1])))
     assert sent.width * sent.height <= 1_000_000 and sent.width > sent.height          # resized, aspect kept
-    assert "Do not solve" in parts[1]["text"]
+    # deepseek-ocr answers '' to any longer instruction (FelCloud, 2026-11-11): the text part is this one sentence only
+    assert parts[1]["text"] == "Transcribe the math exactly."
     assert r.notes["image"]["resized"] and r.notes["image"]["size"] == f"{sent.width}x{sent.height}"
     rec = runs(sink)[-1]
     assert rec.priority == "INTERACTIVE" and rec.model_class == "vision"                 # interactive by default
@@ -126,3 +127,16 @@ async def test_quota_exhausted_is_reported_like_any_chat_task(vt):
     eng, fake, _ = make_engine(vt, lambda b: quota_429(60))
     r = await eng.run("ocr_transcribe", {"image": data_url(photo(700, 500))})
     assert r.degrade_reason == "quota_exhausted" and r.eta_seconds == 60 and r.model_class_used == "vision"
+
+
+def test_math_delimiters_around_whole_lines_are_removed_and_inline_maths_in_prose_is_kept():
+    # what deepseek-ocr answers to the v2 prompt (FelCloud, 2026-11-11): every formula line wrapped in \[ ... \]
+    from engine.tasks import analyze_ocr
+    a = analyze_ocr("\\[ f(x) = 3x^2 + 5x \\]\n\n\\[ f'(x) = 6x + 5 \\]")
+    assert a["text"] == "f(x) = 3x^2 + 5x\nf'(x) = 6x + 5" and a["issues"] == []
+    assert a["latex"] == "f(x) = 3x^{2} + 5x \\\\ f'(x) = 6x + 5"
+    assert analyze_ocr("$$f'(x) = 2x$$\n$x > 0$")["text"] == "f'(x) = 2x\nx > 0"
+    assert analyze_ocr("\\[\nf(x) = 2x\n\\]")["text"] == "f(x) = 2x"                      # marks on their own lines
+    block = analyze_ocr("\\[\\det A = \\begin{pmatrix} a & b \\\\\nc & d \\end{pmatrix} = ad - bc \\]")["text"]
+    assert block == "\\det A = \\begin{pmatrix} a & b \\\\\nc & d \\end{pmatrix} = ad - bc"   # a block over two lines
+    assert analyze_ocr("Voici \\( x^2 \\) le carré")["text"] == "Voici \\( x^2 \\) le carré"  # inline, left alone

@@ -1,6 +1,6 @@
 {
  "version": 3,
- "built_at": 1793532655.39321,
+ "built_at": 1794363794.19529,
  "docs_dir": "data/docs",
  "chunks": [
   {
@@ -19,7 +19,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivative-variations.en#finding-a-maximum-or-a-minimum",
@@ -37,7 +38,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivative-variations.en#worked-example",
@@ -55,7 +57,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivee-definition.fr#idee-intuitive",
@@ -73,7 +76,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
@@ -91,7 +95,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivee-definition.fr#interpretation-graphique-la-tangente",
@@ -109,7 +114,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivee-erreurs.fr#erreurs-avec-les-puissances",
@@ -127,7 +133,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivee-erreurs.fr#oublier-que-la-derivee-d-une-constante-est-nulle",
@@ -145,7 +152,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
@@ -163,7 +171,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivee-formules.fr#derivees-des-fonctions-usuelles",
@@ -181,7 +190,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivee-formules.fr#somme-et-produit-par-une-constante",
@@ -199,11 +209,12 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "derivee-formules.fr#produit-et-quotient",
-   "text": "Formules de dérivation — Produit et quotient\nPour un produit de deux fonctions u et v : (u·v)' = u'·v + u·v'. Ce n'est pas u'·v'. Exemple : f(x) = x(x + 1) avec u = x et v = x + 1 donne f'(x) = 1·(x + 1) + x·1 = 2x + 1.\n\nPour un quotient, quand v ne s'annule pas : (u/v)' = (u'·v − u·v') / v². Exemple : f(x) = 1/(x + 2) donne f'(x) = (0·(x + 2) − 1·1) / (x + 2)² = −1/(x + 2)².",
+   "text": "Formules de dérivation — Produit et quotient\nRègle du produit : la dérivée d'un produit de deux fonctions u et v est (u·v)' = u'·v + u·v', qu'on écrit aussi (uv)' = u'v + uv'. Ce n'est pas u'·v'. Exemple : f(x) = x(x + 1) avec u = x et v = x + 1 donne f'(x) = 1·(x + 1) + x·1 = 2x + 1.\n\nRègle du quotient : la dérivée d'un quotient u/v, quand v ne s'annule pas, est (u/v)' = (u'·v − u·v') / v². Exemple : f(x) = 1/(x + 2) donne f'(x) = (0·(x + 2) − 1·1) / (x + 2)² = −1/(x + 2)².",
    "topic": "derivative",
    "level": "beginner",
    "language": "FRENCH",
@@ -217,7 +228,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "mochtaqa.ar#تعريف-العدد-المشتق",
@@ -235,7 +247,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "mochtaqa.ar#مشتقات-الدوال-المألوفة",
@@ -253,7 +266,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   },
   {
    "chunk_id": "mochtaqa.ar#إشارة-المشتقة-واتجاه-تغير-الدالة",
@@ -271,7 +285,8 @@
    "owner": "",
    "class_id": "",
    "origin": "course",
-   "confidence": 1.0
+   "confidence": 1.0,
+   "page": 0
   }
  ]
 }

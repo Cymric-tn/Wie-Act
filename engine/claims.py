@@ -89,8 +89,54 @@ def _correct_form(claim: str, span: str) -> str | None:
 
 _DERIV_LHS = re.compile(r"'|d\s*/\s*dx", re.I)
 
+# A derivative stated in words: "la dérivée de 1/x est 1/x²", "the derivative of x³ is 3x²", "مشتقة x² تساوي 2x".
+# The verbal reader of engine.grounding leaves these alone on purpose (in an explanation the math run after "dérivée de"
+# is an argument, not one side of an equality), so such a claim went to the model, which called a wrong one
+# NOT_IN_COURSE (FelCloud scenarios 2026-11-11, HS-07a). In a CLAIM it is the assertion itself: it is rewritten as
+# "(E)' = R" and judged by sympy like the written form. Only when both runs are math and nothing sits between them.
+_SPOKEN_NOUNS = frozenset("dérivée derivee dérivé derive derivative مشتقة مشتقه مشتق".split())
+_SPOKEN_FILLER = frozenset("de du d of la le the fonction function الدالة دالة".split())
+_SPOKEN_EQ = (("est", "égale", "à"), ("est", "egale", "a"), ("est", "égal", "à"), ("is", "equal", "to"), ("égale",), ("egale",),
+              ("est",), ("vaut",), ("is",), ("equals",), ("تساوي",), ("يساوي",), ("هي",), ("هو",))
+
+
+def spoken_derivatives(claim: str) -> str:
+    """The claim with every derivative stated in words rewritten as "(E)' = R"; unchanged when there is none."""
+    toks, out, i = claim.split(), [], 0
+    while i < len(toks):
+        if G._bare(toks[i]) not in _SPOKEN_NOUNS and toks[i] not in _SPOKEN_NOUNS:
+            out.append(toks[i])
+            i += 1
+            continue
+        j = i + 1
+        glued = re.match(r"^d['’](.+)$", toks[j]) if j < len(toks) else None       # "d'x²" is rare, "de x²" the rule
+        while j < len(toks) and not glued and G._bare(toks[j]) in _SPOKEN_FILLER and not G._is_math(toks[j]):
+            j += 1
+        e0 = j
+        while j < len(toks) and G._is_math(toks[j]) and "=" not in toks[j]:
+            j += 1
+        eq = next((v for v in _SPOKEN_EQ if tuple(t.lower() for t in toks[j:j + len(v)]) == v), None)
+        r0 = j + len(eq) if eq else j
+        k = r0
+        while k < len(toks) and G._is_math(toks[k]) and "=" not in toks[k]:
+            k += 1
+            if toks[k - 1].endswith((",", ";", ".", "؛", "،")):
+                break
+        if not eq or j == e0 or k == r0:
+            out.append(toks[i])
+            i += 1
+            continue
+        expr, rhs = " ".join(toks[e0:j]), " ".join(toks[r0:k])
+        tail = rhs[len(rhs.rstrip(".,;؛،")):]
+        if out and G._bare(out[-1]) in ("la", "le", "the", "l") and not G._is_math(out[-1]):
+            out.pop()                                                # the article of "la dérivée" goes with it
+        out.append(f"({expr})' = {rhs.rstrip('.,;؛،')}{tail}")
+        i = k
+    return " ".join(out)
+
 
 def analyse(claim: str) -> Formula:
+    claim = spoken_derivatives(claim)
     c = G.check_formulas(claim, [])
     f = Formula(verified=list(c["verified"]), wrong=list(c["wrong"]))
     # In a claim, "(x²)' = x" is an assertion to verify. check_formulas (written for explanations) files an equation

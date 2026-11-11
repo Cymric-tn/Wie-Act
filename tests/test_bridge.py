@@ -338,3 +338,59 @@ def test_the_failing_arabizi_question_misread_as_a_hint_is_routed_to_explain_and
         assert ex["notes"]["sources"] and ex["task"] == "explain"                      # grounded in the course, not a bare hint
     finally:
         r.close()
+
+
+# ---------------------------------------------------------------- Lumi voice: speech to text (no LLM)
+class StubStt:
+    """Stands in for faster-whisper: records the temp file it was given and whether it existed during the call."""
+
+    def __init__(self, text="c'est quoi le nombre dérivé ?", lang="fr", fail=None):
+        self.text, self.lang, self.fail, self.paths = text, lang, fail, []
+
+    def status(self):
+        return {"enabled": True, "model": "stub", "loaded": True, "error": None}
+
+    def transcribe(self, path):
+        self.paths.append((path, os.path.exists(path), open(path, "rb").read()))
+        if self.fail:
+            raise self.fail
+        return {"text": self.text, "lang": self.lang, "detected": self.lang, "probability": 0.9, "duration_s": 1.5}
+
+
+def test_voice_transcribe_returns_text_and_language_and_never_keeps_the_audio(rig):
+    import base64
+    stt = rig.host.stt = StubStt()
+    audio = b"\x1aE\xdf\xa3fake-webm"
+    r = rig.http.post("/voice/transcribe", json={"audio": base64.b64encode(audio).decode(), "mime": "audio/webm;codecs=opus"})
+    assert r.status_code == 200, r.text
+    assert r.json()["text"] == "c'est quoi le nombre dérivé ?" and r.json()["lang"] == "fr"
+    path, existed, content = stt.paths[0]
+    assert existed and content == audio and path.endswith(".webm") and not os.path.exists(path)
+    assert rig.http.get("/health").json()["stt"]["model"] == "stub"
+    assert not rig.prompts                                               # no model call
+
+
+def test_voice_transcribe_refusals(rig):
+    import base64
+    ok = base64.b64encode(b"audio").decode()
+    rig.host.stt = StubStt()
+    assert rig.http.post("/voice/transcribe", json={"audio": ok, "mime": "video/webm"}).status_code == 400
+    assert rig.http.post("/voice/transcribe", json={"audio": "%%%", "mime": "audio/webm"}).status_code == 400
+    assert rig.http.post("/voice/transcribe", json={"audio": "", "mime": "audio/webm"}).status_code == 400
+    big = base64.b64encode(b"x" * (bridge.MAX_AUDIO_BYTES + 1)).decode()
+    assert rig.http.post("/voice/transcribe", json={"audio": big, "mime": "audio/webm"}).status_code == 400
+    rig.host.stt = StubStt(text=" ")
+    assert rig.http.post("/voice/transcribe", json={"audio": ok, "mime": "audio/webm"}).json()["error"] == "nothing heard"
+    stt = rig.host.stt = StubStt(fail=RuntimeError("Invalid data found when processing input"))
+    r = rig.http.post("/voice/transcribe", json={"audio": ok, "mime": "audio/ogg"})
+    assert r.status_code == 400 and "could not decode" in r.json()["error"] and not os.path.exists(stt.paths[0][0])
+    rig.host.stt = StubStt(fail=bridge.SttUnavailable("faster-whisper is not installed"))
+    r = rig.http.post("/voice/transcribe", json={"audio": ok, "mime": "audio/webm"})
+    assert r.status_code == 503 and r.json()["error"] == "stt_unavailable"
+
+
+def test_speech_to_text_can_be_switched_off():
+    stt = bridge.SpeechToText(model="off")
+    assert stt.status()["enabled"] is False
+    with pytest.raises(bridge.SttUnavailable):
+        stt.transcribe("/nonexistent.webm")

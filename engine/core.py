@@ -62,7 +62,7 @@ from metrics.review import ReviewStore
 from metrics.summary import read_jsonl
 from rag.budget import BudgetError, assemble, limit_for
 from rag.glossary import Glossary
-from rag.retriever import VIEWER, Hit, Retriever, language_plan, make_retriever
+from rag.retriever import VIEWER, Hit, Retriever, make_retriever, search_plan
 from rag.store import CourseStore, load_chunks
 from router.policy import Decision, Router, escalated
 
@@ -466,8 +466,12 @@ class Engine:
             if spec.max_chunks:
                 hits = hits[:spec.max_chunks]
             run.nearest = hits[0].chunk.concept
-            tctx = replace(tctx, extra={**tctx.extra, "concept": hits[0].chunk.concept,
-                                        "top_chunk": hits[0].chunk.chunk_id})
+            # a guessed tag below INGEST_MIN_TAG_CONFIDENCE (an upload no professor confirmed) names no concept for the
+            # learner: no practice exercise is appended on it (physics notes got "Calculer la dérivée de ...")
+            top = hits[0].chunk
+            sure = top.confidence >= self.settings.ingest_min_tag_confidence
+            tctx = replace(tctx, extra={**tctx.extra, "concept": top.concept if sure else "",
+                                        "top_chunk": top.chunk_id})
             # cache identity = question (+ history) + WHICH chunks were retrieved, not the compressed text
             key_messages = spec.render_grounded(prompt, inputs, tctx, [], inputs.get("history") or [])
             messages: Messages = []
@@ -1066,12 +1070,10 @@ class Engine:
             if expansion:
                 run.emit("expanding_query", {"glossary": list(expansion.terms)})
                 run.glossary = list(expansion.terms)
-            for lang_filter in language_plan(tctx.language):
-                hits = await self.retriever.search(query, self.settings.rag_top_k,
-                                                   {**(filters or {}), **(lang_filter or {})} or None, expansion)
-                if hits:
-                    run.retrieval_on = source
-                    return hits
+            hits = await search_plan(self.retriever, query, self.settings.rag_top_k, filters, expansion, tctx.language)
+            if hits:
+                run.retrieval_on = source
+                return hits
         return []
 
     async def _ground(self, spec: TaskSpec, prompt, inputs, tctx, hits: list[Hit], prio: Priority,

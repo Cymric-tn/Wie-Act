@@ -27,6 +27,7 @@ state changes as kind="breaker" records.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, replace
 from typing import Any, Mapping
 
@@ -68,6 +69,17 @@ ROUTES: dict[str, Route] = {
 INTENT_TASKS = {"EXPLAIN": "explain", "HINT": "hint", "ANSWER_ATTEMPT": "hint", "QUIZ": "quiz",
                 "DIAGNOSTIC": "diagnostic"}
 CONFUSED_TO_EXPLAIN = {"DIAGNOSTIC", "QUIZ"}     # a learner who is lost is taught first, not tested
+# What a request for an exercise says, in the learner's languages. The 3B classifier reads an imperative such as "Écris
+# un algorithme qui calcule la somme d'un tableau" as QUIZ, and quiz then served a derivative exercise for a question the
+# course does not cover (FelCloud scenarios 2026-11-11, HS-12). A QUIZ whose message asks for no exercise goes to explain,
+# which answers from the course or says "not in the course".
+_QUIZ_WORDS = re.compile(
+    r"exerci[cs]e|\bexos?\b|quiz|quest|entra[iî]n|pratiqu|practi[cs]e|\btest|interrog|\b[ée]valu|devoir|problem|problème|"
+    r"تمرين|تمارين|اختبار|سؤال|اسئلة|أسئلة|امتحان|tamrin|tmarin|tamarin|ikhtibar|so2el|imti7an", re.I)
+
+
+def asks_for_exercise(message: str) -> bool:
+    return bool(_QUIZ_WORDS.search(message))
 
 
 @dataclass(frozen=True)
@@ -146,10 +158,12 @@ class Router:
         self._log(d, ctx)
         return d
 
-    def follow_up(self, classification: Mapping[str, Any], ctx=None, has_open_exercise: bool = False) -> FollowUp:
-        """intent -> task, with two overrides: HIGH confusion + DIAGNOSTIC/QUIZ -> explain (teach before testing), and
+    def follow_up(self, classification: Mapping[str, Any], ctx=None, has_open_exercise: bool = False,
+                  message: str | None = None) -> FollowUp:
+        """intent -> task, with three overrides: HIGH confusion + DIAGNOSTIC/QUIZ -> explain (teach before testing),
         intent HINT while the learner has no open exercise -> explain (a hint is a step on something; with nothing open the
-        learner asked a question, e.g. the Arabizi "kifech nal9aha ?" read as a request for a hint).
+        learner asked a question, e.g. the Arabizi "kifech nal9aha ?" read as a request for a hint), and intent QUIZ on a
+        message (when the caller passes it) that asks for no exercise -> explain (see _QUIZ_WORDS).
         Logged as a kind="route" record with its reason, like every other routing decision."""
         intent = str(classification.get("intent") or "").upper()
         confusion = str(classification.get("confusion") or "").upper()
@@ -159,6 +173,8 @@ class Router:
             f = FollowUp("explain", f"intent {intent} with confusion HIGH -> explain (teach before testing)", True)
         elif intent == "HINT" and not has_open_exercise:
             f = FollowUp("explain", "hint without an open exercise", True)
+        elif intent == "QUIZ" and message and message.strip() and not asks_for_exercise(message):
+            f = FollowUp("explain", "intent QUIZ but the message asks for no exercise -> explain", True)
         log.info("follow-up: %s", f.reason)
         self.sink.write(CallRecord(
             request_id=getattr(ctx, "request_id", None) or "-", turn_id=getattr(ctx, "turn_id", None),

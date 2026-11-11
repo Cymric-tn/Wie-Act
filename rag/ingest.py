@@ -40,6 +40,7 @@ from engine import language as L
 from engine.course import Course
 from rag.chunker import Chunk, chunk_markdown, estimate_text_tokens, slug, _split_section
 from rag.glossary import Glossary
+from rag.normalize import tokenize
 from rag.retriever import BM25Retriever
 
 VISIBILITIES = ("public", "class", "private")
@@ -51,6 +52,7 @@ SUPPORTED = (".pdf", ".docx", ".md", ".markdown", ".txt")
 MAX_OCR_PAGES = 20
 OCR_STOP_AFTER_FAILURES = 2
 OCR_LOW_CONFIDENCE = 0.49
+OFF_TOPIC_CONFIDENCE = 0.49     # the cap of every guessed tag in a file that never names the course topic
 
 
 class IngestError(ValueError):
@@ -205,7 +207,16 @@ def _tag(chunks: list[Chunk], course: Course | None, unit_id: str, glossary: Glo
     for cid in ids:      # the titles are translations of each other: alternatives, not one long query
         c = course.concepts[cid]
         texts = list(dict.fromkeys([cid, *c.titles.values()]))
+        # The id of "Dérivée d'un produit" is "produit": alone it tagged a page on matrices `produit` at confidence 1
+        # (FelCloud scenarios 2026-11-11, finding 3). An id that is only part of a title is not a query of its own.
+        title_tokens = [set(tokenize(t)) for t in c.titles.values()]
+        if any(set(tokenize(cid)) < tt for tt in title_tokens):
+            texts = [t for t in texts if t != cid] or texts
         queries[cid] = [(t, glossary.expand(t) if glossary else None) for t in texts]
+    # A file that never names the course's topic (a sorting-algorithms article in a derivatives course) may share words
+    # with concept titles ("constante", "inverse", "limite"), but no tag on it is reliable: all stay below 0.5.
+    topic = _topic_tokens(glossary)
+    on_topic = not topic or any(topic & set(tf) for tf in r._tf) or any(_PRIME.search(c.text) for c in chunks)
     out = []
     for i, ch in enumerate(chunks):
         if ch.concept:                                    # the author tagged it: keep it
@@ -223,8 +234,28 @@ def _tag(chunks: list[Chunk], course: Course | None, unit_id: str, glossary: Glo
             continue
         second = scored[1][0] if len(scored) > 1 else 0.0
         conf = best[1] * (1.0 - 0.5 * min(1.0, second / best[0]))
+        if not on_topic:
+            conf = min(conf, OFF_TOPIC_CONFIDENCE)
         out.append(replace(ch, concept=best[2], confidence=round(conf, 3)))
     return out
+
+
+_PRIME = re.compile(r"\b[A-Za-z]\s*['′’]\s*\(|\)\s*['′]")     # f'(a), (uv)': the topic written as notation, not as a word
+
+
+def _topic_tokens(glossary: Glossary | None) -> set[str]:
+    """The course topic as BM25 tokens, in every language the glossary knows it: the topic word itself ("derivative"),
+    its course term ("dérivée") and the other variants of that entry ("مشتقة", "mochtaqa")."""
+    if glossary is None or not glossary.topic:
+        return set()
+    exp = glossary.expand(glossary.topic)
+    targets = set(exp.terms)
+    toks = set(tokenize(glossary.topic)) | set(exp.course_tokens)
+    for variants in glossary._index.values():
+        for variant, tg in variants:
+            if targets and set(tg) == targets and len(variant) == 1:     # "derivative at a point" would add "point"
+                toks |= set(variant)
+    return toks
 
 
 # ------------------------------------------------------------------ main

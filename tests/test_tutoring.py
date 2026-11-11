@@ -59,7 +59,8 @@ async def test_explain_v4_model_writes_only_the_body_scaffolding_is_templates(vt
     high = await eng.run("explain", q, {"confusion": "HIGH"})
     low = await eng.run("explain", q, {"confusion": "LOW"})
     sysmsg = system_of(fake.requests[0])
-    assert eng.prompts["explain"].version == "4" and "nothing else" in sysmsg
+    assert eng.prompts["explain"].version == "5" and "nothing else" in sysmsg
+    assert fake.requests[0]["body"]["messages"][-1]["content"].endswith("Answer in French.")      # v5: the language, last
     assert "practice" not in sysmsg and "acknowledge" not in sysmsg and "Darija" not in sysmsg
     assert len(fake.requests) == 1 and low.from_cache                     # body cached across confusion levels
     assert high.text.startswith("C'est une notion qui demande du temps") and low.text.startswith("Voici l'essentiel")
@@ -382,6 +383,53 @@ def test_every_chunk_has_a_concept_with_at_least_one_exercise():
     for c in chunk_dir("data/docs"):
         assert c.concept, c.chunk_id
         assert c.concept in concepts, (c.chunk_id, c.concept)
+
+
+async def test_english_question_reaches_the_french_page_when_it_covers_more():
+    """FelCloud scenarios 2026-11-11, finding 5: a weak English hit used to stop the search."""
+    from rag.chunker import Chunk
+    from rag.retriever import BM25Retriever, search_plan
+    mk = lambda i, lang, text: Chunk(i, text, "derivative", "beginner", lang, i + ".md")
+    r = BM25Retriever(min_coverage=0.4)
+    await r.index([mk("en#variations", "ENGLISH", "The sign of the derivative tells where the function increases."),
+                   mk("fr#quotient", "FRENCH", "La dérivée du quotient u/v est (u'v - uv')/v²."),
+                   mk("fr#autre", "FRENCH", "Une tangente touche la courbe en un point.")])
+    from rag.glossary import Glossary
+    g = Glossary.load("data/glossary.yaml")
+    q = "what is the derivative of a quotient"
+    assert [h.chunk.chunk_id for h in await search_plan(r, q, 2, None, g.expand(q), "ENGLISH")] == ["fr#quotient"]
+    q = "what does the sign of the derivative tell"
+    assert (await search_plan(r, q, 2, None, g.expand(q), "ENGLISH"))[0].chunk.chunk_id == "en#variations"
+    assert await search_plan(r, "football results", 2, None, None, "ENGLISH") == []
+
+
+@pytest.mark.parametrize("question", [
+    "Je ne comprends pas la règle du produit u'v + uv', tu peux expliquer ?",                       # finding 4
+    "Bonjour, je voudrais savoir comment dériver un quotient s'il vous plaît",
+])
+async def test_filler_words_do_not_fail_the_relevance_gate(question):
+    from rag.chunker import chunk_dir
+    from rag.retriever import BM25Retriever
+    r = BM25Retriever(min_coverage=0.4)
+    await r.index(chunk_dir("data/docs", 300))
+    assert await r.search(question, 2)
+    for off_topic in ("je ne comprends pas python", "Explique-moi la recette de la pizza, s'il te plaît",
+                      "Écris un algorithme qui calcule la somme d'un tableau"):
+        assert await r.search(off_topic, 2) == []
+
+
+@pytest.mark.parametrize("message,task", [
+    ("Écris un algorithme qui calcule la somme d'un tableau", "explain"),                            # scenario HS-12
+    ("Donne-moi un exercice sur le produit", "quiz"), ("a3tini tamrin", "quiz"), ("quiz me", "quiz"),
+    (None, "quiz"), ("", "quiz"),
+])
+def test_quiz_intent_without_a_request_for_an_exercise_goes_to_explain(message, task):
+    from engine.fake import _FakeRouter
+    from router.policy import Router
+    c = {"intent": "QUIZ", "confusion": "LOW"}
+    f = Router(MemorySink(), 2).follow_up(c, None, False, message)
+    assert f.task == task and f.overridden == (task == "explain")
+    assert _FakeRouter().follow_up(c, None, False, message).task == task
 
 
 def test_language_plan():

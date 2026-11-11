@@ -9,6 +9,7 @@ fastapi>=0.110          # services/engine_server.py
 uvicorn>=0.29
 python-multipart>=0.0.9   # multipart uploads (images, materials)
 websockets>=12            # uvicorn WebSocket support
+faster-whisper>=1.0       # app/bridge/lumi_stt.py: "Ask Lumi" speech to text (lazy import; optional, no LLM)
 # dev
 pytest>=8
 pytest-asyncio>=0.23

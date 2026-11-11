@@ -165,13 +165,13 @@ async def test_existing_retrieval_evals_are_unchanged():
             got[(os.path.basename(path), mode)] = (v["h1"], v["h3"], v["rejected"])
     # baseline measured before v1.3 (scripts.eval_retrieval, 2026-11-01): hit@1, hit@3, off-topic rejected
     assert got[("retrieval_set.jsonl", "policy")] == (13, 14, 4)
-    assert got[("retrieval_crosslang.jsonl", "policy")][:2] == (6, 7)
+    assert got[("retrieval_crosslang.jsonl", "policy")][:2] == (6, 8)      # 7 before the formula page named the product and quotient rules (2026-11-11)
     assert got[("retrieval_manual.jsonl", "policy")][:2] == (2, 2)
     # v1.4: Arabizi questions padded with Tunisian function words and verbs (mta3, kifech nal9aha, n7esbha...): 4/6 before
     # the stopwords of rag/normalize.py grew, 6/6 after
     assert got[("retrieval_arabizi.jsonl", "policy")][:2] == (6, 6)
     assert got[("retrieval_set.jsonl", "plain")] == (13, 14, 4)
-    assert got[("retrieval_crosslang.jsonl", "glossary")][:2] == (6, 7)
+    assert got[("retrieval_crosslang.jsonl", "glossary")][:2] == (6, 8)
 
 
 def test_tunisian_function_words_and_verbs_are_not_content_terms():

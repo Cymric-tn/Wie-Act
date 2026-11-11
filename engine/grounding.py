@@ -463,6 +463,19 @@ def _simplified(e: sympy.Expr) -> str:
     return str(sympy.simplify(e)).replace("**", "^").replace("*", "")
 
 
+# "f'(a) = lim h→0 (f(a + h) − f(a)) / h": the definition of the derivative, however the limit is written. The French
+# course states it in words ("la limite du taux d'accroissement quand h tend vers 0"), so the written form matched no
+# source and a correct English definition was flagged `ungrounded_formula` (FelCloud replay 2026-11-11, UNI-01).
+_DIFF_QUOTIENT = re.compile(r"\(?f\(([a-z0-9]+)\+([a-z])\)[-−]f\(\1\)\)?/\(?\2\)?")
+
+
+def _is_limit_definition(m_der: re.Match, rhs: str) -> bool:
+    flat = re.sub(r"\s+", "", rhs.lower())
+    q = _DIFF_QUOTIENT.search(flat)
+    return bool(q) and flat.startswith("lim") and q.group(1) == m_der.group(2).replace(" ", "").lower() \
+        and re.search(q.group(2) + r"(?:→|->|⟶|tendvers|tendsto|\\to)\(?0", flat) is not None
+
+
 def check_formulas(answer: str, sources: list[str]) -> dict:
     """Classify every formula of an explain answer:
       verified      derivative claims checked with sympy against the answer's own f(x) = E, (E)' notation,
@@ -523,7 +536,7 @@ def check_formulas(answer: str, sources: list[str]) -> dict:
                 out["verified"].append(span)
             elif not (le.free_symbols | r.free_symbols):              # numbers only and not equal: wrong
                 out["wrong"].append(span)
-            elif any(l.endswith(p) and _norm(rhs).startswith(n) for p, n in verbal):
+            elif not _SINGLE_VAR.fullmatch(l) and any(l.endswith(p) and _norm(rhs).startswith(n) for p, n in verbal):
                 out["wrong"].append(span)                             # "A est égale à B", both sides math, not equal: a false claim
                 out["forms"][span] = f"{lhs} = {_simplified(le)}"
             elif _SINGLE_VAR.fullmatch(l):
@@ -538,6 +551,15 @@ def check_formulas(answer: str, sources: list[str]) -> dict:
             continue
         if any(_lhs_match(lhs, l2) and _rhs_match(rhs, r2) for l2, r2 in pool):
             continue                                                  # in the sources: fine
+        if m_der and _is_limit_definition(m_der, rhs):
+            out["verified"].append(span)                              # f'(a) = lim (f(a + h) − f(a)) / h: the definition
+            continue
+        if not l and r is not None and not r.free_symbols and (_OPERATOR.search(_norm(rhs)) or re.search(r"\)\s*\(", rhs)):
+            # "detA = (2)(5) - (3)(4)": a named quantity worked out on numbers. It is arithmetic on an example, not a
+            # formula the course should contain; flagged, it filled the professor's review queue with correct answers
+            # (FelCloud scenarios 2026-11-11, finding 6). A bare number ("la pente = 7") is still reported.
+            out["skipped"].append(span)
+            continue
         if incomplete(answer, span, rhs):
             out["unchecked"].append(span)                             # cut at a symbol the parser does not know
             continue

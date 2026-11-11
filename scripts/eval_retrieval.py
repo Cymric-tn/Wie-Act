@@ -21,7 +21,7 @@ from dotenv import dotenv_values
 from config import load_settings
 from rag.chunker import chunk_dir
 from rag.glossary import Glossary
-from rag.retriever import language_plan, make_retriever
+from rag.retriever import make_retriever, search_plan
 
 DATASETS = ["tests/eval/retrieval_set.jsonl", "tests/eval/retrieval_crosslang.jsonl",
             "tests/eval/retrieval_manual.jsonl", "tests/eval/retrieval_arabizi.jsonl"]
@@ -36,11 +36,8 @@ async def evaluate(r, items, glossary: Glossary | None, policy: bool = False) ->
     for x in items:
         exp = glossary.expand(x["question"]) if glossary else None
         kws = list(exp.terms) if exp else []
-        hits = []
-        for f in (language_plan(x["language"]) if policy else [None]):
-            hits = await r.search(x["question"], 3, f, expansion=exp)
-            if hits:
-                break
+        hits = (await search_plan(r, x["question"], 3, None, exp, x["language"]) if policy
+                else await r.search(x["question"], 3, None, expansion=exp))
         if policy and x.get("expected_french") and x["language"] in ("DARIJA", "ARABIZI"):
             x = {**x, "expected": x["expected_french"]}
         ids = [h.chunk.chunk_id for h in hits]

@@ -170,3 +170,26 @@ def test_the_point_may_come_after_the_claim_in_the_same_sentence_and_other_sente
 def test_a_clause_that_names_no_point_is_never_read_as_one():
     c = check_formulas("la limite de (x²−1)/(x−1) quand n tend vers la lune est égale à 2", [])
     assert c["wrong"] == [] and c["verified"] == [] and c["ungrounded"] == []
+
+
+def test_worked_arithmetic_on_a_named_quantity_is_not_an_ungrounded_formula():
+    """FelCloud scenarios 2026-11-11, finding 6: a correct 2×2 determinant was flagged `ungrounded_formula`."""
+    from engine.grounding import check_formulas
+    src = ["Le déterminant de la matrice (a b ; c d) est det A = ad − bc."]
+    ok = check_formulas("detA = ad - bc\n\ndetA = (2)(5) - (3)(4) = 10 - 12 = -2", src)
+    assert not ok["ungrounded"] and not ok["wrong"] and "10 - 12 = -2" in ok["verified"]
+    bad = check_formulas("detA = (2)(5) - (3)(4) = 10 - 12 = 5", src)
+    assert bad["wrong"] == ["10 - 12 = 5"]
+    assert check_formulas("la pente = 7", src)["ungrounded"] == ["= 7"]          # a bare invented number is still reported
+
+
+def test_an_assignment_said_with_is_and_the_limit_definition_are_not_flagged():
+    """FelCloud replay 2026-11-11: two correct English answers came back `wrong_math` and `ungrounded_formula`."""
+    from engine.grounding import check_formulas
+    a = check_formulas("For f(x) = 1/(x + 2), the numerator u is 1 and the denominator v is x + 2.", [])
+    assert not a["wrong"] and a["skipped"] == ["u = 1", "v = x + 2"]
+    assert check_formulas("2x + 2 equals x", [])["wrong"] == ["2x + 2 = x"]                # a spoken identity still is
+    for good in ("f'(a) = lim h→0 (f(a + h) − f(a)) / h", "f'(x) = lim(h → 0) (f(x + h) − f(x)) / h"):
+        assert check_formulas(good, [])["verified"] == [good]
+    for bad in ("f'(a) = lim h→0 (f(a + h) + f(a)) / h", "f'(a) = lim h→1 (f(a + h) − f(a)) / h"):
+        assert check_formulas(bad, [])["ungrounded"] == [bad]

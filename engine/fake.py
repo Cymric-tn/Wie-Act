@@ -276,14 +276,17 @@ class FakeEngine:
 class _FakeRouter:
     """Router.follow_up without a metrics sink: the same tables, the same rule."""
 
-    def follow_up(self, classification: Mapping[str, Any], ctx=None, has_open_exercise: bool = False):
-        from router.policy import CONFUSED_TO_EXPLAIN, INTENT_TASKS, FollowUp
+    def follow_up(self, classification: Mapping[str, Any], ctx=None, has_open_exercise: bool = False,
+                  message: str | None = None):
+        from router.policy import CONFUSED_TO_EXPLAIN, INTENT_TASKS, FollowUp, asks_for_exercise
         intent = str(classification.get("intent") or "").upper()
         task = INTENT_TASKS.get(intent)
         if str(classification.get("confusion") or "").upper() == "HIGH" and intent in CONFUSED_TO_EXPLAIN:
             return FollowUp("explain", f"intent {intent} with confusion HIGH -> explain (teach before testing)", True)
         if intent == "HINT" and not has_open_exercise:
             return FollowUp("explain", "hint without an open exercise", True)
+        if intent == "QUIZ" and message and message.strip() and not asks_for_exercise(message):
+            return FollowUp("explain", "intent QUIZ but the message asks for no exercise -> explain", True)
         return FollowUp(task, f"intent {intent} -> {task or 'no follow-up'}")
 
 

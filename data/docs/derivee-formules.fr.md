@@ -23,6 +23,6 @@ Ces deux règles permettent de dériver tous les polynômes terme par terme. Exe
 
 ## Produit et quotient
 <!-- concept: produit -->
-Pour un produit de deux fonctions u et v : (u·v)' = u'·v + u·v'. Ce n'est pas u'·v'. Exemple : f(x) = x(x + 1) avec u = x et v = x + 1 donne f'(x) = 1·(x + 1) + x·1 = 2x + 1.
+Règle du produit : la dérivée d'un produit de deux fonctions u et v est (u·v)' = u'·v + u·v', qu'on écrit aussi (uv)' = u'v + uv'. Ce n'est pas u'·v'. Exemple : f(x) = x(x + 1) avec u = x et v = x + 1 donne f'(x) = 1·(x + 1) + x·1 = 2x + 1.
 
-Pour un quotient, quand v ne s'annule pas : (u/v)' = (u'·v − u·v') / v². Exemple : f(x) = 1/(x + 2) donne f'(x) = (0·(x + 2) − 1·1) / (x + 2)² = −1/(x + 2)².
+Règle du quotient : la dérivée d'un quotient u/v, quand v ne s'annule pas, est (u/v)' = (u'·v − u·v') / v². Exemple : f(x) = 1/(x + 2) donne f'(x) = (0·(x + 2) − 1·1) / (x + 2)² = −1/(x + 2)².

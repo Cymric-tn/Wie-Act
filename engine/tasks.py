@@ -483,7 +483,10 @@ def _explain_render(p: PromptTemplate, inputs: Mapping, ctx: TaskContext, chunks
         question += "\n\n" + p.render("passage", text=str(inputs["passage"]).strip())
     if str(inputs.get("board_text") or "").strip():
         question += "\n\n" + p.render("board", text=str(inputs["board_text"]).strip())
-    msgs.append({"role": "user", "content": p.render("user", material=_material(chunks), question=question)})
+    # the reply language is repeated after the question: with French material and a French question the 8B wrote the
+    # body in French under "Reply in: English" (FelCloud scenarios 2026-11-11, UNI-10); the last line is what it follows
+    msgs.append({"role": "user", "content": p.render("user", material=_material(chunks), question=question,
+                                                     reminder=p.sections.get(f"remind.{lang}", "")).rstrip()})
     return msgs
 
 
@@ -749,6 +752,24 @@ CHECK_CLAIM = TaskSpec(
 _FENCE = re.compile(r"^```[a-z]*\s*|\s*```$", re.I)
 _DET_TAGS = re.compile(r"<\|[^|>]*\|>|\[\[\s*\d+(?:\s*,\s*\d+){3}\s*\]\]")      # grounding tags some OCR models emit
 _LABEL_OCR = re.compile(r"^\s*(transcription|texte|text|ocr)\s*:\s*", re.I)
+# deepseek-ocr with the v2 prompt wraps each formula line in \[ ... \] (FelCloud, 2026-11-11): a line that is one whole
+# formula loses its delimiters, a display block split over lines loses its opening and closing marks.
+_WRAPPED = re.compile(r"^(?:\\\[|\\\(|\$\$|\$)\s*(.*?)\s*(?:\\\]|\\\)|\$\$|\$)$")
+_DISPLAY_OPEN = re.compile(r"^(?:\\\[|\$\$)\s*")
+_DISPLAY_CLOSE = re.compile(r"\s*(?:\\\]|\$\$)$")
+_DELIMS = re.compile(r"\\[\[\]()]|\$")
+
+
+def _unwrap_math(line: str) -> str:
+    s = line.strip()
+    m = _WRAPPED.match(s)
+    if m and not _DELIMS.search(m.group(1)):
+        return m.group(1)
+    if _DISPLAY_OPEN.match(s) and not re.search(r"\\\]|\$\$", s[2:]):
+        return _DISPLAY_OPEN.sub("", s)
+    if _DISPLAY_CLOSE.search(s) and not re.search(r"\\\[|\$\$", s[:-2]):
+        return _DISPLAY_CLOSE.sub("", s)
+    return s
 _LATEX_MARK = re.compile(r"\\(?:frac|sqrt|int|sum|lim|cdot|times|leq|geq|neq|infty|left|right)\b|\^\{|_\{|\$|\\\(")
 _MATH_LINE = re.compile(r"[=+<>≤≥≠±√∑∫^]|[²³⁴⁵⁶⁷⁸⁹⁰]|\\(?:frac|sqrt)|\bf\s*['′]?\s*\(|\blim\b|\d\s*[-−*/×·]\s*\w")
 _SUPER = str.maketrans({"²": "^{2}", "³": "^{3}", "⁴": "^{4}", "⁵": "^{5}", "⁶": "^{6}", "⁷": "^{7}", "⁸": "^{8}",
@@ -802,7 +823,7 @@ def analyze_ocr(raw: str, language: str | None = None) -> dict:
     text = _DET_TAGS.sub("", raw or "")
     text = _FENCE.sub("", text.strip())
     text = _LABEL_OCR.sub("", text)
-    text = "\n".join(line.rstrip() for line in text.strip().splitlines() if line.strip())
+    text = "\n".join(u for u in (_unwrap_math(line) for line in text.strip().splitlines()) if u)
     msgs = _OCR_NOTES.get(language or "FRENCH", _OCR_NOTES["FRENCH"])
     issues: list[tuple[str, int]] = []
     lines = text.splitlines()
@@ -824,8 +845,10 @@ def analyze_ocr(raw: str, language: str | None = None) -> dict:
 def _ocr_build(p: PromptTemplate, inputs: Mapping, ctx: TaskContext, limit: int = 0) -> Messages:
     from gatekeeper.client import image_part
     img = ctx.extra["image"]            # engine.run prepared it (resize, hash, token estimate)
+    # CONFIRMED(felcloud): deepseek-ocr returns an empty answer as soon as the instruction says more than this one
+    # sentence (2026-11-11, prompts/ocr_transcribe.md v2), so the prompt is the system section alone, with no user part.
     return [{"role": "user", "content": [image_part(img.data_url, img.est_tokens, img.sha),
-                                         {"type": "text", "text": p.render("system") + "\n\n" + p.render("user")}]}]
+                                         {"type": "text", "text": p.render("system")}]}]
 
 
 def _ocr_finalize(text: str, p: PromptTemplate, inputs: Mapping, ctx: TaskContext):

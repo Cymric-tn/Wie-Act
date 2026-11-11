@@ -6,7 +6,7 @@
   "data": {
     "verdict": "PARTLY",
     "correction": "",
-    "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+    "source_chunk_id": "derivee-formules.fr#produit-et-quotient",
     "checked_by": "llm"
   },
   "model_class_used": "compact",
@@ -84,16 +84,16 @@
   "notes": {
     "retrieved": [
       {
-        "id": "derivee-erreurs.fr#erreurs-avec-le-produit",
-        "score": 3.596,
+        "id": "derivee-formules.fr#produit-et-quotient",
+        "score": 3.649,
         "coverage": 1.0
       }
     ],
     "sources": [
-      "derivee-erreurs.fr#erreurs-avec-le-produit"
+      "derivee-formules.fr#produit-et-quotient"
     ],
     "budget": {
-      "tokens": 730,
+      "tokens": 772,
       "limit": 2520
     },
     "dropped": [],

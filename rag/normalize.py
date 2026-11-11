@@ -9,7 +9,10 @@ BM25 tokenization for French, English, Arabic script (MSA + Darija) and Arabizi.
      without accents), light plural and final-e strip (dérivées, dérivée, dérivé -> deriv). Arabizi digits are kept.
   5. Arabic-script tokens: light prefix strip of the article and attached particles
      (المشتقة / والمشتقة / بالمشتقة -> مشتقه), only if 3+ letters remain; a bare و only if 4+ remain
-  6. drop 1-character tokens and stopwords (FR / EN / Arabizi / Arabic + Darija)
+  6. drop 1-character tokens and stopwords (FR / EN / Arabizi / Arabic + Darija). The stopwords include the words a
+     learner wraps a question in ("je ne comprends pas ... tu peux expliquer ?", "can you help me understand ..."):
+     they name no topic, and counted in the coverage gate they turned an on-topic question into "not in the course"
+     (FelCloud scenarios 2026-11-11, finding 4).
 """
 from __future__ import annotations
 
@@ -72,8 +75,13 @@ le la les un une des de du et ou est sont c ce cet cette ces que qui quoi qu com
 je tu il elle on nous vous ils elles me te se en dans pour par sur avec sans pas ne plus mais au aux
 y a son sa ses mon ma mes ton ta tes leur leurs tout tous tres bien fait faire peux peut dois
 quel quelle quels quelles
+comprends comprend compris comprendre explique expliques expliquez expliquer moi toi svp stp plait merci bonjour
+bonsoir salut voudrais veux voulais aimerais savoir sais dire dis donne donnez donner aide aider aidez besoin pouvez
+pourrais pourriez alors aussi vraiment exactement ca cela ai as suis es etre avoir
 the an of to in on for is are was be been what why how do does did can could i you he she it we they
 my your this that these those and or with without please explain me tell about if its when
+at by from so not but don doesn understand help know want need give show hello hi thanks thank am have has
+will would should just really exactly formally actually which who where there
 chnowa chnoua chnou chniya ya3ni yaani ena enti inti howa hiya fi fel el w ama ken kifech kifeh
 3lech alech bech mta3 mte3 hedha hedhi chay barcha ki kifh nheb n7eb
 ta3 mtaa mt3 wala walla lel bel fil wel 3la 3al 3and 3andi 3ala hedhom hedhouma haka hakeka ken kan nel9a nal9a

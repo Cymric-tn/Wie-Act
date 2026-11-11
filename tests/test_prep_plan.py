@@ -235,3 +235,18 @@ async def test_the_page_language_follows_the_context(vt):
     eng, _, _ = make_engine(vt, lambda b: chat_ok("Derivative of a power: multiply by the exponent, lower it by 1.", 500, 30))
     page = await eng.generate_page({}, FP, {"language": "ENGLISH"})
     assert page["title"] == "Derivative of a power" and page["worked_example"]["statement"].startswith(("Differentiate", "Give", "Compute", "Find", "Calculate", "Compute"))
+
+
+@pytest.mark.parametrize("costs,days,pace,per_day", [
+    ([20] * 11, 4, 60, [60, 60, 60, 40]),          # scenario UNI-02: was 40, 40, 40, 100
+    ([20] * 10, 5, 60, [40, 40, 40, 40, 40]),      # room to spare: even days, not 60, 60, 60, 20, 0
+    ([20] * 10, 5, 300, [40, 40, 40, 40, 40]),
+    ([20] * 6, 2, 45, [40, 80]),                   # does not fit: the last day takes the rest
+    ([20, 8, 8], 3, 15, [20, 8, 8]),               # a page longer than the pace still gets a day
+])
+def test_spread_keeps_days_even_and_within_the_pace(costs, days, pace, per_day):
+    from engine.prep import spread
+    day_of, overflow = spread(costs, days, pace)
+    got = [sum(c for c, d in zip(costs, day_of) if d == i) for i in range(days)]
+    assert got == per_day and day_of == sorted(day_of)
+    assert overflow == max(0, per_day[-1] - pace) * (sum(costs) > days * pace)

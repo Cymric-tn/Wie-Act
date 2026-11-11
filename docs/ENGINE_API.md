@@ -740,7 +740,7 @@ A grounded explanation of a course concept. Mid-size model, retrieval over the c
     "retrieved": [
       {
         "id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
-        "score": 11.666,
+        "score": 11.357,
         "coverage": 1.0
       }
     ],
@@ -748,7 +748,7 @@ A grounded explanation of a course concept. Mid-size model, retrieval over the c
       "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
     ],
     "budget": {
-      "tokens": 598,
+      "tokens": 608,
       "limit": 2520
     },
     "dropped": [],
@@ -812,7 +812,7 @@ Cache hit (same question and same retrieved chunks):
     "retrieved": [
       {
         "id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
-        "score": 11.666,
+        "score": 11.357,
         "coverage": 1.0
       }
     ],
@@ -820,7 +820,7 @@ Cache hit (same question and same retrieved chunks):
       "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
     ],
     "budget": {
-      "tokens": 598,
+      "tokens": 608,
       "limit": 2520
     },
     "dropped": [],
@@ -999,7 +999,7 @@ Fast mode, mid-size saturated:
     "retrieved": [
       {
         "id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
-        "score": 11.666,
+        "score": 11.357,
         "coverage": 1.0
       }
     ],
@@ -1007,7 +1007,7 @@ Fast mode, mid-size saturated:
       "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
     ],
     "budget": {
-      "tokens": 598,
+      "tokens": 608,
       "limit": 2520
     },
     "dropped": []
@@ -2019,7 +2019,7 @@ Judged by the model against the course (real):
   "data": {
     "verdict": "CONTRADICTED",
     "correction": "La dérivée d'un produit est (u·v)' = u'·v + u·v', pas u'·v'.",
-    "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+    "source_chunk_id": "derivee-formules.fr#produit-et-quotient",
     "checked_by": "llm"
   },
   "model_class_used": "compact",
@@ -2067,16 +2067,16 @@ Judged by the model against the course (real):
   "notes": {
     "retrieved": [
       {
-        "id": "derivee-erreurs.fr#erreurs-avec-le-produit",
-        "score": 3.596,
+        "id": "derivee-formules.fr#produit-et-quotient",
+        "score": 3.649,
         "coverage": 1.0
       }
     ],
     "sources": [
-      "derivee-erreurs.fr#erreurs-avec-le-produit"
+      "derivee-formules.fr#produit-et-quotient"
     ],
     "budget": {
-      "tokens": 730,
+      "tokens": 772,
       "limit": 2520
     },
     "dropped": []
@@ -2143,7 +2143,7 @@ The model failed twice (real; safe default):
   "data": {
     "verdict": "PARTLY",
     "correction": "",
-    "source_chunk_id": "derivee-erreurs.fr#erreurs-avec-le-produit",
+    "source_chunk_id": "derivee-formules.fr#produit-et-quotient",
     "checked_by": "llm"
   },
   "model_class_used": "compact",
@@ -2221,16 +2221,16 @@ The model failed twice (real; safe default):
   "notes": {
     "retrieved": [
       {
-        "id": "derivee-erreurs.fr#erreurs-avec-le-produit",
-        "score": 3.596,
+        "id": "derivee-formules.fr#produit-et-quotient",
+        "score": 3.649,
         "coverage": 1.0
       }
     ],
     "sources": [
-      "derivee-erreurs.fr#erreurs-avec-le-produit"
+      "derivee-formules.fr#produit-et-quotient"
     ],
     "budget": {
-      "tokens": 730,
+      "tokens": 772,
       "limit": 2520
     },
     "dropped": [],
@@ -2644,7 +2644,7 @@ A study plan for an assessment. No model, no request.
       },
       {
         "concept_id": "inverse",
-        "day_index": 1,
+        "day_index": 0,
         "reason": "Prérequis de « Dérivée d'un quotient » ; Maîtrise faible (0%)",
         "reason_code": "prerequisite",
         "page_kind": "learn",
@@ -2652,7 +2652,7 @@ A study plan for an assessment. No model, no request.
       },
       {
         "concept_id": "racine carrée",
-        "day_index": 2,
+        "day_index": 1,
         "reason": "Maîtrise faible (0%)",
         "reason_code": "low_mastery",
         "page_kind": "learn",
@@ -2660,7 +2660,7 @@ A study plan for an assessment. No model, no request.
       },
       {
         "concept_id": "constante",
-        "day_index": 3,
+        "day_index": 1,
         "reason": "Prérequis de « Dérivée d'un polynôme, Dérivée d'un produit » ; Maîtrise faible (40%)",
         "reason_code": "prerequisite",
         "page_kind": "learn",
@@ -2668,7 +2668,7 @@ A study plan for an assessment. No model, no request.
       },
       {
         "concept_id": "polynôme",
-        "day_index": 4,
+        "day_index": 2,
         "reason": "Prérequis de « Dérivée d'un produit, Dérivée d'un quotient » ; Maîtrise faible (0%)",
         "reason_code": "prerequisite",
         "page_kind": "learn",
@@ -2676,7 +2676,7 @@ A study plan for an assessment. No model, no request.
       },
       {
         "concept_id": "produit",
-        "day_index": 5,
+        "day_index": 2,
         "reason": "Prérequis de « Dérivée d'un quotient » ; Maîtrise faible (0%)",
         "reason_code": "prerequisite",
         "page_kind": "learn",
@@ -2684,7 +2684,7 @@ A study plan for an assessment. No model, no request.
       },
       {
         "concept_id": "quotient",
-        "day_index": 6,
+        "day_index": 3,
         "reason": "Maîtrise faible (0%)",
         "reason_code": "low_mastery",
         "page_kind": "learn",
@@ -2692,7 +2692,7 @@ A study plan for an assessment. No model, no request.
       },
       {
         "concept_id": "variations",
-        "day_index": 6,
+        "day_index": 4,
         "reason": "Prérequis de « Extremum » ; Maîtrise faible (0%)",
         "reason_code": "prerequisite",
         "page_kind": "learn",
@@ -2700,7 +2700,7 @@ A study plan for an assessment. No model, no request.
       },
       {
         "concept_id": "extremum",
-        "day_index": 6,
+        "day_index": 5,
         "reason": "Maîtrise faible (0%)",
         "reason_code": "low_mastery",
         "page_kind": "learn",

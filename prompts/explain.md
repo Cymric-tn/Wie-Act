@@ -1,6 +1,6 @@
 ---
 task: explain
-version: 4
+version: 5
 ---
 ## system
 You are a tutor. Explain the student's question using ONLY the course material given with it.
@@ -15,6 +15,8 @@ Course material:
 $material
 
 Question: $question
+
+$reminder
 
 ## passage
 The student selected this passage on their study page and says it confuses them. Explain it using the course material:
@@ -45,7 +47,22 @@ Write the explanation in French.
 Write the explanation in Modern Standard Arabic with correct math terminology; keep formulas exactly as written.
 
 ## lang.ENGLISH
-Write the explanation in English.
+Write the explanation in English, even when the course material or the question is in French: translate what you use and keep formulas exactly as written.
+
+## remind.DARIJA
+Answer in French.
+
+## remind.ARABIZI
+Answer in French.
+
+## remind.FRENCH
+Answer in French.
+
+## remind.ARABIC
+Answer in Modern Standard Arabic (العربية الفصحى), not in French.
+
+## remind.ENGLISH
+Answer in English, not in French.
 
 ## line.DARIJA
 Write it in Tunisian Darija, Arabic letters (متاع, شنوة, كيفاش, باهي; never ديال, واش). If unsure of a word, use the French term.

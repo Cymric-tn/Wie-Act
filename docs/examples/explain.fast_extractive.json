@@ -164,7 +164,7 @@
     "retrieved": [
       {
         "id": "derivee-definition.fr#nombre-derive-et-taux-d-accroissement",
-        "score": 11.666,
+        "score": 11.357,
         "coverage": 1.0
       }
     ],
@@ -172,7 +172,7 @@
       "derivee-definition.fr#nombre-derive-et-taux-d-accroissement"
     ],
     "budget": {
-      "tokens": 598,
+      "tokens": 608,
       "limit": 2520
     },
     "dropped": []

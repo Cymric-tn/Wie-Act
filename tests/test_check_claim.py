@@ -145,10 +145,31 @@ async def test_the_cache_key_is_the_claim_plus_the_chunk_id(tmp_path, vt):
 
 # ------------------------------------------------------------------ languages, failure
 async def test_an_arabic_claim_is_checked_against_the_arabic_course(vt):
-    eng, fake, _ = make_engine(vt, verdict("CONTRADICTED", "مشتقة x² هي 2x."))
-    r = await eng.run("check_claim", {"claim": "مشتقة الدالة x² هي x."}, {"language": "ARABIC"})
-    assert r.data["source_chunk_id"].startswith("mochtaqa.ar#") and r.data["correction"] == "مشتقة x² هي 2x."
+    eng, fake, _ = make_engine(vt, verdict("CONTRADICTED", "مشتقة الدالة الثابتة تساوي صفراً."))
+    r = await eng.run("check_claim", {"claim": "مشتقة الدالة الثابتة تساوي واحداً."}, {"language": "ARABIC"})
+    assert r.data["source_chunk_id"].startswith("mochtaqa.ar#") and r.data["correction"] == "مشتقة الدالة الثابتة تساوي صفراً."
     assert "Modern Standard Arabic" in fake.requests[0]["body"]["messages"][0]["content"]
+
+
+@pytest.mark.parametrize("claim,language,verdict_,correction", [
+    ("La dérivée de 1/x est 1/x²", "FRENCH", "CONTRADICTED", "Plutôt : (1/x)' = -1/x²"),      # scenario HS-07a
+    ("la dérivée de 1/x est -1/x²", "FRENCH", "SUPPORTED", ""),
+    ("The derivative of x^3 is 3x^2.", "ENGLISH", "SUPPORTED", ""),
+    ("la dérivée de la fonction x² + 3x est égale à 2x + 3", "FRENCH", "SUPPORTED", ""),
+    ("مشتقة الدالة x² هي x.", "ARABIC", "CONTRADICTED", "الصحيح: (x²)' = 2x"),
+])
+async def test_a_derivative_stated_in_words_is_decided_by_sympy(vt, claim, language, verdict_, correction):
+    eng, fake, _ = make_engine(vt, verdict("NOT_IN_COURSE"))
+    r = await eng.run("check_claim", {"claim": claim}, {"language": language})
+    assert (r.data["verdict"], r.data["correction"], r.data["checked_by"]) == (verdict_, correction, "sympy")
+    assert not fake.requests
+
+
+@pytest.mark.parametrize("claim", ["La dérivée est toujours positive", "la dérivée de x² est positive",
+                                   "La dérivée d'une constante est 0", "La dérivée de f(x) = x² est f'(x) = 2x"])
+def test_prose_that_states_no_spoken_derivative_is_left_as_written(claim):
+    from engine.claims import spoken_derivatives
+    assert spoken_derivatives(claim) == claim
 
 
 async def test_quota_exhausted_gives_the_safe_default_and_an_eta(vt):

@@ -114,13 +114,18 @@ def spread(costs: Sequence[int], days: int, pace: int) -> tuple[list[int], int]:
     """Day index of each item (in order): fill the days evenly without exceeding `pace` minutes a day.
     Returns (days, overflow minutes): the last day absorbs what the days cannot hold."""
     total = sum(costs)
-    target = max(1, min(pace, math.ceil(total / max(1, days))))
-    out, day, used = [], 0, 0
+    out, day, used, left = [], 0, 0, total
+    # Each day aims at its share of what is LEFT (so the days stay even) and may go past that share up to the pace: with
+    # one fixed target of total/days, 11 pages of 20 min over 4 days at 60 min a day became 40, 40, 40 and 100 on the
+    # last day, although 60, 60, 60, 40 fits (FelCloud scenarios 2026-11-11, UNI-02).
+    target = max(1, min(pace, math.ceil(left / max(1, days))))
     for c in costs:
-        if used and used + c > max(target, c) and day < days - 1:
+        if used and day < days - 1 and (used >= target or used + c > max(pace, c)):
             day, used = day + 1, 0
+            target = max(1, min(pace, math.ceil(left / (days - day))))
         out.append(day)
         used += c
+        left -= c
     last_min = sum(c for c, d in zip(costs, out) if d == days - 1)
     return out, max(0, last_min - pace) if total > days * pace else 0
 

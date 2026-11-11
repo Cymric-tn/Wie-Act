@@ -241,6 +241,29 @@ def language_plan(learner_language: str | None) -> list[dict | None]:
     return [None]
 
 
+async def search_plan(retriever: Retriever, query: str, k: int, filters: Filters, expansion: Expansion | None,
+                      learner_language: str | None) -> list[Hit]:
+    """One search through the learner's language plan. The first language with a hit wins, except for ENGLISH: the
+    English pages cover part of the course only, so a question about the rest used to stop at a weak English hit
+    (a quotient question answered from the variations page; FelCloud scenarios 2026-11-11, finding 5). There the
+    French hits win when their best coverage is higher, or equal with a higher top score (both come from one BM25
+    index, and the French side is scored on glossary terms at GLOSSARY_WEIGHT, so it does not win by default); a
+    full tie stays with the learner's language.
+    Coverage is only compared between two Latin-script languages: for ARABIC it is not comparable (an Arabic word
+    leaves the denominator against a French chunk), so Arabic chunks keep the plain priority."""
+    best: list[Hit] = []
+    rank = lambda hs: (max(h.coverage for h in hs), hs[0].score)
+    for lang_filter in language_plan(learner_language):
+        hits = await retriever.search(query, k, {**(filters or {}), **(lang_filter or {})} or None, expansion)
+        if not hits:
+            continue
+        if learner_language != "ENGLISH":
+            return hits
+        if not best or rank(hits) > rank(best):
+            best = hits
+    return best
+
+
 def make_retriever(kind: str, min_coverage: float, embed: EmbedFn | None = None,
                    glossary_weight: float = 0.5, professor_boost: float = 1.0) -> Retriever:
     if kind == "bm25":

@@ -276,3 +276,18 @@ def test_the_generated_pdf_page_one_at_054_is_flagged_by_the_default_cutoff(tmp_
     old = ingest(str(path), "analyse", "derivees", "prof-7", "class", "professor", min_confidence=0.5, **kw)
     assert old.low_confidence == []                                     # the old cutoff let it through
     assert make_settings(INGEST_MIN_TAG_CONFIDENCE="0.8").ingest_min_tag_confidence == 0.8
+
+
+def test_a_file_that_never_names_the_topic_gets_no_confident_tag(tmp_path):
+    course = load_course("data/courses/analyse.yaml")
+    """FelCloud scenarios 2026-11-11, finding 3: "Matrice 2 × 2" was tagged `produit` at confidence 1."""
+    f = tmp_path / "matrices.md"
+    f.write_text("# Matrice 2 × 2\n\nLe déterminant est le produit des termes de la diagonale moins le produit des autres.\n\n"
+                 "# Tri\n\nUn tri en temps constant n'existe pas ; la limite inférieure est n log n, et l'inverse est faux.\n",
+                 encoding="utf-8")
+    res = ingest(str(f), "analyse", "", "prof-7", "public", "professor", course=course, glossary=Glossary.load("data/glossary.yaml"))
+    assert res.chunks and all(c.confidence < 0.5 for c in res.chunks)
+    g = tmp_path / "produit.md"
+    g.write_text("# Produit\n\n" + PRODUIT + "\n", encoding="utf-8")
+    ok = ingest(str(g), "analyse", "", "prof-7", "public", "professor", course=course, glossary=Glossary.load("data/glossary.yaml"))
+    assert [(c.concept, c.confidence >= 0.6) for c in ok.chunks] == [("produit", True)]
