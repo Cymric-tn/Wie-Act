@@ -7,14 +7,6 @@ English, Arabic, Tunisian Darija or Arabizi), while the professor sees and corre
 It runs on the challenge's inference service (FelCloud): two categories of language models on CPU, 20 requests a
 minute, two at a time, no streaming. Most of the engineering is about using that service well.
 
-| | |
-|---|---|
-| ![Dashboard](docs/screenshots/02-dashboard.png) | ![AI companion](docs/screenshots/04b-companion-answer.png) |
-| ![Progress map](docs/screenshots/03-progress-map.png) | ![Whiteboard](docs/screenshots/07-whiteboard.png) |
-| ![Diagram generator](docs/screenshots/06-diagrams.png) | ![Professor review](docs/screenshots/08-professor-review.png) |
-
-More screens: [`docs/screenshots/`](docs/screenshots/). Technical report: [`docs/report/lumi-technical-report.pdf`](docs/report/lumi-technical-report.pdf).
-
 ## What it does
 
 | For | Feature |
@@ -68,10 +60,6 @@ browser ── /api/ai/* ──▶ Node server ──▶ bridge ──▶ engine
 **Checks on what the model writes:** every formula in an explanation is verified with sympy or matched against the
 sources; an answer with a wrong or unsupported formula is flagged for the professor and never cached as good.
 
-Details: [`docs/ENGINE_API.md`](docs/ENGINE_API.md) (the contract, generated from real output),
-[`docs/engine_guide/ednova_engine_guide.pdf`](docs/engine_guide/ednova_engine_guide.pdf), and
-[`DECISIONS.md`](DECISIONS.md) (every design choice with its measurement).
-
 ## Run it
 
 Requirements: Python 3.10+, Node 22.5+ (the server uses the built-in `node:sqlite`; `app/.nvmrc` says 24).
@@ -104,9 +92,6 @@ cd app/client && npm test            # client: geometry, history, diagrams, tran
 python -m scripts.load_mixed --virtual   # a simulated classroom on the constraint simulator
 ```
 
-Measured results on the real service are in [`reports/`](reports/); the scenario run of 2026-11-11 is
-[`reports/felcloud-2026-11-11-scenarios.md`](reports/felcloud-2026-11-11-scenarios.md).
-
 ## Repository layout
 
 | Path | Contents |
@@ -118,7 +103,6 @@ Measured results on the real service are in [`reports/`](reports/); the scenario
 | `app/server/` | Node server: rooms, real-time sync, voice signaling, the feature layer over the engine |
 | `app/bridge/`, `app/diagrams/` | Python bridge that hosts the engine; the diagram generator |
 | `tests/`, `app/*/test/` | tests and evaluation sets |
-| `reports/`, `docs/` | measurements, API contract, engine guide, technical report |
 
 ## Privacy and safeguards
 

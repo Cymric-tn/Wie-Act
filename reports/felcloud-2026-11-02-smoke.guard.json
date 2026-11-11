@@ -1,7 +1,0 @@
-{
- "step": "smoke",
- "chat_requests": 7,
- "non_200": {},
- "server_429": 0,
- "exceptions": []
-}

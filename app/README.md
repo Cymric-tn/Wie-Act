@@ -19,7 +19,7 @@ app/dev.sh --real     # the real engine, ENV_FILE=.env.real: spends the team's F
 | engine bridge | 8765 | `BRIDGE_PORT` |
 
 `dev.sh` checks the Node version, generates a local `ENGINE_SERVICE_TOKEN` when none is set, and writes logs to
-`app/.dev-logs/`. One page for the feature team: [`HANDOFF.md`](HANDOFF.md).
+`app/.dev-logs/`.
 
 Boards, materials and AI history are saved under `server/data/` and survive
 restarts. The AI features need the engine's bridge (see **AI engine** below); without it they answer

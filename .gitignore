@@ -39,3 +39,13 @@ _legacy/index-courses-*/
 docs/report/*.aux
 docs/report/*.log
 docs/report/*.out
+
+# kept locally, not published
+CLAUDE.md
+DECISIONS.md
+AUDIT.md
+VOICE_CHAT_IMPLEMENTATION.md
+app/HANDOFF.md
+reports/
+docs/
+videos/
